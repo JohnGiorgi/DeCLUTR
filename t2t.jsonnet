@@ -57,16 +57,16 @@ local max_sequence_length = 512;
     "iterator": {
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
-        "batch_size": 1
+        "batch_size": 2
     },
     "trainer": {
         "optimizer": {
             "type": "adam",
             // TODO (John): Because our decoder is trained from scratch, we will likely need a larger
             // learning rate. Idea, diff learning rates for encoder / decoder?
-            "lr": 2e-5
+            "lr": 5e-5,
         },
-        "validation_metric": "+bleu",
+        // "validation_metric": "-loss",
         "num_serialized_models_to_keep": 1,
         "num_epochs": 5,
         "cuda_device": 0,

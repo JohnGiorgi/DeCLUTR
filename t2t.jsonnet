@@ -7,6 +7,7 @@ local pretrained_transformer_model_name = "bert-base-uncased";
 // This will be used to set the max # of tokens and the max # of decoding steps
 local max_sequence_length = 512;
 // This corresponds to the config.hidden_size of the pretrained_transformer_model_name
+// TODO (John): Can we set this programatically?
 local transformer_embedding_size = 768;
 // Whether or not tokens should be lowercased. This should match the
 // pretrained_transformer_model_name used.
@@ -42,8 +43,8 @@ local do_lowercase = true;
             },
         },
         // This will break the pretrained_transformer token indexer. So remove for now.
-        // In the future, we should assigned the special start and end sequence tokens to one of
-        // BERTs unused vocab ids.
+        // In the future, we might want to consider assigning the special start and end sequence
+        // tokens to one of BERTs unused vocab ids.
         // See: https://github.com/allenai/allennlp/issues/3435#issuecomment-558668277
         "source_add_start_token": false,
         "source_add_end_token": false,
@@ -92,6 +93,12 @@ local do_lowercase = true;
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
         "batch_size": 4
+    },
+    // By using this iterator at train time, we can provide it to the AllenNLP predict command
+    // to ensure that instances are not shuffled at inference time.
+    "validation_iterator": {
+        "type": "basic",
+        "batch_size": 16
     },
     "trainer": {
         "optimizer": {

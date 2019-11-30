@@ -1,16 +1,20 @@
+// Specifies an encoder-decoder model trained to reconstruct the input text in order to produce
+// rich document embeddings. Some inspiration was taken from the following AllenNLP configs:
+// * https://github.com/allenai/allennlp/blob/2850579831f392467276f1ab6d5cda3fdb45c3ba/allennlp/tests/fixtures/encoder_decoder/composed_seq2seq/experiment_transformer.json
+// * https://github.com/allenai/allennlp/blob/2850579831f392467276f1ab6d5cda3fdb45c3ba/allennlp/tests/fixtures/encoder_decoder/composed_seq2seq/experiment_lstm.json
+
 // This should be a registered name in the Transformers library 
 // (see https://huggingface.co/transformers/pretrained_models.html) or a path on disk to a
 // serialized transformer model. Note, to avoid issues, please name the serialized model folder in
 // the same format as the Transformers library, e.g.
 // [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
 local pretrained_transformer_model_name = "bert-base-uncased";
-// This will be used to set the max # of tokens and the max # of decoding steps
+// This will be used to set the max # of source tokens and the max # of decoding steps
 local max_sequence_length = 512;
 // This corresponds to the config.hidden_size of the pretrained_transformer_model_name
 // TODO (John): Can we set this programatically?
 local transformer_embedding_size = 768;
-// Whether or not tokens should be lowercased. This should match the
-// pretrained_transformer_model_name used.
+// Whether or not tokens should be lowercased. Should match pretrained_transformer_model_name.
 local do_lowercase = true;
 
 {
@@ -26,10 +30,10 @@ local do_lowercase = true;
         "target_tokenizer": {
             "type": "spacy"
         },
+        // TODO (John): For now, we are using different token namespaces for the source and target
+        // text. Not sure this makes sense, as the vocabs are the same. Experiement with merging.
         "source_token_indexers": {
             "tokens": {
-                // TODO (John): I don't understand the namespace argument. This could be the source
-                // of our problems.
                 "type": "pretrained_transformer",
                 "model_name": pretrained_transformer_model_name,
                 "namespace": "source_tokens"
@@ -42,7 +46,7 @@ local do_lowercase = true;
                 "namespace": "target_tokens"
             },
         },
-        // This will break the pretrained_transformer token indexer. So remove for now.
+        // TODO (John): This will break the pretrained_transformer token indexer. So remove for now.
         // In the future, we might want to consider assigning the special start and end sequence
         // tokens to one of BERTs unused vocab ids.
         // See: https://github.com/allenai/allennlp/issues/3435#issuecomment-558668277
@@ -86,7 +90,7 @@ local do_lowercase = true;
             },
             "target_namespace": "target_tokens",
             // Use greedy decoding
-            "beam_size": 1            
+            "beam_size": 1
         },
     },
     "iterator": {

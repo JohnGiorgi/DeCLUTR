@@ -96,13 +96,13 @@ local do_lowercase = true;
     "iterator": {
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
-        "batch_size": 4
+        // TODO (John): Ideally this would be [16, 32], but there are OOM issues
+        "batch_size": 8
     },
-    // By using this iterator at train time, we can provide it to the AllenNLP predict command
-    // to ensure that instances are not shuffled at inference time.
     "validation_iterator": {
-        "type": "basic",
-        "batch_size": 16
+        "type": "bucket",
+        "sorting_keys": [["source_tokens", "num_tokens"]],
+        "batch_size": 32
     },
     "trainer": {
         "optimizer": {

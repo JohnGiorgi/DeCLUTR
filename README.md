@@ -22,6 +22,7 @@ To train the model, run the following command
 allennlp train t2t.jsonnet \
     -s tmp \
     --include-package t2t.modules.seq2seq_encoders.pretrained_transformer
+    --include-package t2t.models.encoder_decoders.composed_seq2seq_with_doc_embeddings
 ```
 
 During training, models, vocabulary configuration and log files will be saved to `"tmp"`. This can be changed to any path you like.
@@ -40,6 +41,7 @@ allennlp predict tmp path/to/input/file.tsv \
     --dataset-reader-choice validation \
     --predictor seq2seq \
     --include-package t2t.modules.seq2seq_encoders.pretrained_transformer \
+    --include-package t2t.models.encoder_decoders.composed_seq2seq_with_doc_embeddings
 ```
 
 This will:

@@ -34,15 +34,17 @@ To perform inference with a trained model, run the following command
 allennlp predict tmp path/to/input/file.tsv \
     --output-file tmp/predictions.json \
     --weights-file tmp/best.th \
-    --batch-size 16 \
+    --batch-size 32 \
     --cuda-device 0 \
     --use-dataset-reader \
-    --dataset-reader-choice validation
+    --dataset-reader-choice validation \
     --predictor seq2seq \
     --include-package t2t.modules.seq2seq_encoders.pretrained_transformer \
 ```
 
 This will:
-* load the model serialized to `"./tmp"` with the weights from the epoch that achieved the best performance on the validation set
+* load the model serialized to `"tmp"` with the weights from the epoch that achieved the best performance on the validation set
 * use that model to perform inference on the provided input file
 * save the predictions to disk as `tmp/predictions.json`
+
+The document embeddings are stored in the field `"doc_embeddings"` in `predictions.json`.

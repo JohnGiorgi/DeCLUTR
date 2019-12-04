@@ -58,7 +58,7 @@ local do_lowercase = true;
     "train_data_path": "datasets/pubmed/train.tsv",
     "validation_data_path": "datasets/pubmed/valid.tsv",
     "model": {
-        "type": "composed_seq2seq",
+        "type": "composed_seq2seq_with_doc_embeddings",
         "source_text_embedder": {
             "token_embedders": {
                 "tokens": {

@@ -52,3 +52,5 @@ class ComposedSeq2SeqWithDocEmbeddings(ComposedSeq2Seq):
                               torch.clamp(torch.sum(doc_mask, dim=1), min=1e-9))
 
         output_dict['doc_embeddings'] = doc_embeddings
+
+        return output_dict

@@ -8,7 +8,7 @@
 // serialized transformer model. Note, to avoid issues, please name the serialized model folder in
 // the same format as the Transformers library, e.g.
 // [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
-local pretrained_transformer_model_name = "bert-base-uncased";
+local pretrained_transformer_model_name = "albert-base-v1";
 // This will be used to set the max # of source tokens and the max # of decoding steps
 local max_sequence_length = 512;
 // This corresponds to the config.hidden_size of the pretrained_transformer_model_name

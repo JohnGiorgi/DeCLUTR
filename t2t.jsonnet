@@ -8,7 +8,7 @@
 // serialized transformer model. Note, to avoid issues, please name the serialized model folder in
 // the same format as the Transformers library, e.g.
 // [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
-local pretrained_transformer_model_name = "bert-base-uncased";
+local pretrained_transformer_model_name = "albert-base-v1";
 // This will be used to set the max # of source tokens and the max # of decoding steps
 local max_sequence_length = 512;
 // This corresponds to the config.hidden_size of the pretrained_transformer_model_name
@@ -55,8 +55,8 @@ local do_lowercase = true;
         "source_max_tokens": max_sequence_length,
         "target_max_tokens": max_sequence_length - 2,  // Account for start/end tokens
     },
-    "train_data_path": "datasets/pubmed/train.tsv",
-    "validation_data_path": "datasets/pubmed/valid.tsv",
+    "train_data_path": "datasets/20_newsgroup/train.tsv",
+    "validation_data_path": "datasets/20_newsgroup/valid.tsv",
     "model": {
         "type": "composed_seq2seq_with_doc_embeddings",
         "source_text_embedder": {
@@ -109,11 +109,12 @@ local do_lowercase = true;
             "type": "adam",
             // TODO (John): Because our decoder is trained from scratch, we will likely need a larger
             // learning rate. Idea: different learning rates for encoder / decoder?
-            "lr": 5e-5
+            "lr": 4e-5
         },
+        "patience": 5,
         // "validation_metric": "-loss",
+        "num_epochs": 20,
         "num_serialized_models_to_keep": 1,
-        "num_epochs": 10,
         "cuda_device": 0,
         "grad_norm": 1.0
     }

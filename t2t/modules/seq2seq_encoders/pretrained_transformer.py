@@ -1,5 +1,6 @@
 import torch
 from overrides import overrides
+from torch import nn
 
 from allennlp.modules.seq2seq_encoders import Seq2SeqEncoder
 from transformers.modeling_auto import AutoModel
@@ -8,44 +9,31 @@ from transformers.modeling_auto import AutoModel
 @Seq2SeqEncoder.register("pretrained_transformer")
 class PretrainedTransformerEncoder(Seq2SeqEncoder):
     """
-    Implements an encoder from a pretrained transformer model (e.g. BERT).
+    Implements an encoder using a pre-trained transformer model (e.g. BERT) from the 
+    ``Transformers`` library. Because these models both embed and encode their inputs, when this
+    class is used as the encoder of a encoder-decoder model it should be paired with the 
+    ``PassThrough`` token embedder.
 
     Parameters
     ----------
     vocab : ``Vocabulary``
-    bert_model : ``Union[str, BertModel]``
-        The BERT model to be wrapped. If a string is provided, we will call
-        ``BertModel.from_pretrained(bert_model)`` and use the result.
-    num_labels : ``int``, optional (default: None)
-        How many output classes to predict. If not provided, we'll use the
-        vocab_size for the ``label_namespace``.
-    index : ``str``, optional (default: "bert")
-        The index of the token indexer that generates the BERT indices.
-    label_namespace : ``str``, optional (default : "labels")
-        Used to determine the number of classes if ``num_labels`` is not supplied.
-    trainable : ``bool``, optional (default : True)
-        If True, the weights of the pretrained BERT model will be updated during training.
-        Otherwise, they will be frozen and only the final linear layer will be trained.
-    initializer : ``InitializerApplicator``, optional
-        If provided, will be used to initialize the final linear layer *only*.
-    regularizer : ``RegularizerApplicator``, optional (default=``None``)
-        If provided, will be used to calculate the regularization penalty during training.
+    model_name : ``str``
+        The pre-trained ``Transformers`` model to be wrapped. The model is instantiated by calling:
+        ``AutoModel.from_pretrained(model_name)``.
     """
     def __init__(self, model_name: str) -> None:
         super().__init__(model_name)
-        self.transformer_model = AutoModel.from_pretrained(model_name)
-        # I'm not sure if this works for all models; open an issue on github if you find a case
-        # where it doesn't work.
-        self.output_dim = self.transformer_model.config.hidden_size
+        self._transformer_model = AutoModel.from_pretrained(model_name)
+        self._output_dim = self.transformer_model.config.hidden_size
 
     @overrides
-    def get_output_dim(self):
-        return self.output_dim
+    def get_output_dim(self) -> int:
+        return self._output_dim
 
     @overrides
     def is_bidirectional(self) -> bool:
         """
-        Returns ``True`` if this encoder is bidirectional.  If so, we assume the forward direction
+        Returns ``True`` if this encoder is bidirectional. If so, we assume the forward direction
         of the encoder is the first half of the final dimension, and the backward direction is the
         second half.
         """
@@ -53,4 +41,13 @@ class PretrainedTransformerEncoder(Seq2SeqEncoder):
 
     @overrides
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:  # type: ignore
-        return self.transformer_model(inputs, attention_mask=mask)[0]
+        sequence_output, _ = self._transformer_model(inputs, attention_mask=mask)
+
+        # TODO (John): We use a mean of the transformers last hidden states as our pooler
+        # In the future, we will make this modular and experiment with learnable poolers.
+        pooled_output = (torch.sum(sequence_output * mask.unsqueeze(-1), dim=1) / 
+                         torch.clamp(torch.sum(mask, dim=1, keepdim=True), min=1e-9))
+        # HACK (John): Decoder expects: (batch_size, max_input_sequence_length, encoder_input_dim)
+        pooled_output = pooled_output.unsqueeze(1).expand_as(sequence_output)
+
+        return pooled_output

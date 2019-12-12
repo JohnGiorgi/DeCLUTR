@@ -42,15 +42,7 @@ class ComposedSeq2SeqWithDocEmbeddings(ComposedSeq2Seq):
         state = self._encode(source_tokens)
         output_dict = self._decoder(state, target_tokens)
 
-        # HACK (John): Our current solution to extracting document embeddings
-        with torch.no_grad():
-            encoder_outputs, source_mask = state['encoder_outputs'], state['source_mask']
-
-            doc_mask = source_mask.unsqueeze(-1).expand_as(encoder_outputs)
-            doc_embeddings = (torch.sum(encoder_outputs * doc_mask, dim=1) /
-                              # clamp prevents division by 0
-                              torch.clamp(torch.sum(doc_mask, dim=1), min=1e-9))
-
-        output_dict['doc_embeddings'] = doc_embeddings
+        # HACK (John): Document embeddings are expanded along the second dimension, drop it
+        output_dict['doc_embeddings'] = state['encoder_outputs'][:, 0, :].squeeze(1)
 
         return output_dict

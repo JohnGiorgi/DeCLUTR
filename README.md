@@ -25,7 +25,8 @@ To train the model, run the following command
 ```
 allennlp train t2t.jsonnet \
     -s tmp \
-    --include-package t2t.modules.seq2seq_encoders.pretrained_transformer
+    --include-package t2t.modules.seq2seq_encoders.pretrained_transformer \
+    --include-package t2t.modules.seq2vec.boe_encoder_with_projection \
     --include-package t2t.models.encoder_decoders.composed_seq2seq_with_doc_embeddings
 ```
 
@@ -45,6 +46,7 @@ allennlp predict tmp path/to/input/file.tsv \
     --dataset-reader-choice validation \
     --predictor seq2seq \
     --include-package t2t.modules.seq2seq_encoders.pretrained_transformer \
+    --include-package t2t.modules.seq2vec.boe_encoder_with_projection \
     --include-package t2t.models.encoder_decoders.composed_seq2seq_with_doc_embeddings
 ```
 

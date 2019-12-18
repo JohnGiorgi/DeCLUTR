@@ -129,3 +129,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Added by us: don't track dataset folder
+datasets

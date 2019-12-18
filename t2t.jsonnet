@@ -8,12 +8,13 @@
 // serialized transformer model. Note, to avoid issues, please name the serialized model folder in
 // the same format as the Transformers library, e.g.
 // [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
-local pretrained_transformer_model_name = "albert-base-v1";
+local pretrained_transformer_model_name = "albert-base-v2";
 // This will be used to set the max # of source tokens and the max # of decoding steps
 local max_sequence_length = 512;
 // This corresponds to the config.hidden_size of the pretrained_transformer_model_name
 // TODO (John): Can we set this programatically?
-local transformer_embedding_size = 768;
+local source_embedding_size = 768;
+local target_embedding_size = 512;
 // Whether or not tokens should be lowercased. Should match pretrained_transformer_model_name.
 local do_lowercase = true;
 
@@ -63,34 +64,41 @@ local do_lowercase = true;
             "token_embedders": {
                 "tokens": {
                     "type": "pass_through",
-                    "hidden_dim": transformer_embedding_size  
+                    "hidden_dim": source_embedding_size  
                 },
             },
         },
         "encoder": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
+            "pooler": {
+                "type": "bag_of_embeddings_with_projection",
+                "embedding_dim": source_embedding_size,
+                "averaged": true,
+                "output_dim": target_embedding_size
+            },
         },
         "decoder": {
             "decoder_net": {
                 // These hyperparameters should be chosen to minimize the decoders capacity, while 
                 // still allowing it to learn coherent reconstructions
                 "type": "stacked_self_attention",
-                "decoding_dim": transformer_embedding_size,
-                "target_embedding_dim": transformer_embedding_size,
-                "feedforward_hidden_dim": 1024,
+                "decoding_dim": target_embedding_size,
+                "target_embedding_dim": target_embedding_size,
+                "feedforward_hidden_dim": target_embedding_size,
                 "num_layers": 1,
                 "num_attention_heads": 1,
                 "positional_encoding_max_steps": max_sequence_length
             },
             "max_decoding_steps": max_sequence_length,
             "target_embedder": {
-                "embedding_dim": transformer_embedding_size,
+                "embedding_dim": target_embedding_size,
                 "vocab_namespace": "target_tokens"
             },
             "target_namespace": "target_tokens",
             // Use greedy decoding
-            "beam_size": 1
+            "beam_size": 1,
+            "tensor_based_metric": "bleu"
         },
     },
     "iterator": {
@@ -109,11 +117,11 @@ local do_lowercase = true;
             "type": "adam",
             // TODO (John): Because our decoder is trained from scratch, we will likely need a larger
             // learning rate. Idea: different learning rates for encoder / decoder?
-            "lr": 4e-5
+            "lr": 5e-5
         },
         "patience": 5,
-        // "validation_metric": "-loss",
-        "num_epochs": 20,
+        "validation_metric": "+BLEU",
+        "num_epochs": 25,
         "num_serialized_models_to_keep": 1,
         "cuda_device": 0,
         "grad_norm": 1.0

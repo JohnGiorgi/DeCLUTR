@@ -105,19 +105,23 @@ local do_lowercase = true;
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
         // TODO (John): Ideally this would be [16, 32], but there are OOM issues
-        "batch_size": 8
+        "batch_size": 6
     },
     "validation_iterator": {
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
-        "batch_size": 32
+        "batch_size": 16
     },
     "trainer": {
         "optimizer": {
-            "type": "adam",
+            "type": "huggingface_adamw",
             // TODO (John): Because our decoder is trained from scratch, we will likely need a larger
             // learning rate. Idea: different learning rates for encoder / decoder?
-            "lr": 5e-5
+            "lr": 5e-5,
+            "weight_decay": 0.01,
+            "parameter_groups": [
+              [["bias", "LayerNorm.bias", "LayerNorm.weight", "layer_norm.weight"], {"weight_decay": 0.0}],
+            ],
         },
         "patience": 5,
         "validation_metric": "+BLEU",

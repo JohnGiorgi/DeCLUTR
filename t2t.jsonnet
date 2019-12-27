@@ -20,9 +20,7 @@ local do_lowercase = true;
 
 {
     "dataset_reader": {
-        // TODO (John): Because our source and target text is identical, we should subclass this
-        // dataloader to one which only expects one document per line.
-        "type": "seq2seq",
+        "type": "seq2sameseq",
         "source_tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -56,8 +54,8 @@ local do_lowercase = true;
         "source_max_tokens": max_sequence_length,
         "target_max_tokens": max_sequence_length - 2,  // Account for start/end tokens
     },
-    "train_data_path": "datasets/20_newsgroup/train.tsv",
-    "validation_data_path": "datasets/20_newsgroup/valid.tsv",
+    "train_data_path": "datasets/20_newsgroup/train.txt",
+    "validation_data_path": "datasets/20_newsgroup/valid.txt",
     "model": {
         "type": "composed_seq2seq_with_doc_embeddings",
         "source_text_embedder": {

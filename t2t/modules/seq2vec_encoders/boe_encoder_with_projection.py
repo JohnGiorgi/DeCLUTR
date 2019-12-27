@@ -13,32 +13,27 @@ from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 @Seq2VecEncoder.register("bag_of_embeddings_with_projection")
 class BagOfEmbeddingsEncoderWithProjection(BagOfEmbeddingsEncoder):
     """
-    A ``BagOfEmbeddingsEncoderWithProjection`` is a simple :class:`Seq2VecEncoder` which simply sums
-    the embeddings of a sequence across the time dimension. The input to this module is of shape
-    ``(batch_size, num_tokens, embedding_dim)``, and the output is of shape
-    ``(batch_size, embedding_dim)``. If ``output_dim`` is not None, then the summed embeddings are
-    linearly projected to this size, and the output is of shape ``(batch_size, output_dim)``.
+    A ``BagOfEmbeddingsEncoderWithProjection`` is a simple :class:`Seq2VecEncoder` which simply sums the
+    embeddings of a sequence across the time dimension. The input to this module is of shape
+    ``(batch_size, num_tokens, embedding_dim)``, and the output is of shape ``(batch_size, embedding_dim)``. If
+    ``output_dim`` is not None, then the summed embeddings are linearly projected to this size, and the output is
+    of shape ``(batch_size, output_dim)``.
 
     Parameters
     ----------
     embedding_dim: ``int``
         This is the input dimension to the encoder.
     averaged: ``bool``, optional (default=``False``)
-        If ``True``, this module will average the embeddings across time, rather than simply summing
-        (ie. we will divide the summed embeddings by the length of the sentence).
+        If ``True``, this module will average the embeddings across time, rather than simply summing (i.e. we will
+        divide the summed embeddings by the length of the sentence).
     output_dim : ``Optional[int]``, optional (default=``None``)
-        After pooling, we'll project the collected features into a vector of this size. If this
-        value is ``None``, we will just return the result of the pooling, giving an output of shape
+        After pooling, we'll project the collected features into a vector of this size. If this value is ``None``,
+        we will just return the result of the pooling, giving an output of shape
         ``(tokens.size(0), tokens.size(-1))``.
     """
 
-    def __init__(
-        self,
-        embedding_dim: int,
-        averaged: bool = False,
-        output_dim: Optional[int] = None
-    ) -> None:
-        super().__init__()
+    def __init__(self, embedding_dim: int, averaged: bool = False, output_dim: Optional[int] = None) -> None:
+        super().__init__(embedding_dim, averaged)
 
         if output_dim:
             self._projection_layer = Linear(embedding_dim, output_dim)

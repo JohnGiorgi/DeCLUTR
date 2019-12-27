@@ -105,7 +105,7 @@ local do_lowercase = true;
         "type": "bucket",
         "sorting_keys": [["source_tokens", "num_tokens"]],
         // TODO (John): Ideally this would be [16, 32], but there are OOM issues
-        "batch_size": 6
+        "batch_size": 4
     },
     "validation_iterator": {
         "type": "bucket",
@@ -120,7 +120,9 @@ local do_lowercase = true;
             "lr": 5e-5,
             "weight_decay": 0.01,
             "parameter_groups": [
-              [["bias", "LayerNorm.bias", "LayerNorm.weight", "layer_norm.weight"], {"weight_decay": 0.0}],
+              [
+                  ["bias", "LayerNorm.bias", "LayerNorm.weight", "layer_norm.weight", "decoder"],
+                  {"weight_decay": 0.0}],
             ],
         },
         "patience": 5,
@@ -128,6 +130,8 @@ local do_lowercase = true;
         "num_epochs": 25,
         "num_serialized_models_to_keep": 1,
         "cuda_device": 0,
-        "grad_norm": 1.0
+        "grad_norm": 1.0,
+        // The effective batch size is batch_size * num_gradient_accumulation_steps
+        "num_gradient_accumulation_steps": 4
     }
 }

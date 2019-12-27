@@ -22,7 +22,7 @@ local do_lowercase = true;
     "dataset_reader": {
         // TODO (John): Because our source and target text is identical, we should subclass this
         // dataloader to one which only expects one document per line.
-        "type": "seq2seq",
+        "type": "seq2sameseq",
         "source_tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,

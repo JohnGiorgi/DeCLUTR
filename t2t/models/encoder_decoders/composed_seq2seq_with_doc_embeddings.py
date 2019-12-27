@@ -42,7 +42,10 @@ class ComposedSeq2SeqWithDocEmbeddings(ComposedSeq2Seq):
         state = self._encode(source_tokens)
         output_dict = self._decoder(state, target_tokens)
 
+        # During eval, copy the encoders output to CPU memory. This becomes our document embedding.
         # HACK (John): Document embeddings are expanded along the second dimension, drop it
-        output_dict['doc_embeddings'] = state['encoder_outputs'][:, 0, :].squeeze(1)
+        if not self.training:
+            output_dict['doc_embeddings'] = \
+                state['encoder_outputs'][:, 0, :].cpu().squeeze(1)
 
         return output_dict

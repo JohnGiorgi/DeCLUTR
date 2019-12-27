@@ -4,7 +4,7 @@ import torch
 from overrides import overrides
 from torch.nn import Linear
 
-from allennlp.modules import Seq2VecEncoder
+from allennlp.modules.seq2vec_encoders.seq2vec_encoder import Seq2VecEncoder
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 

@@ -24,7 +24,13 @@ class PretrainedTransformerEncoder(Seq2SeqEncoder):
     """
     def __init__(self, model_name: str, pooler: Seq2VecEncoder) -> None:
         super().__init__()
-        self._transformer_model = AutoModel.from_pretrained(model_name)
+        self._transformer_model = AutoModel.from_pretrained(
+            model_name,
+            # TEMP (John): This is a temporary fix.
+            # See: https://github.com/huggingface/transformers/issues/2337
+            attention_probs_dropout_prob=0,
+            hidden_dropout_prob=0,
+        )
         self._pooler = pooler
         self._output_dim = pooler.get_output_dim()
 

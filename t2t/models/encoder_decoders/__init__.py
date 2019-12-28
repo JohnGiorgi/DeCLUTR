@@ -1,0 +1,1 @@
+from t2t.models.encoder_decoders.composed_seq2seq_with_doc_embeddings import ComposedSeq2SeqWithDocEmbeddings

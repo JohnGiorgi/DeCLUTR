@@ -33,12 +33,12 @@ class Seq2SameSeqDatasetReader(Seq2SeqDatasetReader):
         delimiter: str = None,
         source_max_tokens: Optional[int] = None,
         target_max_tokens: Optional[int] = None,
-        lazy: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             source_tokenizer, target_tokenizer, source_token_indexers, target_token_indexers,
             source_add_start_token, source_add_end_token, delimiter, source_max_tokens,
-            target_max_tokens, lazy
+            target_max_tokens, **kwargs
         )
 
     @overrides

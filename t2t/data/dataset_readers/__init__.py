@@ -1,1 +1,2 @@
 from t2t.data.dataset_readers.seq2sameseq import Seq2SameSeqDatasetReader
+from t2t.data.dataset_readers.contrastive import ContrastiveDatasetReader

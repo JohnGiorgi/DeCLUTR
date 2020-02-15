@@ -1,1 +1,1 @@
-from t2t.models.contrastive_document_embedder import ContrastiveDocumentEmbedder
+from t2t.models.contrastive_text_encoder import ContrastiveTextEncoder

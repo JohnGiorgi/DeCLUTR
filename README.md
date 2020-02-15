@@ -1,6 +1,6 @@
-# t2t
+# Contrastive Self-supervision for Sentence and Document Embedding
 
-An encoder-decoder model trained to reproduce the source text in order to learn useful document-level embeddings.
+A contrastive, self-supervised method for sentence and document embedding.
 
 ## Installation
 
@@ -16,37 +16,36 @@ The only requirement is [AllenNLP](https://github.com/allenai/allennlp). For the
 
 ### Preparing a Dataset
 
-Datasets should be text files where each line contains a raw text sequence. You can specify different partitions in the config (the default config is `t2t.jsonnet`) under `"train_data_path"`, `"validation_data_path"` and `"test_data_path"`.
+Datasets should be text files where each line contains a raw text sequence. You can specify different partitions in the config (the default config is `contrastive.jsonnet`) under `"train_data_path"`, `"validation_data_path"` and `"test_data_path"`.
 
 ### Training
 
 To train the model, run the following command
 
 ```
-allennlp train t2t.jsonnet -s tmp --include-package t2t
+allennlp train contrastive.jsonnet -s tmp --include-package t2t
 ```
 
 During training, models, vocabulary, configuration and log files will be saved to `tmp`. This can be changed to any path you like.
 
-### Inference
+### Embedding
 
-To perform inference with a trained model, run the following command
+To embed text with a trained model, run the following command
 
 ```
 allennlp predict tmp path/to/input/file.txt \
- --output-file tmp/predictions.jsonl \
+ --output-file tmp/embeddings.jsonl \
  --weights-file tmp/best.th \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
  --dataset-reader-choice validation \
- --predictor seq2seq \
  --include-package t2t
 ```
 
 This will:
 * load the model serialized to `tmp` with the weights from the epoch that achieved the best performance on the validation set
 * use that model to perform inference on the provided input file
-* save the predictions to disk as a [JSON lines](http://jsonlines.org/) file (`tmp/predictions.jsonl`)
+* save the predictions to disk as a [JSON lines](http://jsonlines.org/) file (`tmp/embeddings.jsonl`)
 
-The document embeddings are stored in the field `"doc_embeddings"` in `predictions.json`.
+The sentence and/or document embeddings are stored in the field `"embeddings"` in `embeddings.json`.

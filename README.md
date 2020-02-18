@@ -1,6 +1,8 @@
-# Contrastive Self-supervision for Sentence and Document Embedding
+# Contrastive Learning of Textual Representations
 
-A contrastive, self-supervised method for sentence and document embedding.
+A contrastive, self-supervised method for learning textual representations.
+
+> This is a work in progress!
 
 ## Installation
 

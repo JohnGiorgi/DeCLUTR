@@ -20,15 +20,14 @@ class ContrastiveTextEncoder(Model):
     After embedding the text into a text field, we will optionally encode the embeddings with a `Seq2SeqEncoder`.
     The resulting sequence is pooled using a `Seq2VecEncoder` and then passed to a `FeedFoward` layer, which
     projects the embeddings to a certain size. If a `Seq2SeqEncoder` is not provided, we will pass the embedded
-    text directly to the `Seq2VecEncoder`. This model is based on modifications to the `BasicClassifier` in
-    AllenNLP:  https://github.com/allenai/allennlp/blob/master/allennlp/models/basic_classifier.py.
+    text directly to the `Seq2VecEncoder`.
 
     # Parameters
 
     vocab : `Vocabulary`
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
-    seq2seq_encoder : `Seq2SeqEncoder`, optional (default=`None`)
+    seq2seq_encoder : `Seq2SeqEncoder`, optional, (default=`None`)
         Optional Seq2Seq encoder layer for the input text.
     seq2vec_encoder : `Seq2VecEncoder`
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
@@ -36,8 +35,6 @@ class ContrastiveTextEncoder(Model):
         of the `text_field_embedder`.
     feedforward : `FeedForward`, optional, (default = None).
         An optional feedforward layer to apply after the seq2vec_encoder.
-    dropout : `float`, optional (default = `None`)
-        Dropout percentage to use.
     initializer : `InitializerApplicator`, optional (default=`InitializerApplicator()`)
         If provided, will be used to initialize the model parameters.
     """
@@ -47,9 +44,8 @@ class ContrastiveTextEncoder(Model):
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
-        seq2seq_encoder: Seq2SeqEncoder = None,
+        seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
-        dropout: float = None,
         initializer: InitializerApplicator = InitializerApplicator(),
         **kwargs,
     ) -> None:
@@ -65,18 +61,12 @@ class ContrastiveTextEncoder(Model):
         self._seq2vec_encoder = seq2vec_encoder
         self._feedforward = feedforward
 
-        if dropout:
-            self._dropout = torch.nn.Dropout(dropout)
-        else:
-            self._dropout = None
-
         self._loss = NPairLoss()
         initializer(self)
 
     def forward(  # type: ignore
         self, anchor_tokens: TextFieldTensors, positive_tokens: TextFieldTensors = None
     ) -> Dict[str, torch.Tensor]:
-
 
         """
         # Parameters
@@ -85,36 +75,25 @@ class ContrastiveTextEncoder(Model):
             From a `TextField`
         positive_tokens : torch.IntTensor, optional (default = None)
             From a `TextField`
-        
+
         # Returns
 
         An output dictionary consisting of:
 
-        logits : torch.FloatTensor
-            A tensor of shape `(batch_size, self._seq2vec_encoder.get_output_dim())` if self._feedforward is None
-            else `(batch_size, self._feedforward.get_output_dim())` representing the embedding for the given
-            `tokens`.
+        embeddings : torch.FloatTensor
+            A tensor of shape `(batch_size, self._text_field_embedder.get_output_dim())`, which is the
+            representation for the given `anchor_tokens` output by the encoder. The encoder is composed of:
+            `self._text_field_embedder`, `self._seq2seq_encoder` (optional), and `self._seq2vec_encoder`, in that
+            order.
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
         embedded_anchor_text = self._forward_internal(anchor_tokens)
 
-        # This is the text embedding
-        output_dict = {"embeddings": embedded_anchor_text}
-
-        # To mine positives online, we need to
-        # - add sentence segmentation to the dataset loader
-        # - flatten the returned tokens when embedded the anchor
-        # - for each anchor, choose a random sentence.
-        # - embed these random sentences as positives.
-        """
-        if self.training:
-            positive_tokens = random.choice(anchor_tokens)
-            embedded_positive_text = self._forward_internal(positive_tokens)
-
-            loss = self._loss(embedded_anchor_text, embedded_positive_text)
-            output_dict["loss"] = loss
-        """
+        # This is the textual representation.
+        # We only want to store it at test time, when embedding text with a trained model.
+        if not self.training:
+            output_dict = {"embeddings": embedded_anchor_text}
 
         if positive_tokens is not None:
             embedded_positive_text = self._forward_internal(positive_tokens)
@@ -133,10 +112,11 @@ class ContrastiveTextEncoder(Model):
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
 
-        if self._dropout:
-            embedded_text = self._dropout(embedded_text)
-
-        if self._feedforward is not None:
+        # The representations produced by the non-linear projection are used only for training with the contrastive
+        # loss. When embedding text with a trained model, we want the representation produced by the encoder
+        # network. See: https://arxiv.org/abs/2002.05709
+        # You can ablate this by modifying `self._feedforward`, which is specified in the config.
+        if self.training and self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
 
         return embedded_text

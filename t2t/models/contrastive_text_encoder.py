@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 import torch
+from pytorch_metric_learning.losses import NTXentLoss
 
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
@@ -8,9 +9,7 @@ from allennlp.modules import (FeedForward, Seq2SeqEncoder, Seq2VecEncoder,
                               TextFieldEmbedder)
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-
-# TODO (John): This should be registerable so we can select hyperparameters in the config
-from ..losses.n_pair_loss import NPairLoss
+from t2t.models.util import format_embed_pt_metric_loss
 
 
 @Model.register("constrastive")
@@ -25,6 +24,8 @@ class ContrastiveTextEncoder(Model):
     # Parameters
 
     vocab : `Vocabulary`
+    temperature : `float`
+        Required temperature hyperparameter for the `NTXentLoss` function.
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
     seq2seq_encoder : `Seq2SeqEncoder`, optional, (default=`None`)
@@ -42,6 +43,7 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
+        temperature: float,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
@@ -61,7 +63,8 @@ class ContrastiveTextEncoder(Model):
         self._seq2vec_encoder = seq2vec_encoder
         self._feedforward = feedforward
 
-        self._loss = NPairLoss()
+        # TODO (John): Any way we can "register" this so it can be created "from_params"?
+        self._loss = NTXentLoss(temperature)
         initializer(self)
 
     def forward(  # type: ignore
@@ -88,22 +91,19 @@ class ContrastiveTextEncoder(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
+        # This is the textual representation learned by a trained model that will be used for downstream tasks.
         embedded_anchor_text = self._forward_internal(anchor_tokens)
-
-        # This is the textual representation.
-        # We only want to store it at test time, when embedding text with a trained model.
-        if not self.training:
-            output_dict = {"embeddings": embedded_anchor_text}
+        output_dict = {"embeddings": embedded_anchor_text}
 
         if positive_tokens is not None:
             embedded_positive_text = self._forward_internal(positive_tokens)
-
-            loss = self._loss(embedded_anchor_text, embedded_positive_text)
+            embeddings, labels = format_embed_pt_metric_loss(embedded_anchor_text, embedded_positive_text)
+            loss = self._loss(embeddings, labels)
             output_dict["loss"] = loss
 
         return output_dict
 
-    def _forward_internal(self, tokens: TextFieldTensors):
+    def _forward_internal(self, tokens: TextFieldTensors) -> torch.Tensor:
         embedded_text = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens).float()
 
@@ -112,11 +112,16 @@ class ContrastiveTextEncoder(Model):
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
 
-        # The representations produced by the non-linear projection are used only for training with the contrastive
-        # loss. When embedding text with a trained model, we want the representation produced by the encoder
-        # network. See: https://arxiv.org/abs/2002.05709
-        # You can ablate this by modifying `self._feedforward`, which is specified in the config.
-        if self.training and self._feedforward is not None:
+        # Representations produced by the non-linear projection are used for training with a contrastive loss.
+        # When embedding text with a trained model, we want the representation produced by the encoder network.
+        # See: https://arxiv.org/abs/2002.05709
+        #
+        # To discard the projection when embedding text with a trained model, you should:
+        #   1. Remove the "feedforward" field from the config used to train the model
+        #   2. Provide this modified config as argument with the --overrides flag to
+        #      allennlp predict (https://allenai.github.io/allennlp-docs/api/commands/predict/)
+        # See README.md for more details.
+        if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
 
         return embedded_text

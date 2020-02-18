@@ -25,12 +25,15 @@ local token_embedding_size = 768;
                 "model_name": pretrained_transformer_model_name,
             },
         },
-        "cache_directory": ""
+        // If not null, a cache of already-processed data will be stored in this directory.
+        // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
+        "cache_directory": null
     },
     "train_data_path": "",
     "validation_data_path": "",
     "model": {
         "type": "constrastive",
+        "temperature": 0.1,
         "text_field_embedder": {
             "token_embedders": {
                 "tokens": {

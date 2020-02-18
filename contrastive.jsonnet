@@ -1,16 +1,14 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
-// OR a path on disk to a  serialized transformer model. 
+// OR a path on disk to a serialized transformer model. 
 // Note, to avoid issues, please name the serialized model folder in roughly the same format as the
 // Transformers library, e.g.
 // [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
 local pretrained_transformer_model_name = "distilroberta-base";
-// This will be used to set the max # of tokens in the anchor, positive and negative examples
+// This will be used to set the max # of tokens in the anchor, positive and negative examples.
 local max_length = 512;
 // TODO (John): Can we set this programatically?
-// This corresponds to the config.hidden_size of the pretrained_transformer_model_name
+// This corresponds to the config.hidden_size of pretrained_transformer_model_name
 local token_embedding_size = 768;
-// Size of the fixed-length text embedding to be learned by the model
-local document_embedding_size = 512;
 
 {
     "dataset_reader": {
@@ -27,9 +25,10 @@ local document_embedding_size = 512;
                 "model_name": pretrained_transformer_model_name,
             },
         },
+        "cache_directory": ""
     },
-    "train_data_path": "datasets/pubmed_contrastive/train.tsv",
-    "validation_data_path": "datasets/pubmed_contrastive/valid.tsv",
+    "train_data_path": "",
+    "validation_data_path": "",
     "model": {
         "type": "constrastive",
         "text_field_embedder": {
@@ -47,17 +46,15 @@ local document_embedding_size = 512;
         },
         "feedforward": {
             "input_dim": token_embedding_size,
-            "num_layers": 1,
-            "hidden_dims": document_embedding_size,
-            # TODO (John): Need to experiment to determine if a non-linearity helps here.
-            "activations": "linear",
-            "dropout": 0.0
+            "num_layers": 2,
+            "hidden_dims": [512, 256],
+            "activations": ["relu", "linear"],
         },
     },
     "iterator": {
         "type": "basic",
         // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 16,
+        "batch_size": 18,
     },
     "validation_iterator": {
         "type": "basic",

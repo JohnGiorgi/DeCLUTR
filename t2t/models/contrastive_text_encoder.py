@@ -9,7 +9,8 @@ from allennlp.modules import (FeedForward, Seq2SeqEncoder, Seq2VecEncoder,
                               TextFieldEmbedder)
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-from t2t.models.util import format_embed_pt_metric_loss
+from t2t.models.util import (format_embed_pt_metric_loss,
+                             generate_anchor_positive_pairs)
 
 
 @Model.register("constrastive")
@@ -68,15 +69,13 @@ class ContrastiveTextEncoder(Model):
         initializer(self)
 
     def forward(  # type: ignore
-        self, anchor_tokens: TextFieldTensors, positive_tokens: TextFieldTensors = None
+        self, tokens: TextFieldTensors,
     ) -> Dict[str, torch.Tensor]:
 
         """
         # Parameters
 
-        anchor_tokens : TextFieldTensors
-            From a `TextField`
-        positive_tokens : torch.IntTensor, optional (default = None)
+        tokens : TextFieldTensors
             From a `TextField`
 
         # Returns
@@ -91,12 +90,24 @@ class ContrastiveTextEncoder(Model):
         loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
         """
+
+        if tokens["tokens"]["token_ids"].dim() == 3:
+            anchors, positives = sample_anchor_positive_pairs(tokens)
+            # TODO (John): I don't think this works for several reasons:
+            #   1. tokens is a dict
+            #   2. tokens is used in generate_anchor_positive_pairs
+            # Find a way to get these tensors off the GPU has they are taking up memory.
+            del tokens
+            torch.cuda.empty_cache()
+        else:
+            anchors, positives = tokens, None
+
         # This is the textual representation learned by a trained model that will be used for downstream tasks.
-        embedded_anchor_text = self._forward_internal(anchor_tokens)
+        embedded_anchor_text = self._forward_internal(anchors)
         output_dict = {"embeddings": embedded_anchor_text}
 
-        if positive_tokens is not None:
-            embedded_positive_text = self._forward_internal(positive_tokens)
+        if positives is not None:
+            embedded_positive_text = self._forward_internal(positives)
             embeddings, labels = format_embed_pt_metric_loss(embedded_anchor_text, embedded_positive_text)
             loss = self._loss(embeddings, labels)
             output_dict["loss"] = loss
@@ -116,7 +127,7 @@ class ContrastiveTextEncoder(Model):
         # When embedding text with a trained model, we want the representation produced by the encoder network.
         # See: https://arxiv.org/abs/2002.05709
         #
-        # To discard the projection when embedding text with a trained model, you should:
+        # To discard the projection head when embedding text with a trained model, you should:
         #   1. Remove the "feedforward" field from the config used to train the model
         #   2. Provide this modified config as argument with the --overrides flag to
         #      allennlp predict (https://allenai.github.io/allennlp-docs/api/commands/predict/)

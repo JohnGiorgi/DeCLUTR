@@ -47,7 +47,13 @@ During training, models, vocabulary, configuration and log files will be saved t
 
 ### Embedding
 
-To embed text with a trained model, run the following command
+To embed text with a trained model, you first need a copy of the config used to train the model, where `training = false`. Specifically, you need to:
+
+1. Copy the config used to train the model (in our example, this would be `tmp/config.json`). E.g., `cp tmp/config.json tmp/config_embed.json`.
+2. In the copied config, set `training = false`.
+3. Include the flag `--overrides` in your call to `allennlp predict`, providing it the path to the modified config.
+
+Then run the following command
 
 ```
 allennlp predict tmp path/to/input.txt \
@@ -57,6 +63,7 @@ allennlp predict tmp path/to/input.txt \
  --cuda-device 0 \
  --use-dataset-reader \
  --dataset-reader-choice validation \
+ --overrides tmp/config_embed.json \
  --include-package t2t
 ```
 
@@ -66,14 +73,4 @@ This will:
 2. Use that model to embed the text in the provided input file (`path/to/input.txt`).
 3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`tmp/embeddings.jsonl`)
 
-The text embeddings are stored in the field `"embeddings"` in `embeddings.jsonl`.
-
-#### Embedding without the projection head
-
-Previous work has found that the representations learned by encoder network outperform those learned by the projection head for downstream tasks. To discard the projection head when embedding text, you will need to:
-
-1. Copy the config used to train the model (in our example, this would be `tmp/config.json`).
-2. Remove the `"FeedForward"` field from this copy of the config.
-3. Include the flag `--overrides` in your call to `allennlp predict`, providing it the path to the modified config.
-
-This will embed the input text using _only_ the encoder network. These embeddings _may_ perform better on downstream tasks.
+The text embeddings are stored in the field `"embeddings"` in `tmp/embeddings.jsonl`.

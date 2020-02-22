@@ -13,6 +13,9 @@ local token_embedding_size = 768;
 {
     "dataset_reader": {
         "type": "contrastive",
+        "sample_spans": true,
+        "max_spans": 15,
+        "min_span_width": 15,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -50,18 +53,18 @@ local token_embedding_size = 768;
         "feedforward": {
             "input_dim": token_embedding_size,
             "num_layers": 2,
-            "hidden_dims": [512, 256],
+            "hidden_dims": [128, 128],
             "activations": ["relu", "linear"],
         },
     },
     "iterator": {
         "type": "basic",
         // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 18,
+        "batch_size": 14,
     },
     "validation_iterator": {
         "type": "basic",
-        "batch_size": 32
+        "batch_size": 24
     },
     "trainer": {
         "optimizer": {
@@ -77,13 +80,11 @@ local token_embedding_size = 768;
             ],
         },
         "patience": 5,
-        "num_epochs": 25,
+        "num_epochs": 100,
         "checkpointer": {
             "num_serialized_models_to_keep": 1,
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
-        // The effective batch size is batch_size * num_gradient_accumulation_steps
-        "num_gradient_accumulation_steps": 1
     }
 }

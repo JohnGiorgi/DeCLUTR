@@ -1,8 +1,3 @@
-// Whether or not you are training the model. This changes two things:
-//  1. If true, then spans are extracted during the dataloading process for training against the contrastive
-//     objective. Otherwise text is loaded as is.
-//  2. If true, a non-linear transformation is added between the text representation and the contrastive loss.
-local training = false;
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
 // OR a path on disk to a serialized transformer model. 
 // Note, to avoid issues, please name the serialized model folder in roughly the same format as the
@@ -15,23 +10,12 @@ local max_length = 512;
 // This corresponds to the config.hidden_size of pretrained_transformer_model_name
 local token_embedding_size = 768;
 
-// During training, this nonlinear transformation (inserted between the encoder network and the contrastive loss)
-// will be learned.
-// During inference, it is discarded and the textual representation is obtained from the encoder network only,
-// which is composed of: text_field_embedder, seq2seq_encoder (optional) and seq2vec_encoder, in that order.
-local projection_head = {
-    "input_dim": token_embedding_size,
-    "num_layers": 2,
-    "hidden_dims": [128, 128],
-    "activations": ["relu", "linear"],
-};
-
 {
     "dataset_reader": {
         "type": "contrastive",
-        "extract_spans": training,
-        "max_spans": 250,
-        "min_span_width": 20,
+        "sample_spans": true,
+        "max_spans": 15,
+        "min_span_width": 15,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -66,7 +50,12 @@ local projection_head = {
             "embedding_dim": token_embedding_size,
             "averaged": true
         },
-        "feedforward": (if training then projection_head),
+        "feedforward": {
+            "input_dim": token_embedding_size,
+            "num_layers": 2,
+            "hidden_dims": [128, 128],
+            "activations": ["relu", "linear"],
+        },
     },
     "iterator": {
         "type": "basic",
@@ -75,7 +64,7 @@ local projection_head = {
     },
     "validation_iterator": {
         "type": "basic",
-        "batch_size": 26
+        "batch_size": 24
     },
     "trainer": {
         "optimizer": {
@@ -91,13 +80,11 @@ local projection_head = {
             ],
         },
         "patience": 5,
-        "num_epochs": 50,
+        "num_epochs": 100,
         "checkpointer": {
             "num_serialized_models_to_keep": 1,
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
-        // The effective batch size is batch_size * num_gradient_accumulation_steps
-        "num_gradient_accumulation_steps": 1
     }
 }

@@ -10,7 +10,7 @@ from allennlp.modules import (FeedForward, Seq2SeqEncoder, Seq2VecEncoder,
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.models.util import (format_embed_pt_metric_loss,
-                             generate_anchor_positive_pairs)
+                             sample_anchor_positive_pairs)
 
 
 @Model.register("constrastive")
@@ -87,34 +87,42 @@ class ContrastiveTextEncoder(Model):
             representation for the given `anchor_tokens` output by the encoder. The encoder is composed of:
             `self._text_field_embedder`, `self._seq2seq_encoder` (optional), and `self._seq2vec_encoder`, in that
             order.
+        projections : torch.FloatTensor
+            A tensor of shape `(batch_size, self._feedforward.get_output_dim())`, which is the non-linear
+            projection of the learned representation for the given `anchor_tokens` output by the projection head.
+            This field will only be included if `self._feedforward` is `None`.
         loss : torch.FloatTensor, optional
-            A scalar loss to be optimised.
+            A scalar loss to be optimized.
         """
+        output_dict: Dict[str, torch.Tensor] = {}
 
         if tokens["tokens"]["token_ids"].dim() == 3:
             anchors, positives = sample_anchor_positive_pairs(tokens)
             # TODO (John): I don't think this works for several reasons:
             #   1. tokens is a dict
-            #   2. tokens is used in generate_anchor_positive_pairs
-            # Find a way to get these tensors off the GPU has they are taking up memory.
+            #   2. tokens is used in sample_anchor_positive_pairs
+            # Find a way to get these tensors off the GPU as they are taking up memory.
             del tokens
             torch.cuda.empty_cache()
         else:
             anchors, positives = tokens, None
 
         # This is the textual representation learned by a trained model that will be used for downstream tasks.
-        embedded_anchor_text = self._forward_internal(anchors)
-        output_dict = {"embeddings": embedded_anchor_text}
+        embedded_anchor_text = self._forward_internal(anchors, output_dict)
 
         if positives is not None:
             embedded_positive_text = self._forward_internal(positives)
             embeddings, labels = format_embed_pt_metric_loss(embedded_anchor_text, embedded_positive_text)
-            loss = self._loss(embeddings, labels)
-            output_dict["loss"] = loss
+            output_dict["loss"] = self._loss(embeddings, labels)
 
         return output_dict
 
-    def _forward_internal(self, tokens: TextFieldTensors) -> torch.Tensor:
+    def _forward_internal(
+        self,
+        tokens: TextFieldTensors,
+        output_dict: Optional[Dict[str, torch.Tensor]] = None
+    ) -> torch.Tensor:
+
         embedded_text = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens).float()
 
@@ -122,17 +130,15 @@ class ContrastiveTextEncoder(Model):
             embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
+        if output_dict:
+            output_dict["embeddings"] = embedded_text.clone().detach()
 
         # Representations produced by the non-linear projection are used for training with a contrastive loss.
         # When embedding text with a trained model, we want the representation produced by the encoder network.
         # See: https://arxiv.org/abs/2002.05709
-        #
-        # To discard the projection head when embedding text with a trained model, you should:
-        #   1. Remove the "feedforward" field from the config used to train the model
-        #   2. Provide this modified config as argument with the --overrides flag to
-        #      allennlp predict (https://allenai.github.io/allennlp-docs/api/commands/predict/)
-        # See README.md for more details.
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
+            if output_dict:
+                output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text

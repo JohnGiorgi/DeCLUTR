@@ -42,6 +42,7 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
+        temperature: float,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
@@ -62,7 +63,7 @@ class ContrastiveTextEncoder(Model):
         self._feedforward = feedforward
 
         # TODO (John): Any way we can "register" this so it can be created "from_params"?
-        self._loss = NTXentLoss(kwargs['temperature'])
+        self._loss = NTXentLoss(temperature)
         initializer(self)
 
     def forward(  # type: ignore
@@ -127,7 +128,7 @@ class ContrastiveTextEncoder(Model):
             embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
-        if output_dict:
+        if output_dict is not None:
             output_dict["embeddings"] = embedded_text.clone().detach()
 
         # Representations produced by the non-linear projection are used for training with a contrastive loss.
@@ -135,7 +136,7 @@ class ContrastiveTextEncoder(Model):
         # See: https://arxiv.org/abs/2002.05709
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
-            if output_dict:
+            if output_dict is not None:
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text

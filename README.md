@@ -68,3 +68,27 @@ This will:
 The text embeddings are stored in the field `"embeddings"` in `tmp/embeddings.jsonl`.
 
 > If your model was trained with a `FeedForward` module, it will also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).
+
+### Evaluating with SentEval
+
+[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. To evaluate the quality of the embeddings learned by our model, you need to do two things:
+
+Clone the SentEval repository and download the transfer task datasets
+
+```bash
+git clone https://github.com/facebookresearch/SentEval.git
+cd SentEval/data/downstream/
+./get_transfer_data.bash
+```
+
+> See the SentEval repository for full details.
+
+Set the relevant paths at the top of `scripts/run_senteval_benchmark.py`, then call
+
+```bash
+python scripts/run_senteval_benchmark.py
+```
+
+The results will be logged to the console.
+
+> This is a work in progress, I hope to make this much more user-friendly in the coming weeks.

@@ -25,8 +25,6 @@ class ContrastiveTextEncoder(Model):
     # Parameters
 
     vocab : `Vocabulary`
-    temperature : `float`
-        Required temperature hyperparameter for the `NTXentLoss` function.
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
     seq2seq_encoder : `Seq2SeqEncoder`, optional, (default=`None`)
@@ -44,7 +42,6 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
-        temperature: float,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
@@ -65,7 +62,7 @@ class ContrastiveTextEncoder(Model):
         self._feedforward = feedforward
 
         # TODO (John): Any way we can "register" this so it can be created "from_params"?
-        self._loss = NTXentLoss(temperature)
+        self._loss = NTXentLoss(kwargs['temperature'])
         initializer(self)
 
     def forward(  # type: ignore

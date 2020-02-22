@@ -67,12 +67,4 @@ This will:
 
 The text embeddings are stored in the field `"embeddings"` in `tmp/embeddings.jsonl`.
 
-#### Embedding without the projection head
-
-[Previous work](https://arxiv.org/abs/2002.05709) has found that the representations learned by the encoder network outperform those learned by the projection head for downstream tasks. To discard the projection head when embedding text, add  `{"model.feedforward": null}` to the `--overrides` argument of `allennlp predict`, e.g.
-
-```bash
---overrides '{"dataset_reader.sample_spans": false, "model.feedforward": null}'
-```
-
-This will embed the input text using _only_ the encoder network. These embeddings _may_ perform better on downstream tasks.
+> If your model was trained with a `FeedForward` module, it will also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).

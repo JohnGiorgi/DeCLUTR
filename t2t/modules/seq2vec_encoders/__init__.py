@@ -1,1 +1,0 @@
-from t2t.modules.seq2vec_encoders.boe_encoder_with_projection import BagOfEmbeddingsEncoderWithProjection

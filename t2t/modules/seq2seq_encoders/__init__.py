@@ -1,1 +1,0 @@
-from t2t.modules.seq2seq_encoders.pretrained_transformer import PretrainedTransformerEncoder

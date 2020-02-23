@@ -32,5 +32,6 @@ setuptools.setup(
         "allennlp>=0.9.0",
         "torch>=1.2.0",
         "pytorch-metric-learning>=0.9.73",
+        "typer>=0.0.8"
     ],
 )

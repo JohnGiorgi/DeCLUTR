@@ -83,7 +83,7 @@ cd SentEval/data/downstream/
 
 > See the SentEval repository for full details.
 
-Then you can run our helper script to evaluate a trained model against SentEval
+Then you can run our [script](scripts/run_senteval_benchmark.py) to evaluate a trained model against SentEval
 
 ```bash
 python scripts/run_senteval_benchmark.py SentEval tmp \

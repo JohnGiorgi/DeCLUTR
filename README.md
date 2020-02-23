@@ -71,9 +71,9 @@ The text embeddings are stored in the field `"embeddings"` in `tmp/embeddings.js
 
 ### Evaluating with SentEval
 
-[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. To evaluate the quality of the embeddings learned by our model, you need to do two things:
+[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to easily evaluate our model against SentEval.
 
-Clone the SentEval repository and download the transfer task datasets
+First, clone the SentEval repository and download the transfer task datasets (you only need to do this once)
 
 ```bash
 git clone https://github.com/facebookresearch/SentEval.git
@@ -83,12 +83,17 @@ cd SentEval/data/downstream/
 
 > See the SentEval repository for full details.
 
-Set the relevant paths at the top of `scripts/run_senteval_benchmark.py`, then call
+Then you can run our helper script to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval_benchmark.py
+python scripts/run_senteval_benchmark.py SentEval tmp \
+ --cuda-device 0 \
+ --overrides '{"dataset_reader.sample_spans": false}' \
+ --include-package t2t
 ```
 
-The results will be logged to the console.
+The results will be logged to the console. For more options, run
 
-> This is a work in progress, I hope to make this much more user-friendly in the coming weeks.
+```bash
+python scripts/run_senteval_benchmark.py --help
+```

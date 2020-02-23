@@ -60,7 +60,7 @@ local token_embedding_size = 768;
     "iterator": {
         "type": "basic",
         // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 16,
+        "batch_size": 14,
     },
     "validation_iterator": {
         "type": "basic",

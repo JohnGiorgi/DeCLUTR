@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List
+from typing import Callable, List
 
 import numpy as np
 import typer
@@ -29,17 +29,14 @@ TRANSFER_TASKS = ['STS12', 'STS13', 'STS14', 'STS15', 'STS16',
                   'OddManOut', 'CoordinationInversion']
 
 # Emoji's used in typer.secho calls
+# See: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py
 WARNING = '\U000026A0'
 SUCCESS = '\U00002705'
 RUNNING = '\U000023F3'
 SAVING = '\U0001F4BE'
 
 
-def _setup_senteval(
-    path_to_senteval: str,
-    prototyping_config: bool = False,
-    verbose: bool = False
-) -> None:
+def _setup_senteval(path_to_senteval: str, prototyping_config: bool = False, verbose: bool = False) -> None:
     if verbose:
         logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
@@ -64,8 +61,13 @@ def _setup_senteval(
     return params_senteval
 
 
-def _run_senteval(params, path_to_senteval: str, batcher, prepare, output_filepath: str = None):
-    # Import SentEval
+def _run_senteval(
+    params,
+    path_to_senteval: str,
+    batcher: Callable,
+    prepare: Callable,
+    output_filepath: str = None
+) -> None:
     sys.path.insert(0, path_to_senteval)
     import senteval
 
@@ -83,7 +85,6 @@ def _run_senteval(params, path_to_senteval: str, batcher, prepare, output_filepa
     if output_filepath is not None:
         with open(output_filepath, "w") as fp:
             json.dump(common_util.sanitize(results), fp, indent=2)
-
         typer.secho(f"{SAVING} Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True)
     else:
         typer.secho(
@@ -143,9 +144,7 @@ def allennlp(
     )
 
     # Load the archived AllenNLP model
-    model = Model.load(
-        allennlp_params, serialization_dir=serialization_dir, cuda_device=cuda_device
-    ).eval()
+    model = Model.load(allennlp_params, serialization_dir=serialization_dir, cuda_device=cuda_device).eval()
     typer.secho(f"{SUCCESS} Model from AllenNLP archive loaded successfully", fg=typer.colors.GREEN, bold=True)
 
     params_senteval['reader'] = reader
@@ -153,14 +152,16 @@ def allennlp(
 
     _run_senteval(params_senteval, path_to_senteval, batcher, prepare, output_filepath)
 
+    return
+
 
 @app.command()
-def bow():
+def bow() -> None:
     raise NotImplementedError
 
 
 @app.command()
-def transformers():
+def transformers() -> None:
     raise NotImplementedError
 
 

@@ -83,17 +83,27 @@ cd SentEval/data/downstream/
 
 > See the SentEval repository for full details.
 
-Then you can run our [script](scripts/run_senteval_benchmark.py) to evaluate a trained model against SentEval
+Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval_benchmark.py SentEval tmp \
- --cuda-device 0 \
+python scripts/run_senteval.py allennlp SentEval tmp \
+ --output-filepath tmp/senteval_results.json \
+ --cuda-device 0  \
  --overrides '{"dataset_reader.sample_spans": false}' \
  --include-package t2t
+ --output_filepath
 ```
 
-The results will be logged to the console. For more options, run
+The results will be saved to `tmp/senteval_results.json`. This can be changed to any path you like.
+
+For a list of commands, run
 
 ```bash
-python scripts/run_senteval_benchmark.py --help
+python scripts/run_senteval.py --help
+```
+
+For help with a specific command, e.g. `allennlp`, run
+
+```
+python scripts/run_senteval.py allennlp --help
 ```

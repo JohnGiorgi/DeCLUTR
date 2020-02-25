@@ -46,7 +46,7 @@ def _setup_senteval(path_to_senteval: str, prototyping_config: bool = False, ver
     if prototyping_config:
         typer.secho(
             (f"{WARNING} Using prototyping config. Pass --no-prototyping-config to get results comparable to the"
-             "literature."),
+             " literature."),
             fg=typer.colors.YELLOW,
             bold=True
         )

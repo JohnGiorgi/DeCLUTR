@@ -36,7 +36,6 @@ local token_embedding_size = 768;
     "validation_data_path": "",
     "model": {
         "type": "constrastive",
-        "temperature": 0.1,
         "text_field_embedder": {
             "token_embedders": {
                 "tokens": {
@@ -56,11 +55,16 @@ local token_embedding_size = 768;
             "hidden_dims": [128, 128],
             "activations": ["relu", "linear"],
         },
+        "loss": {
+            "type": "nt-xent",
+            "temperature": 0.1,
+            "normalize_embeddings": true
+        },
     },
     "iterator": {
         "type": "basic",
         // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 14,
+        "batch_size": 12,
     },
     "validation_iterator": {
         "type": "basic",
@@ -76,7 +80,6 @@ local token_embedding_size = 768;
                 # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
                 # Regex: https://regex101.com/r/ZUyDgR/3/tests
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.01}],
-                # TODO (John): Apply a different (smaller) learning rate to the seq2seq encoder as it is pre-trained
             ],
         },
         "patience": 5,

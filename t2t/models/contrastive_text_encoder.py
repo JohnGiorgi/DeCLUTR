@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 
 import torch
-from pytorch_metric_learning.losses import NTXentLoss
 
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
@@ -9,8 +8,8 @@ from allennlp.modules import (FeedForward, Seq2SeqEncoder, Seq2VecEncoder,
                               TextFieldEmbedder)
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-from t2t.models.util import (format_embed_pt_metric_loss,
-                             sample_anchor_positive_pairs)
+from t2t.losses import PyTorchMetricLearningLoss
+from t2t.models.util import sample_anchor_positive_pairs
 
 
 @Model.register("constrastive")
@@ -42,13 +41,13 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
-        temperature: float,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
+        loss: PyTorchMetricLearningLoss = None,
         initializer: InitializerApplicator = InitializerApplicator(),
-        **kwargs,
+        **kwargs
     ) -> None:
 
         super().__init__(vocab, **kwargs)
@@ -62,8 +61,7 @@ class ContrastiveTextEncoder(Model):
         self._seq2vec_encoder = seq2vec_encoder
         self._feedforward = feedforward
 
-        # TODO (John): Any way we can "register" this so it can be created "from_params"?
-        self._loss = NTXentLoss(temperature)
+        self._loss = loss
         initializer(self)
 
     def forward(  # type: ignore
@@ -110,7 +108,7 @@ class ContrastiveTextEncoder(Model):
 
         if positives is not None:
             embedded_positive_text = self._forward_internal(positives)
-            embeddings, labels = format_embed_pt_metric_loss(embedded_anchor_text, embedded_positive_text)
+            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
             output_dict["loss"] = self._loss(embeddings, labels)
 
         return output_dict
@@ -140,3 +138,21 @@ class ContrastiveTextEncoder(Model):
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text
+
+
+
+def my_func(line):
+    # 1
+    first_city, split = line.split(':')
+
+    # 2
+    second_city = ''
+    distance = ''
+
+    for ch in split:
+        if ch.isdigit():
+            distance += ch
+        else:
+            second_city += ch
+
+    return first_city, second_city.strip(), int(distance)

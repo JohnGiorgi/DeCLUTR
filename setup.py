@@ -31,7 +31,7 @@ setuptools.setup(
     install_requires=[
         "allennlp>=0.9.0",
         "torch>=1.2.0",
-        "pytorch-metric-learning>=0.9.73",
+        "pytorch-metric-learning>=0.9.75",
         "typer>=0.0.8"
     ],
 )

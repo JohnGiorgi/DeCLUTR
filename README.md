@@ -91,7 +91,6 @@ python scripts/run_senteval.py allennlp SentEval tmp \
  --cuda-device 0  \
  --overrides '{"dataset_reader.sample_spans": false}' \
  --include-package t2t
- --output_filepath
 ```
 
 The results will be saved to `tmp/senteval_results.json`. This can be changed to any path you like.

@@ -7,6 +7,13 @@ from allennlp.common import Registrable
 
 
 class PyTorchMetricLearningLoss(Registrable):
+    """This class just allows us to implement `Registrable` for PyTorch Metric Learning loss functions.
+    Subclasses of this class should also subclass a loss function from PyTorch Metric Learning
+    (see: https://github.com/KevinMusgrave/pytorch-metric-learning), and accept as arguments
+    to the constructor the same arguments that the loss function does, as well as the `BaseMetricLossFunction`
+    (see: https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#basemetriclossfunction).
+    See `NTXentLoss` below as an example.
+    """
 
     @classmethod
     def get_embeddings_and_labels(

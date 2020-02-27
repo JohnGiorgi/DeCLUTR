@@ -138,21 +138,3 @@ class ContrastiveTextEncoder(Model):
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text
-
-
-
-def my_func(line):
-    # 1
-    first_city, split = line.split(':')
-
-    # 2
-    second_city = ''
-    distance = ''
-
-    for ch in split:
-        if ch.isdigit():
-            distance += ch
-        else:
-            second_city += ch
-
-    return first_city, second_city.strip(), int(distance)

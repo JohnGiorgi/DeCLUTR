@@ -60,10 +60,14 @@ local token_embedding_size = 768;
             "normalize_embeddings": true
         },
     },
-    "iterator": {
-        "type": "basic",
+    "data_loader": {
         // TODO (John): Ideally this would be much larger but there are OOM issues.
         "batch_size": 20,
+        // TODO (John): Not clear if this needs to be set to false when embedding text
+        // with a trained model, or evaluating with SentEval. I should check this.
+        "shuffle": true,
+        // You may need to play with this, depending on your batch size, to get the maximum speedup.
+        "num_workers": 2
     },
     "trainer": {
         "type": "mixed-precision",

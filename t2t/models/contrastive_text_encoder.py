@@ -79,14 +79,14 @@ class ContrastiveTextEncoder(Model):
         An output dictionary consisting of:
 
         embeddings : torch.FloatTensor
-            A tensor of shape `(batch_size, self._text_field_embedder.get_output_dim())`, which is the
-            representation for the given `anchor_tokens` output by the encoder. The encoder is composed of:
+            A tensor of shape `(batch_size, self._seq2vec_encoder.get_output_dim())`, which is the
+            representation for the given `tokens` output by the encoder. The encoder is composed of:
             `self._text_field_embedder`, `self._seq2seq_encoder` (optional), and `self._seq2vec_encoder`, in that
             order.
         projections : torch.FloatTensor
             A tensor of shape `(batch_size, self._feedforward.get_output_dim())`, which is the non-linear
             projection of the learned representation for the given `anchor_tokens` output by the projection head.
-            This field will only be included if `self._feedforward` is `None`.
+            This field will only be included if `self._feedforward` is not `None`.
         loss : torch.FloatTensor, optional
             A scalar loss to be optimized.
         """

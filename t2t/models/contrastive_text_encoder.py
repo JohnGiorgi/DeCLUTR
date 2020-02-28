@@ -4,8 +4,12 @@ import torch
 
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import (FeedForward, Seq2SeqEncoder, Seq2VecEncoder,
-                              TextFieldEmbedder)
+from allennlp.modules import (
+    FeedForward,
+    Seq2SeqEncoder,
+    Seq2VecEncoder,
+    TextFieldEmbedder,
+)
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.losses import PyTorchMetricLearningLoss
@@ -43,9 +47,9 @@ class ContrastiveTextEncoder(Model):
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
+        loss: PyTorchMetricLearningLoss,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
-        loss: PyTorchMetricLearningLoss = None,
         initializer: InitializerApplicator = InitializerApplicator(),
         **kwargs
     ) -> None:
@@ -108,7 +112,9 @@ class ContrastiveTextEncoder(Model):
 
         if positives is not None:
             embedded_positive_text = self._forward_internal(positives)
-            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
+            embeddings, labels = self._loss.get_embeddings_and_labels(
+                embedded_anchor_text, embedded_positive_text
+            )
             output_dict["loss"] = self._loss(embeddings, labels)
 
         return output_dict
@@ -116,7 +122,7 @@ class ContrastiveTextEncoder(Model):
     def _forward_internal(
         self,
         tokens: TextFieldTensors,
-        output_dict: Optional[Dict[str, torch.Tensor]] = None
+        output_dict: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.Tensor:
 
         embedded_text = self._text_field_embedder(tokens)

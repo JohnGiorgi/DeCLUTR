@@ -17,9 +17,7 @@ class PyTorchMetricLearningLoss(Registrable):
 
     @classmethod
     def get_embeddings_and_labels(
-        self,
-        anchors: torch.Tensor,
-        positives: torch.Tensor
+        self, anchors: torch.Tensor, positives: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Formats a pair of anchor, positive embeddings for use with a PyTorch Metric Learning loss function
         (https://github.com/KevinMusgrave/pytorch-metric-learning). These loss functions expect a single embedding
@@ -47,19 +45,19 @@ class PyTorchMetricLearningLoss(Registrable):
         return embeddings, labels
 
 
-@PyTorchMetricLearningLoss.register('nt-xent')
+@PyTorchMetricLearningLoss.register("nt-xent")
 class NTXentLoss(PyTorchMetricLearningLoss, NTXent):
     def __init__(
         self,
         temperature: float,
         normalize_embeddings: bool = True,
         num_class_per_param: int = None,
-        learnable_param_names: List[str] = None
+        learnable_param_names: List[str] = None,
     ) -> None:
 
         super().__init__(
             temperature=temperature,
             normalize_embeddings=normalize_embeddings,
             num_class_per_param=num_class_per_param,
-            learnable_param_names=learnable_param_names
+            learnable_param_names=learnable_param_names,
         )

@@ -2,8 +2,7 @@ from typing import Iterable, Optional
 
 import numpy as np
 
-from allennlp.data.dataset_readers.dataset_utils.span_utils import \
-    enumerate_spans
+from allennlp.data.dataset_readers.dataset_utils.span_utils import enumerate_spans
 
 
 def sample_spans(text: str, max_spans: Optional[int] = None, **kwargs) -> Iterable[str]:
@@ -27,4 +26,4 @@ def sample_spans(text: str, max_spans: Optional[int] = None, **kwargs) -> Iterab
 
     for start, end in span_indices:
         # Add 1 to end index because spans from enumerate_spans are inclusive.
-        yield " ".join(tokens[start: end + 1])
+        yield " ".join(tokens[start : end + 1])

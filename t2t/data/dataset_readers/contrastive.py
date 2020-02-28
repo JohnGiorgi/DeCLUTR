@@ -66,8 +66,10 @@ class ContrastiveDatasetReader(DatasetReader):
                 num_tokens = len(text.split())
                 if num_tokens < self._min_span_width:
                     raise ConfigurationError(
-                        (f"min_span_width is {self._min_span_width} but instance on line {line_num + 1} has len"
-                         f" {num_tokens}")
+                        (
+                            f"min_span_width is {self._min_span_width} but instance on line {line_num + 1} has len"
+                            f" {num_tokens}"
+                        )
                     )
                 yield self.text_to_instance(text)
 
@@ -91,7 +93,9 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self._sample_spans:
             spans: List[Field] = []
-            for span in sample_spans(text, self._max_spans, min_span_width=self._min_span_width):
+            for span in sample_spans(
+                text, self._max_spans, min_span_width=self._min_span_width
+            ):
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

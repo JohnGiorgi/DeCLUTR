@@ -32,8 +32,7 @@ local token_embedding_size = 768;
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     },
-    "train_data_path": "",
-    "validation_data_path": "",
+    "train_data_path": "datasets/wikitext-103/train.txt",
     "model": {
         "type": "constrastive",
         "text_field_embedder": {
@@ -64,13 +63,11 @@ local token_embedding_size = 768;
     "iterator": {
         "type": "basic",
         // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 12,
-    },
-    "validation_iterator": {
-        "type": "basic",
-        "batch_size": 24
+        "batch_size": 20,
     },
     "trainer": {
+        "type": "mixed-precision",
+        "opt_level": "O1",
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 2e-5,
@@ -82,7 +79,6 @@ local token_embedding_size = 768;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.01}],
             ],
         },
-        "patience": 5,
         "num_epochs": 100,
         "checkpointer": {
             "num_serialized_models_to_keep": 1,

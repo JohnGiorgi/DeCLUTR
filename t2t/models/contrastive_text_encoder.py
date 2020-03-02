@@ -1,7 +1,7 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
-
+import torch.distributed as dist
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import (
@@ -12,6 +12,7 @@ from allennlp.modules import (
 )
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
+
 from t2t.losses import PyTorchMetricLearningLoss
 from t2t.models.util import sample_anchor_positive_pairs
 
@@ -51,7 +52,7 @@ class ContrastiveTextEncoder(Model):
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
         initializer: InitializerApplicator = InitializerApplicator(),
-        **kwargs
+        **kwargs,
     ) -> None:
 
         super().__init__(vocab, **kwargs)
@@ -112,9 +113,23 @@ class ContrastiveTextEncoder(Model):
 
         if positives is not None:
             embedded_positive_text = self._forward_internal(positives)
+
+            # If we are training on multiple GPUs using DistributedDataParallel, then a naive application would
+            # result in 2 * (batch_size/n_gpus - 1) number of negatives per GPU. To avoid this, we need to
+            # gather the anchors/positives from each replica on every other replica in order to generate the
+            # correct number of negatives, 2 * (batch_size - 1), before computing the contrastive loss.
+            if dist.get_world_size() > 1:
+                (
+                    embedded_anchor_text,
+                    embedded_positive_text,
+                ) = self._gather_anchors_and_positives(
+                    embedded_anchor_text, embedded_positive_text
+                )
+
             embeddings, labels = self._loss.get_embeddings_and_labels(
                 embedded_anchor_text, embedded_positive_text
             )
+
             output_dict["loss"] = self._loss(embeddings, labels)
 
         return output_dict
@@ -144,3 +159,24 @@ class ContrastiveTextEncoder(Model):
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text
+
+    def _gather_anchors_and_positives(
+        self, anchors, positives
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        # Gather the encoded anchors and positives on all replicas
+        anchors_list = [torch.ones_like(anchors) for _ in range(dist.get_world_size())]
+        positives_list = [
+            torch.ones_like(positives) for _ in range(dist.get_world_size())
+        ]
+        dist.all_gather(anchors_list, anchors)
+        dist.all_gather(positives_list, positives)
+        # The gathered copy of the current replicas positive pairs have no gradients, so we overwrite them
+        # with the positive pairs generated on this replica, which DO have gradients back to the encoder.
+        anchors_list[dist.get_rank()] = anchors
+        positives_list[dist.get_rank()] = positives
+        # Finally, we concatenate the positive pairs so they can be fed to the contrastive loss
+        anchors = torch.cat(anchors_list)
+        positives = torch.cat(positives_list)
+
+        return anchors, positives

@@ -1,8 +1,7 @@
 import logging
 from typing import Dict, Iterable, List, Optional
 
-from overrides import overrides
-
+import torch.distributed as dist
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
@@ -10,6 +9,8 @@ from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
+from overrides import overrides
+
 from t2t.data.dataset_readers.dataset_utils.span_utils import sample_spans
 
 logger = logging.getLogger(__name__)
@@ -58,20 +59,23 @@ class ContrastiveDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
         with open(cached_path(file_path), "r") as data_file:
             logger.info("Reading instances from lines in file at: %s", file_path)
-            for line_num, text in enumerate(data_file):
+            for idx, text in enumerate(data_file):
                 # We use whitespace tokenization when sampling spans, so we also use it here to check that a
                 # valid min_span_width was given.
                 num_tokens = len(text.split())
                 if num_tokens < self._min_span_width:
                     raise ConfigurationError(
                         (
-                            f"min_span_width is {self._min_span_width} but instance on line {line_num + 1} has len"
+                            f"min_span_width is {self._min_span_width} but instance on line {idx + 1} has len"
                             f" {num_tokens}"
                         )
                     )
-                yield self.text_to_instance(text)
+                if idx % world_size == rank:
+                    yield self.text_to_instance(text)
 
     @overrides
     def text_to_instance(self, text: str) -> Instance:  # type: ignore

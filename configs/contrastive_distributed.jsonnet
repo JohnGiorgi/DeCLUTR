@@ -61,8 +61,7 @@ local token_embedding_size = 768;
         },
     },
     "data_loader": {
-        // TODO (John): Ideally this would be much larger but there are OOM issues.
-        "batch_size": 20,
+        "batch_size": 16,
         // TODO (John): Not clear if this needs to be set to false when embedding text
         // with a trained model, or evaluating with SentEval. I should check this.
         "shuffle": true,
@@ -87,7 +86,9 @@ local token_embedding_size = 768;
         "checkpointer": {
             "num_serialized_models_to_keep": 1,
         },
-        "cuda_device": 0,
         "grad_norm": 1.0,
-    }
+    },
+    "distributed" : {
+        "cuda_devices": [0, 1],
+    },
 }

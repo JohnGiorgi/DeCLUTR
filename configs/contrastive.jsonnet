@@ -60,7 +60,7 @@ local token_embedding_size = 768;
         },
     },
     "data_loader": {
-        "batch_size": 16,
+        "batch_size": 20,
         // TODO (John): Not clear if this needs to be set to false when embedding text
         // with a trained model, or evaluating with SentEval. I should check this.
         "shuffle": true,

@@ -34,7 +34,7 @@ To submit a pull request, please do the following:
    consistently. After you make changes, format them with:
 
    ```bash
-   $ black t2t
+   $ black -l 115 t2t
    ```
 
    This repository also uses `flake8` to check for coding mistakes. To run the checks locally:

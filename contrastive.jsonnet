@@ -70,8 +70,8 @@ local token_embedding_size = 768;
         "num_workers": 2
     },
     "trainer": {
-        "type": "mixed-precision",
-        "opt_level": "O1",
+        // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
+        "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 2e-5,

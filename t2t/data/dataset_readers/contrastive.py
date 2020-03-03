@@ -1,7 +1,6 @@
 import logging
 from typing import Dict, Iterable, List, Optional
 
-import torch.distributed as dist
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
@@ -59,8 +58,6 @@ class ContrastiveDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        rank = dist.get_rank()
-        world_size = dist.get_world_size()
         with open(cached_path(file_path), "r") as data_file:
             logger.info("Reading instances from lines in file at: %s", file_path)
             for idx, text in enumerate(data_file):
@@ -74,8 +71,7 @@ class ContrastiveDatasetReader(DatasetReader):
                             f" {num_tokens}"
                         )
                     )
-                if idx % world_size == rank:
-                    yield self.text_to_instance(text)
+                yield self.text_to_instance(text)
 
     @overrides
     def text_to_instance(self, text: str) -> Instance:  # type: ignore
@@ -97,9 +93,7 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self._sample_spans:
             spans: List[Field] = []
-            for span in sample_spans(
-                text, self._max_spans, min_span_width=self._min_span_width
-            ):
+            for span in sample_spans(text, self._max_spans, min_span_width=self._min_span_width):
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 
 import torch
-
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import (
@@ -12,8 +11,12 @@ from allennlp.modules import (
 )
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
+
 from t2t.losses import PyTorchMetricLearningLoss
-from t2t.models.util import sample_anchor_positive_pairs
+from t2t.models.contrastive_text_encoder_util import (
+    sample_anchor_positive_pairs,
+    all_gather_anchor_positive_pairs,
+)
 
 
 @Model.register("constrastive")
@@ -51,17 +54,13 @@ class ContrastiveTextEncoder(Model):
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
         initializer: InitializerApplicator = InitializerApplicator(),
-        **kwargs
+        **kwargs,
     ) -> None:
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
 
-        if seq2seq_encoder:
-            self._seq2seq_encoder = seq2seq_encoder
-        else:
-            self._seq2seq_encoder = None
-
+        self._seq2seq_encoder = seq2seq_encoder
         self._seq2vec_encoder = seq2vec_encoder
         self._feedforward = feedforward
 
@@ -96,14 +95,11 @@ class ContrastiveTextEncoder(Model):
         """
         output_dict: Dict[str, torch.Tensor] = {}
 
+        # If token_ids contains a third dimension, then spans were sampled during the data loading process and we
+        # randomly sample from those spans here to create anchor, positive pairs for training.
+        # Else, assume that we are just embedding some given text without training the model.
         if tokens["tokens"]["token_ids"].dim() == 3:
             anchors, positives = sample_anchor_positive_pairs(tokens)
-            # TODO (John): I don't think this works for several reasons:
-            #   1. tokens is a dict
-            #   2. tokens is used in sample_anchor_positive_pairs
-            # Find a way to get these tensors off the GPU as they are taking up memory.
-            del tokens
-            torch.cuda.empty_cache()
         else:
             anchors, positives = tokens, None
 
@@ -112,23 +108,29 @@ class ContrastiveTextEncoder(Model):
 
         if positives is not None:
             embedded_positive_text = self._forward_internal(positives)
-            embeddings, labels = self._loss.get_embeddings_and_labels(
+
+            # If we are training on multiple GPUs using DistributedDataParallel, then a naive application would
+            # result in 2 * (batch_size/n_gpus - 1) number of negatives per GPU. To avoid this, we need to
+            # gather the anchors/positives from each replica on every other replica in order to generate the
+            # correct number of negatives, 2 * (batch_size - 1), before computing the contrastive loss.
+            (embedded_anchor_text, embedded_positive_text,) = all_gather_anchor_positive_pairs(
                 embedded_anchor_text, embedded_positive_text
             )
+
+            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
+
             output_dict["loss"] = self._loss(embeddings, labels)
 
         return output_dict
 
     def _forward_internal(
-        self,
-        tokens: TextFieldTensors,
-        output_dict: Optional[Dict[str, torch.Tensor]] = None,
+        self, tokens: TextFieldTensors, output_dict: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.Tensor:
 
         embedded_text = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens).float()
 
-        if self._seq2seq_encoder:
+        if self._seq2seq_encoder is not None:
             embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)

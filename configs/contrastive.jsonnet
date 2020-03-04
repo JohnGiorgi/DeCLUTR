@@ -19,7 +19,6 @@ local token_embedding_size = 768;
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
-            "add_special_tokens": true,
             "max_length": max_length,
         },
         "token_indexers": {
@@ -32,7 +31,7 @@ local token_embedding_size = 768;
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     },
-    "train_data_path": "datasets/wikitext-103/train.txt",
+    "train_data_path": "",
     "model": {
         "type": "constrastive",
         "text_field_embedder": {
@@ -61,7 +60,6 @@ local token_embedding_size = 768;
         },
     },
     "data_loader": {
-        // TODO (John): Ideally this would be much larger but there are OOM issues.
         "batch_size": 20,
         // TODO (John): Not clear if this needs to be set to false when embedding text
         // with a trained model, or evaluating with SentEval. I should check this.
@@ -80,7 +78,7 @@ local token_embedding_size = 768;
                 # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
                 # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
                 # Regex: https://regex101.com/r/ZUyDgR/3/tests
-                [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.01}],
+                [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
         "num_epochs": 100,
@@ -89,5 +87,5 @@ local token_embedding_size = 768;
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
-    }
+    },
 }

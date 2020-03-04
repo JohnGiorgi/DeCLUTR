@@ -1,8 +1,6 @@
 import logging
 from typing import Dict, Iterable, List, Optional
 
-from overrides import overrides
-
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
@@ -10,6 +8,8 @@ from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
+from overrides import overrides
+
 from t2t.data.dataset_readers.dataset_utils.span_utils import sample_spans
 
 logger = logging.getLogger(__name__)
@@ -60,14 +60,14 @@ class ContrastiveDatasetReader(DatasetReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         with open(cached_path(file_path), "r") as data_file:
             logger.info("Reading instances from lines in file at: %s", file_path)
-            for line_num, text in enumerate(data_file):
+            for idx, text in enumerate(data_file):
                 # We use whitespace tokenization when sampling spans, so we also use it here to check that a
                 # valid min_span_width was given.
                 num_tokens = len(text.split())
                 if num_tokens < self._min_span_width:
                     raise ConfigurationError(
                         (
-                            f"min_span_width is {self._min_span_width} but instance on line {line_num + 1} has len"
+                            f"min_span_width is {self._min_span_width} but instance on line {idx + 1} has len"
                             f" {num_tokens}"
                         )
                     )
@@ -93,9 +93,7 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self._sample_spans:
             spans: List[Field] = []
-            for span in sample_spans(
-                text, self._max_spans, min_span_width=self._min_span_width
-            ):
+            for span in sample_spans(text, self._max_spans, min_span_width=self._min_span_width):
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

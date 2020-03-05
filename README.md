@@ -57,7 +57,7 @@ allennlp predict tmp path/to/input.txt \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
- --overrides '{"dataset_reader.sample_spans": false, "data_loader.shuffle": false}' \
+ --overrides '{"dataset_reader.num_spans": 0, "data_loader.shuffle": false}' \
  --include-package t2t
 ```
 
@@ -91,7 +91,7 @@ Then you can run our [script](scripts/run_senteval.py) to evaluate a trained mod
 python scripts/run_senteval.py allennlp SentEval tmp \
  --output-filepath tmp/senteval_results.json \
  --cuda-device 0  \
- --overrides '{"dataset_reader.sample_spans": false, "data_loader.shuffle": false}' \
+ --overrides '{"dataset_reader.num_spans": 0, "data_loader.shuffle": false}' \
  --include-package t2t
 ```
 

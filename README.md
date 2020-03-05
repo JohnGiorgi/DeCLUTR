@@ -1,3 +1,5 @@
+![build](https://github.com/JohnGiorgi/t2t/workflows/build/badge.svg?branch=master)
+
 # Contrastive Learning of Textual Representations
 
 A contrastive, self-supervised method for learning textual representations.

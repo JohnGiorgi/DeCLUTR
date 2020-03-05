@@ -79,7 +79,7 @@ class ContrastiveDatasetReader(DatasetReader):
         # Returns
 
         An `Instance` containing the following fields:
-            tokens : ``Union[TextField, ListField[TextField]]`
+            tokens : `Union[TextField, ListField[TextField]]`
                 If `self._num_spans > 0`, returns a `ListField` containing `self._num_spans` number of random,
                 tokenized spans from `text`.
                 Else, returns a `TextField` containing tokenized `text`.

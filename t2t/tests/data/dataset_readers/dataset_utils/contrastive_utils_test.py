@@ -2,14 +2,17 @@ from t2t.data.dataset_readers.dataset_utils import contrastive_utils
 import pytest
 
 
-class TestContrastiveUtils():
+class TestContrastiveUtils:
     def test_sample_spans_returns_valid_spans(self):
         num_spans = 5
         min_span_width = 5
         text = "They may take our lives, but they'll never take our freedom!"
         text_length = len(text.split())
 
-        for span in contrastive_utils.sample_spans(text, num_spans, min_span_width):
+        spans = list(contrastive_utils.sample_spans(text, num_spans, min_span_width))
+        assert len(spans) == num_spans
+
+        for span in spans:
             span_length = len(span.split())
 
             assert span_length <= text_length

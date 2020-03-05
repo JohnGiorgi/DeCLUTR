@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="contrastive-learning-for-textual-representations",
+    name="t2t",
     version="0.1.0",
     author="John Giorgi",
     author_email="johnmgiorgi@gmail.com",

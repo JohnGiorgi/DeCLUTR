@@ -13,8 +13,7 @@ local token_embedding_size = 768;
 {
     "dataset_reader": {
         "type": "contrastive",
-        "sample_spans": true,
-        "max_spans": 15,
+        "num_spans": 10,
         "min_span_width": 15,
         "tokenizer": {
             "type": "pretrained_transformer",
@@ -60,12 +59,10 @@ local token_embedding_size = 768;
         },
     },
     "data_loader": {
-        "batch_size": 20,
-        // TODO (John): Not clear if this needs to be set to false when embedding text
-        // with a trained model, or evaluating with SentEval. I should check this.
+        "batch_size": 16,
         "shuffle": true,
         // You may need to play with this, depending on your batch size, to get the maximum speedup.
-        "num_workers": 2
+        "num_workers": 0
     },
     "trainer": {
         // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.

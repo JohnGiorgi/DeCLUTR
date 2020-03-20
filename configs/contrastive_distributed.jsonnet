@@ -13,7 +13,8 @@ local token_embedding_size = 768;
 {
     "dataset_reader": {
         "type": "contrastive",
-        "num_spans": 10,
+        "lazy": true,
+        "sample_spans": true,
         "min_span_width": 15,
         "tokenizer": {
             "type": "pretrained_transformer",
@@ -53,17 +54,17 @@ local token_embedding_size = 768;
             "activations": ["relu", "linear"],
         },
         "loss": {
-            "type": "nt-xent",
-            "temperature": 0.1,
-            "normalize_embeddings": true
+            "type": "nt_xent",
+            "temperature": 0.05,
         },
     },
     "data_loader": {
-        // As a rule of thumb, you should choose the largest batch size that fits in to memory.
-        "batch_size": 16,
-        "shuffle": true,
-        // You may need to play with this, depending on your batch size, to get the maximum speedup.
-        "num_workers": 0
+        "batch_size": 12,
+        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
+        // I need to modify the dataloader according to:
+        // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        // in order to support multi-processing.
+        "num_workers": 1
     },
     "trainer": {
         // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
@@ -79,8 +80,9 @@ local token_embedding_size = 768;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 100,
+        "num_epochs": 15,
         "checkpointer": {
+            "keep_serialized_model_every_num_seconds": 9000,
             "num_serialized_models_to_keep": 1,
         },
         "grad_norm": 1.0,

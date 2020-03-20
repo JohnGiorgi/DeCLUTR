@@ -22,21 +22,21 @@ SPACY_MODEL = "en_core_web_sm"
 
 def main(input_file: str, output_file: str, word_vectors: str, binary: bool = False) -> None:
 
-    print('Loading model and tokenizer...', end=' ', flush=True)
+    print("Loading model and tokenizer...", end=" ", flush=True)
     nlp, model = _init_model_and_tokenizer(word_vectors, binary)
-    print('Done.')
+    print("Done.")
 
-    texts = Path(input_file).read_text().split('\n')
+    texts = Path(input_file).read_text().split("\n")
     embeddings = _embed(texts, nlp, model)
 
-    print(f'Saving document embeddings to {output_file}...', end=' ', flush=True)
+    print(f"Saving document embeddings to {output_file}...", end=" ", flush=True)
     _save_embeddings_to_disk(output_file, embeddings)
-    print('Done.')
+    print("Done.")
 
 
 def _init_model_and_tokenizer(word_vectors: str, binary: bool) -> Tuple:
 
-    nlp = spacy.load(SPACY_MODEL, disable=['ner'])
+    nlp = spacy.load(SPACY_MODEL, disable=["ner"])
     model = KeyedVectors.load_word2vec_format(word_vectors, binary=binary)
 
     return nlp, model
@@ -58,7 +58,7 @@ def _embed(texts: List[str], nlp: spacy.lang, model) -> List[float]:
     # TODO (John): Empty lines lead to empty lists being appended. Figure out how to filter.
     doc_embeddings = []
     docs = nlp.pipe(texts, n_process=-1)
-    for doc in tqdm(docs, total=len(texts), desc='Embedding documents', dynamic_ncols=True):
+    for doc in tqdm(docs, total=len(texts), desc="Embedding documents", dynamic_ncols=True):
         word_embeddings = []
         for token in doc:
             # TODO (John): Smarter way to do this? If I don't find a word I lowercase it and try
@@ -93,12 +93,12 @@ def _save_embeddings_to_disk(output_file: str, embeddings: List[float]) -> None:
     output_file = Path(output_file)
     output_file.parents[0].mkdir(parents=True, exist_ok=True)
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         # Format the embeddings in JSON lines format
         for embedding in embeddings:
-            json.dump({'doc_embeddings': embedding}, f)
-            f.write('\n')
+            json.dump({"doc_embeddings": embedding}, f)
+            f.write("\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fire.Fire(main)

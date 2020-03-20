@@ -28,17 +28,17 @@ def main(input_file: str, output_file: str, spacy_model: str = "en_core_web_sm")
             python -m spacy download <spacy_model>`. Defaults to `"en_core_web_sm"`.
     """
 
-    print('Loading tokenizer...', end=' ', flush=True)
-    nlp = spacy.load(spacy_model, disable=['ner'])
-    print('Done.')
+    print("Loading tokenizer...", end=" ", flush=True)
+    nlp = spacy.load(spacy_model, disable=["ner"])
+    print("Done.")
 
-    anchors = Path(input_file).read_text().split('\n')
+    anchors = Path(input_file).read_text().split("\n")
     positives = _generate_positives(anchors, nlp)
 
-    print(f'Saving generated training data to {output_file}...', end=' ', flush=True)
+    print(f"Saving generated training data to {output_file}...", end=" ", flush=True)
     train_data = zip(anchors, positives)
     _save_train_data_to_disk(output_file, train_data)
-    print('Done.')
+    print("Done.")
 
 
 def _generate_positives(anchors: List[str], nlp: spacy.lang):
@@ -55,7 +55,7 @@ def _generate_positives(anchors: List[str], nlp: spacy.lang):
     positives = []
 
     docs = nlp.pipe(anchors, n_process=-1)
-    for doc in tqdm(docs, total=len(anchors), desc='Generating positive examples', dynamic_ncols=True):
+    for doc in tqdm(docs, total=len(anchors), desc="Generating positive examples", dynamic_ncols=True):
         # TODO (John): We don't want especially short sentences as they contain little information. As a temporary
         # hack, take the longest sentence from each anchor.
         sents = list(doc.sents)
@@ -64,9 +64,7 @@ def _generate_positives(anchors: List[str], nlp: spacy.lang):
             dropped += 1
             continue
 
-        positives.append(
-            sorted(sents, key=len)[-1].text
-        )
+        positives.append(sorted(sents, key=len)[-1].text)
 
     if dropped:
         print(f"Dropped {dropped}/{len(anchors)} ({dropped/len(anchors):.2%}) anchors with no sentences.")

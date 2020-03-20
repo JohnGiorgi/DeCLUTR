@@ -26,7 +26,20 @@ def sample_spans(text: str, num_spans: int, min_span_width: int) -> Iterable[str
             )
         )
 
-    for _ in range(num_spans):
+    sampled = set()
+
+    # TODO (John): There is some probability that this will never complete. Add a check to see if num_spans is
+    # valid.
+    while True:
+        if len(sampled) == num_spans:
+            break
+
         start = randint(0, len(tokens) - min_span_width)
         end = randint(max(start + min_span_width, len(tokens)), len(tokens))
+
+        # Never sample identical spans
+        if (start, end) in sampled:
+            continue
+        sampled.add((start, end))
+
         yield " ".join(tokens[start:end])

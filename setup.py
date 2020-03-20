@@ -37,10 +37,10 @@ setuptools.setup(
     ],
     python_requires=">=3.7",
     install_requires=[
-        "allennlp>=0.9.0",
-        "torch>=1.2.0",
-        "pytorch-metric-learning>=0.9.75",
+        "allennlp>=0.9.1",
+        "torch>=1.4.0",
+        "pytorch-metric-learning>=0.9.77",
         "typer>=0.0.8",
     ],
-    extras_require={"dev": ["flake8", "black"]},
+    extras_require={"dev": ["black", "flake8", "pytest"]},
 )

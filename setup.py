@@ -39,8 +39,8 @@ setuptools.setup(
     install_requires=[
         "allennlp>=0.9.1",
         "torch>=1.4.0",
-        "pytorch-metric-learning>=0.9.77",
-        "typer>=0.0.8",
+        "pytorch-metric-learning>=0.9.78",
+        "typer>=0.1.0",
     ],
     extras_require={"dev": ["black", "flake8", "pytest"]},
 )

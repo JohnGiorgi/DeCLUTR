@@ -59,7 +59,7 @@ allennlp predict tmp path/to/input.txt \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
- --overrides '{"dataset_reader.sample_spans": false}' \
+ --predictor "contrastive" \
  --include-package t2t
 ```
 
@@ -90,10 +90,9 @@ cd SentEval/data/downstream/
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval.py allennlp SentEval tmp \
+python scripts/run_senteval.py allennlp SentEval tmp "contrastive" \
  --output-filepath tmp/senteval_results.json \
  --cuda-device 0  \
- --overrides '{"dataset_reader.sample_spans": false}' \
  --include-package t2t
 ```
 

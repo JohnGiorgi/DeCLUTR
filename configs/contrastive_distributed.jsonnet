@@ -9,6 +9,8 @@ local max_length = 512;
 // TODO (John): Can we set this programatically?
 // This corresponds to the config.hidden_size of pretrained_transformer_model_name
 local token_embedding_size = 768;
+// The size of the embeddings produced by the projection head
+local projection_size = 128;
 
 {
     "dataset_reader": {
@@ -50,7 +52,7 @@ local token_embedding_size = 768;
         "feedforward": {
             "input_dim": token_embedding_size,
             "num_layers": 2,
-            "hidden_dims": [128, 128],
+            "hidden_dims": [projection_size, projection_size],
             "activations": ["relu", "linear"],
         },
         "loss": {

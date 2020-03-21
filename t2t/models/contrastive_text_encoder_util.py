@@ -1,19 +1,9 @@
-import random
 from typing import Tuple
 
 import torch
-
-from allennlp.data import TextFieldTensors
 import torch.distributed as dist
 
-
-def get_world_size() -> int:
-    """Returns the world size, or -1 if `torch.distributed.init_process_group` was never called.
-    """
-    try:
-        return dist.get_world_size()
-    except AssertionError:
-        return -1
+from allennlp.data import TextFieldTensors
 
 
 def sample_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensors]:
@@ -29,20 +19,10 @@ def sample_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTen
     positives : TextFieldTensors
         `TextFieldTensors` containing the sampled positives.
     """
-    # The procedure for sampling anchor, positive pairs is as follows:
-    #   1. Sample two random spans for every training instance
-    #   2. Unpack the TextFieldTensors, extract the token ids, masks, and type ids for the sampled pairs
-    #   3. Repackage the information into TextFieldTensors
-    num_spans = tokens["tokens"]["token_ids"].size(1)
-    index = torch.as_tensor(random.sample(range(0, num_spans), 2), device=tokens["tokens"]["token_ids"].device,)
 
-    random_token_ids = torch.index_select(tokens["tokens"]["token_ids"], dim=1, index=index)
-    random_masks = torch.index_select(tokens["tokens"]["mask"], dim=1, index=index)
-    random_type_ids = torch.index_select(tokens["tokens"]["type_ids"], dim=1, index=index)
-
-    anchor_token_ids, positive_token_ids = torch.chunk(random_token_ids, 2, dim=1)
-    anchor_masks, positive_masks = torch.chunk(random_masks, 2, dim=1)
-    anchor_type_ids, positive_type_ids = torch.chunk(random_type_ids, 2, dim=1)
+    anchor_token_ids, positive_token_ids = torch.chunk(tokens["tokens"]["token_ids"], 2, dim=1)
+    anchor_masks, positive_masks = torch.chunk(tokens["tokens"]["mask"], 2, dim=1)
+    anchor_type_ids, positive_type_ids = torch.chunk(tokens["tokens"]["type_ids"], 2, dim=1)
 
     anchors: TextFieldTensors = {
         "tokens": {
@@ -86,7 +66,7 @@ def all_gather_anchor_positive_pairs(
     """
 
     # If we are not training on at least 2 GPUs, this is a no-op.
-    if get_world_size() < 2:
+    if not dist.is_initialized() or dist.get_world_size() < 2:
         return anchors, positives
 
     # Gather the encoded anchors and positives on all replicas

@@ -3,9 +3,7 @@ import json
 import pickle
 import random
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import fire
 from tqdm import tqdm
@@ -23,7 +21,7 @@ def main(
     pos_threshold: float = 0.2,
     neg_threshold: float = 0.001,
     neg_margin: float = 0.015,
-    cache: bool = False
+    cache: bool = False,
 ) -> None:
     """Generates a set of triplets of PMIDs which, among other things, can be used to evaluate document embeddings.
 
@@ -120,9 +118,7 @@ def _load_and_cache_icite_metadata(input_dir: Path, output_dir: Path, cache: boo
 
 
 def _parse_icite_metadata(
-    input_dir: Path,
-    research_only: bool = True,
-    citation_count_threshold: int = 10
+    input_dir: Path, research_only: bool = True, citation_count_threshold: int = 10
 ) -> Dict[str, set]:
 
     citations = {}
@@ -134,8 +130,9 @@ def _parse_icite_metadata(
                 contents = json.loads(line)
 
                 # Filter anything that isn't a reasearch article or has less than citation_count_threshold citations
-                if ((not contents["is_research_article"] and research_only) or
-                   contents["citation_count"] < citation_count_threshold):
+                if (not contents["is_research_article"] and research_only) or contents[
+                    "citation_count"
+                ] < citation_count_threshold:
                     continue
 
                 pmid = str(contents["pmid"])
@@ -155,7 +152,7 @@ def _compute_similarity(
     citations: Dict[str, Dict[str, List]],
     pos_threshold: float,
     neg_threshold: float,
-    neg_margin: float
+    neg_margin: float,
 ) -> List[Tuple[str, str, str]]:
     """Returns triplets of PMIDs from `pmid_pairs` where the first two PMIDs are most closely related. Only PMIDs
     with similarity scores greatert than or equal to `pos_threshold` are retained. The similarity score is computed
@@ -217,7 +214,7 @@ def _generate_triplets(
     max_triplets: int,
     pos_threshold: float,
     neg_threshold: float,
-    neg_margin: float
+    neg_margin: float,
 ) -> List[Tuple[str, str, str]]:
 
     pmids = set(citations.keys())
@@ -256,8 +253,12 @@ def _generate_triplets(
             triplets = triplets[:max_triplets]  # drop triplets over the max number requested
             break
 
-    print((f"Generated {len(triplets)} triplets of PMIDs with a positive threshold of {pos_threshold}, a"
-           f" negative threshold of {neg_threshold} and a negative margin of {neg_margin}"))
+    print(
+        (
+            f"Generated {len(triplets)} triplets of PMIDs with a positive threshold of {pos_threshold}, a"
+            f" negative threshold of {neg_threshold} and a negative margin of {neg_margin}"
+        )
+    )
 
     return triplets
 

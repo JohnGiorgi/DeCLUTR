@@ -1,22 +1,14 @@
 from typing import Dict, Optional
 
 import torch
+
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import (
-    FeedForward,
-    Seq2SeqEncoder,
-    Seq2VecEncoder,
-    TextFieldEmbedder,
-)
+from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-
 from t2t.losses import PyTorchMetricLearningLoss
-from t2t.models.contrastive_text_encoder_util import (
-    sample_anchor_positive_pairs,
-    all_gather_anchor_positive_pairs,
-)
+from t2t.models.contrastive_text_encoder_util import all_gather_anchor_positive_pairs, sample_anchor_positive_pairs
 
 
 @Model.register("constrastive")
@@ -95,9 +87,8 @@ class ContrastiveTextEncoder(Model):
         """
         output_dict: Dict[str, torch.Tensor] = {}
 
-        # If token_ids contains a third dimension, then spans were sampled during the data loading process and we
-        # randomly sample from those spans here to create anchor, positive pairs for training.
-        # Else, assume that we are just embedding some given text without training the model.
+        # If token_ids contains a third dimension, then spans were sampled during the data loading process.
+        # sample_anchor_positive_pairs splits the batch on the second dimension to get our anchor, positive pairs.
         if tokens["tokens"]["token_ids"].dim() == 3:
             anchors, positives = sample_anchor_positive_pairs(tokens)
         else:
@@ -117,7 +108,9 @@ class ContrastiveTextEncoder(Model):
                 embedded_anchor_text, embedded_positive_text
             )
 
-            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
+            embeddings, labels = PyTorchMetricLearningLoss.get_embeddings_and_labels(
+                embedded_anchor_text, embedded_positive_text
+            )
 
             output_dict["loss"] = self._loss(embeddings, labels)
 
@@ -134,15 +127,17 @@ class ContrastiveTextEncoder(Model):
             embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
         embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
-        if output_dict is not None:
+        # Don't hold on to embeddings and projections during training.
+        if output_dict is not None and not self.training:
             output_dict["embeddings"] = embedded_text.clone().detach()
 
         # Representations produced by the non-linear projection are used for training with a contrastive loss.
         # When embedding text with a trained model, we want the representation produced by the encoder network.
+        # We therefore call these vectors "projections" to distinguish them from the "embeddings".
         # See: https://arxiv.org/abs/2002.05709
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
-            if output_dict is not None:
+            if output_dict is not None and not self.training:
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return embedded_text

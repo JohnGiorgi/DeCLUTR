@@ -6,18 +6,18 @@
 local pretrained_transformer_model_name = "distilroberta-base";
 // This will be used to set the max # of tokens in the anchor, positive and negative examples.
 local max_length = 512;
-// TODO (John): Can we set this programatically?
-// This corresponds to the config.hidden_size of pretrained_transformer_model_name
+// This corresponds to PretrainedTransformerEmbedder.transformer_model.config.hidden_size
 local token_embedding_size = 768;
-// The size of the embeddings produced by the projection head
-local projection_size = 128;
 
 {
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
         "sample_spans": true,
-        "min_span_width": 15,
+        // This is (approximately an upper bound on sentence length in English
+        "min_span_len": 30,
+        // Whether or not we should mask spans a la SpanBERT
+        "span_masking": false,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -32,7 +32,7 @@ local projection_size = 128;
         // If not null, a cache of already-processed data will be stored in this directory.
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
-    },
+    }, 
     "train_data_path": "",
     "model": {
         "type": "constrastive",
@@ -49,15 +49,9 @@ local projection_size = 128;
             "embedding_dim": token_embedding_size,
             "averaged": true
         },
-        "feedforward": {
-            "input_dim": token_embedding_size,
-            "num_layers": 2,
-            "hidden_dims": [projection_size, projection_size],
-            "activations": ["relu", "linear"],
-        },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.05,
+            "temperature": 0.005,
         },
     },
     "data_loader": {
@@ -82,13 +76,13 @@ local projection_size = 128;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 15,
+        "num_epochs": 10,
         "checkpointer": {
-            "keep_serialized_model_every_num_seconds": 9000,
             "num_serialized_models_to_keep": 1,
         },
         "grad_norm": 1.0,
     },
+    // This is where you would specify the CUDA devices to use for training
     "distributed" : {
         "cuda_devices": [0, 1],
     },

@@ -45,14 +45,13 @@ local token_embedding_size = 768;
             },
         },
         "seq2vec_encoder": {
-            "type": "bag_of_embeddings",
+            "type": "cls_pooler",
             "embedding_dim": token_embedding_size,
-            "averaged": true
         },
         "loss": {
             "type": "nt_xent",
             "temperature": 0.005,
-        },
+        },      
     },
     "data_loader": {
         "batch_size": 12,
@@ -63,24 +62,6 @@ local token_embedding_size = 768;
         "num_workers": 1
     },
     "trainer": {
-        // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
-        "opt_level": null,
-        "optimizer": {
-            "type": "huggingface_adamw",
-            "lr": 2e-5,
-            "weight_decay": 0.0,
-            "parameter_groups": [
-                # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
-                # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
-                # Regex: https://regex101.com/r/ZUyDgR/3/tests
-                [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
-            ],
-        },
-        "num_epochs": 10,
-        "checkpointer": {
-            "num_serialized_models_to_keep": 1,
-        },
-        "cuda_device": 0,
-        "grad_norm": 1.0,
+        "type": "no_op"
     },
 }

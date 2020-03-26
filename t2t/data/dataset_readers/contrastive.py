@@ -11,7 +11,7 @@ from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
-from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
+from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer, PretrainedTransformerTokenizer
 from t2t.data.dataset_readers.dataset_utils.contrastive_utils import sample_spans
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class ContrastiveDatasetReader(DatasetReader):
         We use this to define the input representation for the text. See :class:`TokenIndexer`.
     sample_spans : `bool`, optional (default = True)
         If True, two spans will be sampled from each input, tokenized and indexed.
-    min_span_width : `int`, optional (default = 1)
+    min_span_len : `int`, optional (default = 1)
         The minimum length of spans which should be sampled. Defaults to 1. Has no effect if
         `sample_spans is False`.
     """
@@ -43,15 +43,34 @@ class ContrastiveDatasetReader(DatasetReader):
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        sample_spans: Optional[bool] = True,
-        min_span_width: Optional[int] = 1,
+        sample_spans: bool = False,
+        min_span_len: Optional[int] = None,
+        span_masking: Optional[bool] = False,
+        mask_token: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self._tokenizer = tokenizer or SpacyTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._sample_spans = sample_spans
-        self._min_span_width = min_span_width
+        self._min_span_len = min_span_len
+        self._span_masking = span_masking
+
+        # If masking spans and tokenizer is an instance of PretrainedTransformerTokenizer, use its mask token.
+        # Otherwise a user will have to provide it. Complain if they dont.
+        # This will only work for PretrainedTransformerTokenizer
+        if self._span_masking:
+            if isinstance(self._tokenizer, PretrainedTransformerTokenizer):
+                self._mask_token = self._tokenizer.tokenizer.mask_token
+            else:
+                if mask_token is None:
+                    raise ConfigurationError(
+                        (
+                            "If span_masking is True and tokenizer is not a PretrainedTransformerTokenizer, then"
+                            " mask_token must be provided."
+                        )
+                    )
+                self._mask_token = mask_token
 
         # HACK (John): I need to temporarily disable user warnings because this objects __len__ function returns
         # 1, which confuses PyTorch.
@@ -93,16 +112,6 @@ class ContrastiveDatasetReader(DatasetReader):
             for idx, text in data_file:
                 if distributed and idx % world_size != rank:
                     continue
-                # We use whitespace tokenization when sampling spans, so we also use it here to check that a
-                # valid min_span_width was given.
-                num_tokens = len(text.split())
-                if self._sample_spans and num_tokens < self._min_span_width:
-                    raise ConfigurationError(
-                        (
-                            f"min_span_width is {self._min_span_width} but instance on line {idx + 1} has len"
-                            f" {num_tokens}"
-                        )
-                    )
 
                 yield self.text_to_instance(text)
 
@@ -125,7 +134,13 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self._sample_spans:
             spans: List[Field] = []
-            for span in sample_spans(text, 2, self._min_span_width):
+            for span in sample_spans(
+                text,
+                num_spans=2,
+                min_span_len=self._min_span_len,
+                span_masking=self._span_masking,
+                mask_token=self._mask_token if self._span_masking else None,
+            ):
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

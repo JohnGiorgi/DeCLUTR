@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from overrides import overrides
 
 from allennlp.common.util import JsonDict
@@ -17,15 +19,10 @@ class ContrastivePredictor(Predictor):
             return self._dataset_reader.text_to_instance(text=text)
 
 
-class no_sample:
+@contextmanager
+def no_sample(dataset_reader: DatasetReader):
     """Context manager that disables sampling of spans for the given `dataset_reader`."""
-
-    def __init__(self, dataset_reader: DatasetReader):
-        self.dataset_reader = dataset_reader
-        self.prev = self.dataset_reader.sample_spans
-
-    def __enter__(self):
-        self.dataset_reader.sample_spans = False
-
-    def __exit__(self, *args):
-        self.dataset_reader.sample_spans = self.prev
+    prev = dataset_reader
+    dataset_reader.sample_spans = False
+    yield dataset_reader
+    dataset_reader.sample_spans = prev

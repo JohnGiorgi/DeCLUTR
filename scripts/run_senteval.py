@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 import numpy as np
 import torch
@@ -78,20 +78,25 @@ def _get_device(cuda_device):
     return device
 
 
-def _compute_aggregate_score(results):
-    """Computes a simple aggregate score score for the given SentEval `results`.
+def _compute_aggregate_scores(results):
+    """Computes a simple aggregate score for the dev and test sets in a given SentEval `results`.
     """
-    aggregate_score = 0
+    dev_score, test_score = 0, 0
     for task, scores in results.items():
         if task == "STSBenchmark" or task == "SICKRelatedness":
-            aggregate_score += scores["spearman"] * 100
+            dev_score += scores["devpearson"] * 100
+            test_score += scores["spearman"] * 100
         elif task.startswith("STS"):
-            aggregate_score += scores["all"]["spearman"]["mean"] * 100
-        elif "acc" in scores:
-            aggregate_score += scores["acc"]
+            # There are no partitions for these tasks as no model is trained on top of the embeddings
+            sts_score = scores["all"]["spearman"]["mean"] * 100
+            dev_score += sts_score
+            test_score += sts_score
+        elif "devacc" in scores and "acc" in scores:
+            dev_score += scores["devacc"]
+            test_score += scores["acc"]
         else:
             raise ValueError(f'Found an unexpected field in results, "{task}".')
-    return aggregate_score / len(results)
+    return dev_score / len(results), test_score / len(results)
 
 
 def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = None):
@@ -176,15 +181,21 @@ def _run_senteval(
     results = se.eval(TRANSFER_TASKS)
     typer.secho(f"{SUCCESS}  Evaluation complete!", fg=typer.colors.GREEN, bold=True)
 
-    score = _compute_aggregate_score(results)
-    typer.secho(f"{SCORE}  Aggregate score: {score:.2f}%", fg=typer.colors.WHITE, bold=True)
+    dev_score, test_score = _compute_aggregate_scores(results)
+    typer.secho(f"{SCORE}  Aggregate dev score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
+    typer.secho(f"{SCORE}  Aggregate test score: {test_score:.2f}%", fg=typer.colors.WHITE, bold=True)
 
     if output_filepath is not None:
         # Create the directory path if it doesn't exist
         output_filepath = Path(output_filepath)
         output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
         with open(output_filepath, "w") as fp:
-            json.dump(common_util.sanitize(results), fp, indent=2)
+            # Convert anything that can't be serialized to JSON to a python type
+            json_safe_results = common_util.sanitize(results)
+            # Add agggregate scores to top level of results dict
+            json_safe_results["aggregate_dev_score"] = dev_score
+            json_safe_results["aggregate_test_score"] = test_score
+            json.dump(json_safe_results, fp, indent=2)
         typer.secho(f"{SAVING}  Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True)
     else:
         typer.secho(
@@ -197,12 +208,13 @@ def _run_senteval(
 
 
 @app.command()
-def aggregate_score(path_to_results: str):
+def aggregate_score(path_to_results: str) -> Tuple[float, float]:
     with open(path_to_results, "r") as f:
         results = json.load(f)
-    score = _compute_aggregate_score(results)
-    typer.secho(f"{SCORE}  Aggregate score: {score:.2f}%", fg=typer.colors.WHITE, bold=True)
-    return score
+    dev_score, test_score = _compute_aggregate_scores(results)
+    typer.secho(f"{SCORE} Aggregate dev score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
+    typer.secho(f"{SCORE} Aggregate test score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
+    return dev_score, test_score
 
 
 @app.command()
@@ -245,7 +257,7 @@ def transformers(
         )
 
         with torch.no_grad():
-            sequence_output, pooled_output = params.model(input_ids=input_ids, attention_mask=attention_masks)
+            sequence_output, _ = params.model(input_ids=input_ids, attention_mask=attention_masks)
 
         # If mean_pool, we take the average of the token-level embeddings, accounting for pads.
         # Otherwise, we take the pooled output for this specific model, which is typically the linear projection
@@ -255,7 +267,9 @@ def transformers(
                 torch.sum(attention_masks, dim=1, keepdims=True), min=1e-9
             )
         else:
-            embeddings = pooled_output
+            # TODO (John): Replace this with the built in pooler from the Transformers lib,
+            # as it will check if the last token should be used.
+            embeddings = sequence_output[:, 0, :]
 
         embeddings = embeddings.cpu().numpy()
         return embeddings

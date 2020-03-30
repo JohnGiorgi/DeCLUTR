@@ -44,8 +44,6 @@ class ContrastiveDatasetReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         sample_spans: bool = False,
         min_span_len: Optional[int] = None,
-        span_masking: Optional[bool] = False,
-        mask_token: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)

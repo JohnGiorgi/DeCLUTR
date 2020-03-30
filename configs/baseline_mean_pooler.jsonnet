@@ -16,8 +16,6 @@ local token_embedding_size = 768;
         "sample_spans": true,
         // This is (approximately an upper bound on sentence length in English
         "min_span_len": 30,
-        // Whether or not we should mask spans a la SpanBERT
-        "span_masking": false,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -36,11 +34,17 @@ local token_embedding_size = 768;
     "train_data_path": "",
     "model": {
         "type": "constrastive",
+        "tokenizer": {
+            "model_name": pretrained_transformer_model_name,
+            "max_length": max_length,
+        },
         "text_field_embedder": {
+            "type": "mlm",
             "token_embedders": {
                 "tokens": {
-                    "type": "pretrained_transformer",
+                    "type": "pretrained_transformer_mlm",
                     "model_name": pretrained_transformer_model_name,
+                    "masked_language_modeling": true
                 },
             },
         },
@@ -51,11 +55,11 @@ local token_embedding_size = 768;
         },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.005,
-        },      
+            "temperature": 0.001,
+        },
     },
     "data_loader": {
-        "batch_size": 12,
+        "batch_size": 10,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

@@ -34,10 +34,6 @@ local token_embedding_size = 768;
     "train_data_path": "",
     "model": {
         "type": "constrastive",
-        "tokenizer": {
-            "model_name": pretrained_transformer_model_name,
-            "max_length": max_length,
-        },
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

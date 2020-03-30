@@ -42,7 +42,6 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
-        tokenizer: PretrainedTransformerTokenizer,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         loss: PyTorchMetricLearningLoss,
@@ -54,7 +53,7 @@ class ContrastiveTextEncoder(Model):
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
-        # (HACK): This prevents the user from having to specify the tokenizer again and masked language modeling
+        # (HACK): This prevents the user from having to specify the tokenizer / masked language modeling
         # objective again. In the future it would be great to come up with something more elegant.
         self._token_embedder = self._text_field_embedder._token_embedders["tokens"]
         self._tokenizer = self._token_embedder.tokenizer

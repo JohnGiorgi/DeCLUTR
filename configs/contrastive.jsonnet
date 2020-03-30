@@ -16,6 +16,13 @@ local token_embedding_size = 768;
         "sample_spans": true,
         // This is (approximately an upper bound on sentence length in English
         "min_span_len": 30,
+        "augmentations": [
+            {"type": "contextual-word-embed-aug",
+             "any arguments go here"
+            },
+            ...
+            {},
+        ],
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
@@ -34,10 +41,6 @@ local token_embedding_size = 768;
     "train_data_path": "",
     "model": {
         "type": "constrastive",
-        "tokenizer": {
-            "model_name": pretrained_transformer_model_name,
-            "max_length": max_length,
-        },
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

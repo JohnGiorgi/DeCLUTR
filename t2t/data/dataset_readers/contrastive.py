@@ -44,6 +44,7 @@ class ContrastiveDatasetReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         sample_spans: bool = False,
         min_span_len: Optional[int] = None,
+        augmentations: Optional[List[nlpaug.augmenter]] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -51,6 +52,7 @@ class ContrastiveDatasetReader(DatasetReader):
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._sample_spans = sample_spans
         self._min_span_len = min_span_len
+        self._augmentations = augmentations
 
         # HACK (John): I need to temporarily disable user warnings because this objects __len__ function returns
         # 1, which confuses PyTorch.
@@ -115,6 +117,9 @@ class ContrastiveDatasetReader(DatasetReader):
         if self._sample_spans:
             spans: List[Field] = []
             for span in sample_spans(text, num_spans=2, min_span_len=self._min_span_len,):
+                if self._augmentations is not None:
+                    for aug in self._augmentations:
+                        span = aug(span)
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

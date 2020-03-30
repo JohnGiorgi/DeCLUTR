@@ -3,10 +3,12 @@ from typing import Dict, Optional
 import torch
 
 from allennlp.data import TextFieldTensors, Vocabulary
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
+from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
 from t2t.models.contrastive_text_encoder_util import all_gather_anchor_positive_pairs, sample_anchor_positive_pairs
 
@@ -40,6 +42,7 @@ class ContrastiveTextEncoder(Model):
     def __init__(
         self,
         vocab: Vocabulary,
+        tokenizer: PretrainedTransformerTokenizer,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         loss: PyTorchMetricLearningLoss,
@@ -51,6 +54,11 @@ class ContrastiveTextEncoder(Model):
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
+        # (HACK): This prevents the user from having to specify the tokenizer again and masked language modeling
+        # objective again. In the future it would be great to come up with something more elegant.
+        self._token_embedder = self._text_field_embedder._token_embedders["tokens"]
+        self._tokenizer = self._token_embedder.tokenizer
+        self._masked_language_modeling = self._token_embedder.masked_language_modeling
 
         self._seq2seq_encoder = seq2seq_encoder
         self._seq2vec_encoder = seq2vec_encoder
@@ -91,14 +99,17 @@ class ContrastiveTextEncoder(Model):
         # sample_anchor_positive_pairs splits the batch on the second dimension to get our anchor, positive pairs.
         if tokens["tokens"]["token_ids"].dim() == 3:
             anchors, positives = sample_anchor_positive_pairs(tokens)
+            # Mask anchor input ids and get labels required for MLM
+            if self._masked_language_modeling:
+                anchors = mask_tokens(anchors, self._tokenizer)
         else:
             anchors, positives = tokens, None
 
         # This is the textual representation learned by a trained model that will be used for downstream tasks.
-        embedded_anchor_text = self._forward_internal(anchors, output_dict)
+        anchor_masked_lm_loss, embedded_anchor_text = self._forward_internal(anchors, output_dict)
 
         if positives is not None:
-            embedded_positive_text = self._forward_internal(positives)
+            _, embedded_positive_text = self._forward_internal(positives)
 
             # If we are training on multiple GPUs using DistributedDataParallel, then a naive application would
             # result in 2 * (batch_size/n_gpus - 1) number of negatives per GPU. To avoid this, we need to
@@ -108,11 +119,11 @@ class ContrastiveTextEncoder(Model):
                 embedded_anchor_text, embedded_positive_text
             )
 
-            embeddings, labels = PyTorchMetricLearningLoss.get_embeddings_and_labels(
-                embedded_anchor_text, embedded_positive_text
-            )
-
-            output_dict["loss"] = self._loss(embeddings, labels)
+            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
+            contrastive_loss = self._loss(embeddings, labels)
+            output_dict["loss"] = contrastive_loss
+            if anchor_masked_lm_loss is not None:
+                output_dict["loss"] = output_dict["loss"] + anchor_masked_lm_loss
 
         return output_dict
 
@@ -120,7 +131,7 @@ class ContrastiveTextEncoder(Model):
         self, tokens: TextFieldTensors, output_dict: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.Tensor:
 
-        embedded_text = self._text_field_embedder(tokens)
+        masked_lm_loss, embedded_text = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens).float()
 
         if self._seq2seq_encoder is not None:
@@ -130,6 +141,7 @@ class ContrastiveTextEncoder(Model):
         # Don't hold on to embeddings and projections during training.
         if output_dict is not None and not self.training:
             output_dict["embeddings"] = embedded_text.clone().detach()
+            # output_dict["embeddings"] /= torch.norm(output_dict["embeddings"])
 
         # Representations produced by the non-linear projection are used for training with a contrastive loss.
         # When embedding text with a trained model, we want the representation produced by the encoder network.
@@ -139,5 +151,6 @@ class ContrastiveTextEncoder(Model):
             embedded_text = self._feedforward(embedded_text)
             if output_dict is not None and not self.training:
                 output_dict["projections"] = embedded_text.clone().detach()
+                # output_dict["projections"] /= torch.norm(output_dict["projections"])
 
-        return embedded_text
+        return masked_lm_loss, embedded_text

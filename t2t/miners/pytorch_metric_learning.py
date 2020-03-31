@@ -21,7 +21,10 @@ class BatchHardMiner(PyTorchMetricLearningMiner, miners.BatchHardMiner):
     """
 
     def __init__(
-        self, use_similarity: bool = True, squared_distances: bool = False, normalize_embeddings: bool = True
+        self,
+        use_similarity: bool = True,
+        squared_distances: bool = False,
+        normalize_embeddings: bool = True,
     ) -> None:
 
         super().__init__(

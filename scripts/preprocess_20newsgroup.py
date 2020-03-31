@@ -8,8 +8,12 @@ import requests
 from sklearn.model_selection import train_test_split
 
 RANDOM_STATE = 42
-TRAIN_URL = "http://ana.cachopo.org/datasets-for-single-label-text-categorization/20ng-train-all-terms.txt"
-TEST_URL = "http://ana.cachopo.org/datasets-for-single-label-text-categorization/20ng-test-all-terms.txt"
+TRAIN_URL = (
+    "http://ana.cachopo.org/datasets-for-single-label-text-categorization/20ng-train-all-terms.txt"
+)
+TEST_URL = (
+    "http://ana.cachopo.org/datasets-for-single-label-text-categorization/20ng-test-all-terms.txt"
+)
 
 random.seed(RANDOM_STATE)
 
@@ -63,7 +67,9 @@ def main(output_dir: str, validation_size: float = 0.10) -> None:
         == len(processed_data["valid"]["x"])
         == len(processed_data["valid"]["y"])
     )
-    assert len(twenty_ng_test) == len(processed_data["test"]["x"]) == len(processed_data["test"]["y"])
+    assert (
+        len(twenty_ng_test) == len(processed_data["test"]["x"]) == len(processed_data["test"]["y"])
+    )
 
     print("Processed the 20 Newsgroup dataset. Number of examples:")
     num_processed_examples = 0

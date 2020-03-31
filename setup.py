@@ -38,8 +38,8 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "torch>=1.4.0",
-        "pytorch-metric-learning>=0.9.79",
-        "typer>=0.1.0",
+        "pytorch-metric-learning>=0.9.81",
+        "typer>=0.1.1",
     ],
     extras_require={"dev": ["black", "flake8", "pytest"]},
 )

@@ -5,13 +5,12 @@ from typing import Dict, Iterable, List, Optional
 import torch.distributed as dist
 from overrides import overrides
 
-from allennlp.common.checks import ConfigurationError
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
-from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer, PretrainedTransformerTokenizer
+from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
 from t2t.data.dataset_readers.dataset_utils.contrastive_utils import sample_spans
 
 logger = logging.getLogger(__name__)
@@ -45,8 +44,6 @@ class ContrastiveDatasetReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         sample_spans: bool = False,
         min_span_len: Optional[int] = None,
-        span_masking: Optional[bool] = False,
-        mask_token: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -54,23 +51,6 @@ class ContrastiveDatasetReader(DatasetReader):
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._sample_spans = sample_spans
         self._min_span_len = min_span_len
-        self._span_masking = span_masking
-
-        # If masking spans and tokenizer is an instance of PretrainedTransformerTokenizer, use its mask token.
-        # Otherwise a user will have to provide it. Complain if they dont.
-        # This will only work for PretrainedTransformerTokenizer
-        if self._span_masking:
-            if isinstance(self._tokenizer, PretrainedTransformerTokenizer):
-                self._mask_token = self._tokenizer.tokenizer.mask_token
-            else:
-                if mask_token is None:
-                    raise ConfigurationError(
-                        (
-                            "If span_masking is True and tokenizer is not a PretrainedTransformerTokenizer, then"
-                            " mask_token must be provided."
-                        )
-                    )
-                self._mask_token = mask_token
 
         # HACK (John): I need to temporarily disable user warnings because this objects __len__ function returns
         # 1, which confuses PyTorch.
@@ -134,13 +114,7 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self._sample_spans:
             spans: List[Field] = []
-            for span in sample_spans(
-                text,
-                num_spans=2,
-                min_span_len=self._min_span_len,
-                span_masking=self._span_masking,
-                mask_token=self._mask_token if self._span_masking else None,
-            ):
+            for span in sample_spans(text, num_spans=2, min_span_len=self._min_span_len,):
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

@@ -96,7 +96,6 @@ def _compute_aggregate_scores(results):
         # reported for each task.
         # These two tasks report pearsonr for dev and spearman for test. Not sure why?
         if task == "STSBenchmark" or task == "SICKRelatedness":
-            # For some reason, there is no "devspearman" reported.
             aggregate_scores[task_set]["dev"] += scores["devpearson"] * 100
             aggregate_scores[task_set]["test"] += scores["spearman"] * 100
         # There are no partitions for these tasks as no model is trained on top of the embeddings,
@@ -325,7 +324,7 @@ def transformers(
     model = AutoModel.from_pretrained(pretrained_model_name_or_path).to(device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -378,7 +377,7 @@ def sentence_transformers(
     model = SentenceTransformer(pretrained_model_name_or_path, device=device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )

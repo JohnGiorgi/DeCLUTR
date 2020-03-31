@@ -44,18 +44,18 @@ Datasets should be text files where each line contains a raw text sequence. You 
 To train the model, run the following command
 
 ```bash
-allennlp train contrastive.jsonnet -s tmp --include-package t2t
+allennlp train contrastive.jsonnet -s output --include-package t2t
 ```
 
-During training, models, vocabulary, configuration and log files will be saved to `tmp`. This can be changed to any path you like.
+During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
 
 ### Embedding
 
 To embed text with a trained model, run the following command
 
 ```bash
-allennlp predict tmp path/to/input.txt \
- --output-file tmp/embeddings.jsonl \
+allennlp predict output path/to/input.txt \
+ --output-file output/embeddings.jsonl \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
@@ -65,11 +65,11 @@ allennlp predict tmp path/to/input.txt \
 
 This will:
 
-1. Load the model serialized to `tmp` with the weights from the epoch that achieved the best performance on the validation set.
+1. Load the model serialized to `output` with the weights from the epoch that achieved the best performance on the validation set.
 2. Use that model to embed the text in the provided input file (`path/to/input.txt`).
-3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`tmp/embeddings.jsonl`)
+3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`output/embeddings.jsonl`)
 
-The text embeddings are stored in the field `"embeddings"` in `tmp/embeddings.jsonl`.
+The text embeddings are stored in the field `"embeddings"` in `output/embeddings.jsonl`.
 
 > If your model was trained with a `FeedForward` module, it will also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).
 
@@ -90,13 +90,13 @@ cd SentEval/data/downstream/
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval.py allennlp SentEval tmp "contrastive" \
- --output-filepath tmp/senteval_results.json \
+python scripts/run_senteval.py allennlp SentEval output "contrastive" \
+ --output-filepath output/senteval_results.json \
  --cuda-device 0  \
  --include-package t2t
 ```
 
-The results will be saved to `tmp/senteval_results.json`. This can be changed to any path you like.
+The results will be saved to `output/senteval_results.json`. This can be changed to any path you like.
 
 For a list of commands, run
 

@@ -60,7 +60,9 @@ def _get_device(disable_cuda):
     if not disable_cuda and torch.cuda.is_available():
         device = torch.device("cuda")
         typer.secho(
-            f"{FAST} Using GPU device: {torch.cuda.current_device()}", fg=typer.colors.WHITE, bold=True,
+            f"{FAST} Using GPU device: {torch.cuda.current_device()}",
+            fg=typer.colors.WHITE,
+            bold=True,
         )
     else:
         device = torch.device("cpu")
@@ -91,7 +93,9 @@ def _init_model_and_tokenizer(
         try:
             from apex import amp
         except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
+            )
 
         model = amp.initialize(model, opt_level=opt_level)
 

@@ -6,7 +6,8 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Callable, List
+from statistics import mean
 
 import numpy as np
 import torch
@@ -27,8 +28,7 @@ app = typer.Typer()
 # Set up logger
 logger = logging.getLogger(__name__)
 
-# TODO (John): This should be user configurable
-TRANSFER_TASKS = [
+DOWNSTREAM_TASKS = [
     "STS12",
     "STS13",
     "STS14",
@@ -45,6 +45,8 @@ TRANSFER_TASKS = [
     "SICKEntailment",
     "SICKRelatedness",
     "STSBenchmark",
+]
+PROBING_TASKS = [
     "Length",
     "WordContent",
     "Depth",
@@ -56,6 +58,7 @@ TRANSFER_TASKS = [
     "OddManOut",
     "CoordinationInversion",
 ]
+TRANSFER_TASKS = DOWNSTREAM_TASKS + PROBING_TASKS
 
 # Emoji's used in typer.secho calls
 # See: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py
@@ -79,24 +82,54 @@ def _get_device(cuda_device):
 
 
 def _compute_aggregate_scores(results):
-    """Computes a simple aggregate score for the dev and test sets in a given SentEval `results`.
+    """Computes aggregate scores for the dev and test sets in a given SentEval `results`.
     """
-    dev_score, test_score = 0, 0
+    aggregate_scores = {
+        "downstream": {"dev": 0, "test": 0},
+        "probing": {"dev": 0, "test": 0},
+        "all": {},
+    }
     for task, scores in results.items():
+        # Tasks belong to two groups only, "downstream" or "probing"
+        task_set = "downstream" if task in DOWNSTREAM_TASKS else "probing"
+        # All of this conditional logic is required to deal with the various ways performance is
+        # reported for each task.
+        # These two tasks report pearsonr for dev and spearman for test. Not sure why?
         if task == "STSBenchmark" or task == "SICKRelatedness":
-            dev_score += scores["devpearson"] * 100
-            test_score += scores["spearman"] * 100
+            aggregate_scores[task_set]["dev"] += scores["devpearson"] * 100
+            aggregate_scores[task_set]["test"] += scores["spearman"] * 100
+        # There are no partitions for these tasks as no model is trained on top of the embeddings,
+        # therefore we count their scores in both the dev and test accumulators.
         elif task.startswith("STS"):
-            # There are no partitions for these tasks as no model is trained on top of the embeddings
             sts_score = scores["all"]["spearman"]["mean"] * 100
-            dev_score += sts_score
-            test_score += sts_score
+            aggregate_scores[task_set]["dev"] += sts_score
+            aggregate_scores[task_set]["test"] += sts_score
+        # The rest of the tasks seem to all contain a dev and test accuracy
         elif "devacc" in scores and "acc" in scores:
-            dev_score += scores["devacc"]
-            test_score += scores["acc"]
+            aggregate_scores[task_set]["dev"] += scores["devacc"]
+            # f1 is in the score, average it with acc before accumulating
+            if "f1" in scores:
+                aggregate_scores[task_set]["test"] += mean([scores["acc"], scores["f1"]])
+            else:
+                aggregate_scores[task_set]["test"] += scores["acc"]
         else:
             raise ValueError(f'Found an unexpected field in results, "{task}".')
-    return dev_score / len(results), test_score / len(results)
+
+    # Aggregate scores for "downstream" tasks
+    aggregate_scores["downstream"]["dev"] /= len(DOWNSTREAM_TASKS)
+    aggregate_scores["downstream"]["test"] /= len(DOWNSTREAM_TASKS)
+    # Aggregate scores for "probing" tasks
+    aggregate_scores["probing"]["dev"] /= len(PROBING_TASKS)
+    aggregate_scores["probing"]["test"] /= len(PROBING_TASKS)
+    # Aggregate score across all of SentEval
+    aggregate_scores["all"]["dev"] = mean(
+        [aggregate_scores["downstream"]["dev"], aggregate_scores["probing"]["dev"]]
+    )
+    aggregate_scores["all"]["test"] = mean(
+        [aggregate_scores["downstream"]["test"], aggregate_scores["probing"]["test"]]
+    )
+
+    return aggregate_scores
 
 
 def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = None):
@@ -114,7 +147,9 @@ def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = Non
 
         model = amp.initialize(model, opt_level=opt_level)
         typer.secho(
-            f'{FAST} Using mixed-precision with "opt_level={opt_level}".', fg=typer.colors.WHITE, bold=True
+            f'{FAST} Using mixed-precision with "opt_level={opt_level}".',
+            fg=typer.colors.WHITE,
+            bold=True,
         )
 
     return model
@@ -127,7 +162,9 @@ def _pad_sequences(sequences, pad_token):
     return padded_sequences
 
 
-def _setup_senteval(path_to_senteval: str, prototyping_config: bool = False, verbose: bool = False) -> None:
+def _setup_senteval(
+    path_to_senteval: str, prototyping_config: bool = False, verbose: bool = False
+) -> None:
     if verbose:
         logging.basicConfig(format="%(asctime)s : %(message)s", level=logging.DEBUG)
 
@@ -175,15 +212,20 @@ def _run_senteval(
         fg=typer.colors.GREEN,
         bold=True,
     )
-    typer.secho(f"{RUNNING}  Running evaluation. This may take a while!", fg=typer.colors.WHITE, bold=True)
+    typer.secho(
+        f"{RUNNING}  Running evaluation. This may take a while!", fg=typer.colors.WHITE, bold=True
+    )
 
     se = senteval.engine.SE(params, batcher, prepare)
     results = se.eval(TRANSFER_TASKS)
     typer.secho(f"{SUCCESS}  Evaluation complete!", fg=typer.colors.GREEN, bold=True)
 
-    dev_score, test_score = _compute_aggregate_scores(results)
-    typer.secho(f"{SCORE}  Aggregate dev score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
-    typer.secho(f"{SCORE}  Aggregate test score: {test_score:.2f}%", fg=typer.colors.WHITE, bold=True)
+    aggregate_scores = _compute_aggregate_scores(results)
+    typer.secho(
+        f'{SCORE} Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
+        fg=typer.colors.WHITE,
+        bold=True,
+    )
 
     if output_filepath is not None:
         # Create the directory path if it doesn't exist
@@ -192,11 +234,12 @@ def _run_senteval(
         with open(output_filepath, "w") as fp:
             # Convert anything that can't be serialized to JSON to a python type
             json_safe_results = common_util.sanitize(results)
-            # Add agggregate scores to top level of results dict
-            json_safe_results["aggregate_dev_score"] = dev_score
-            json_safe_results["aggregate_test_score"] = test_score
+            # Add aggregate scores to results dict
+            json_safe_results["aggregate_scores"] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
-        typer.secho(f"{SAVING}  Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True)
+        typer.secho(
+            f"{SAVING}  Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True
+        )
     else:
         typer.secho(
             f"{WARNING} --output_filepath was not provided, printing results to console instead.",
@@ -205,16 +248,6 @@ def _run_senteval(
         )
         print(results)
     return
-
-
-@app.command()
-def aggregate_score(path_to_results: str) -> Tuple[float, float]:
-    with open(path_to_results, "r") as f:
-        results = json.load(f)
-    dev_score, test_score = _compute_aggregate_scores(results)
-    typer.secho(f"{SCORE} Aggregate dev score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
-    typer.secho(f"{SCORE} Aggregate test score: {dev_score:.2f}%", fg=typer.colors.WHITE, bold=True)
-    return dev_score, test_score
 
 
 @app.command()
@@ -253,7 +286,9 @@ def transformers(
         # To embed with transformers, we (minimally) need the input ids and the attention masks.
         input_ids = torch.as_tensor(batch, device=params.device)
         attention_masks = torch.where(
-            input_ids == params.tokenizer.pad_token_id, torch.zeros_like(input_ids), torch.ones_like(input_ids)
+            input_ids == params.tokenizer.pad_token_id,
+            torch.zeros_like(input_ids),
+            torch.ones_like(input_ids),
         )
 
         with torch.no_grad():
@@ -263,9 +298,9 @@ def transformers(
         # Otherwise, we take the pooled output for this specific model, which is typically the linear projection
         # of a special tokens embedding, like [CLS] or <s>, which is prepended to the input during tokenization.
         if mean_pool:
-            embeddings = torch.sum(sequence_output * attention_masks.unsqueeze(-1), dim=1) / torch.clamp(
-                torch.sum(attention_masks, dim=1, keepdims=True), min=1e-9
-            )
+            embeddings = torch.sum(
+                sequence_output * attention_masks.unsqueeze(-1), dim=1
+            ) / torch.clamp(torch.sum(attention_masks, dim=1, keepdims=True), min=1e-9)
         else:
             # TODO (John): Replace this with the built in pooler from the Transformers lib,
             # as it will check if the last token should be used.
@@ -289,7 +324,7 @@ def transformers(
     model = AutoModel.from_pretrained(pretrained_model_name_or_path).to(device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -342,7 +377,7 @@ def sentence_transformers(
     model = SentenceTransformer(pretrained_model_name_or_path, device=device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -400,7 +435,11 @@ def allennlp(
     # Load the archived Model
     archive = load_archive(path_to_allennlp_archive)
     predictor = Predictor.from_archive(archive, predictor_name)
-    typer.secho(f"{SUCCESS}  Model from AllenNLP archive loaded successfully.", fg=typer.colors.GREEN, bold=True)
+    typer.secho(
+        f"{SUCCESS}  Model from AllenNLP archive loaded successfully.",
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
 
     # Used mixed-precision to speed up inference
     # model = _setup_mixed_precision_with_amp(model, allennlp_params["trainer"]["opt_level"])

@@ -34,7 +34,7 @@ jobs:
         pip install -e ".[dev]"
     - name: Format code with black
       run: |
-        black -l 115 t2t
+        black -l 100 t2t
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names

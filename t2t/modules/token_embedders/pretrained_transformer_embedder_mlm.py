@@ -17,7 +17,9 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     the future that we can replace it with a model from the https://github.com/allenai/allennlp-models repo.
     """
 
-    def __init__(self, model_name: str, max_length: int = None, masked_language_modeling: bool = True) -> None:
+    def __init__(
+        self, model_name: str, max_length: int = None, masked_language_modeling: bool = True
+    ) -> None:
         super().__init__(model_name, max_length)
         self.masked_language_modeling = masked_language_modeling
         self.tokenizer = PretrainedTransformerTokenizer(model_name)

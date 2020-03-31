@@ -76,7 +76,7 @@ local token_embedding_size = 768;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 10,
+        "num_epochs": 1,
         "checkpointer": {
             "num_serialized_models_to_keep": 1,
         },

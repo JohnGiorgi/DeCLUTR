@@ -55,7 +55,9 @@ def _generate_positives(anchors: List[str], nlp: spacy.lang):
     positives = []
 
     docs = nlp.pipe(anchors, n_process=-1)
-    for doc in tqdm(docs, total=len(anchors), desc="Generating positive examples", dynamic_ncols=True):
+    for doc in tqdm(
+        docs, total=len(anchors), desc="Generating positive examples", dynamic_ncols=True
+    ):
         # TODO (John): We don't want especially short sentences as they contain little information. As a temporary
         # hack, take the longest sentence from each anchor.
         sents = list(doc.sents)
@@ -67,7 +69,9 @@ def _generate_positives(anchors: List[str], nlp: spacy.lang):
         positives.append(sorted(sents, key=len)[-1].text)
 
     if dropped:
-        print(f"Dropped {dropped}/{len(anchors)} ({dropped/len(anchors):.2%}) anchors with no sentences.")
+        print(
+            f"Dropped {dropped}/{len(anchors)} ({dropped/len(anchors):.2%}) anchors with no sentences."
+        )
 
     return positives
 

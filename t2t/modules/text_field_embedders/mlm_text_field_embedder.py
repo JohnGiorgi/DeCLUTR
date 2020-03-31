@@ -24,7 +24,9 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
     def __init__(self, token_embedders: Dict[str, TokenEmbedder]) -> None:
         super().__init__(token_embedders)
 
-    def forward(self, text_field_input: TextFieldTensors, num_wrapping_dims: int = 0, **kwargs) -> torch.Tensor:
+    def forward(
+        self, text_field_input: TextFieldTensors, num_wrapping_dims: int = 0, **kwargs
+    ) -> torch.Tensor:
         if self._token_embedders.keys() != text_field_input.keys():
             message = "Mismatched token keys: %s and %s" % (
                 str(self._token_embedders.keys()),
@@ -53,7 +55,9 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
             if len(tensors) == 1 and len(missing_tensor_args) == 1:
                 # If there's only one tensor argument to the embedder, and we just have one tensor to
                 # embed, we can just pass in that tensor, without requiring a name match.
-                masked_lm_loss, token_vectors = embedder(list(tensors.values())[0], **forward_params_values)
+                masked_lm_loss, token_vectors = embedder(
+                    list(tensors.values())[0], **forward_params_values
+                )
             else:
                 # If there are multiple tensor arguments, we have to require matching names from the
                 # TokenIndexer.  I don't think there's an easy way around that.

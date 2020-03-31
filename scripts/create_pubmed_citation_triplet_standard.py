@@ -81,7 +81,9 @@ def main(
     _save_triplets_to_disk(triplets_filepath, triplets)
 
 
-def _load_and_cache_icite_metadata(input_dir: Path, output_dir: Path, cache: bool) -> Dict[str, Dict[str, set]]:
+def _load_and_cache_icite_metadata(
+    input_dir: Path, output_dir: Path, cache: bool
+) -> Dict[str, Dict[str, set]]:
     """"Load citations from disk if they are cached. Otherwise, parse the input dump."
 
     Args:
@@ -129,7 +131,8 @@ def _parse_icite_metadata(
             for line in tqdm(f):
                 contents = json.loads(line)
 
-                # Filter anything that isn't a reasearch article or has less than citation_count_threshold citations
+                # Filter anything that isn't a reasearch article or has less than citation_count_threshold
+                # citations
                 if (not contents["is_research_article"] and research_only) or contents[
                     "citation_count"
                 ] < citation_count_threshold:
@@ -140,9 +143,13 @@ def _parse_icite_metadata(
 
                 # Either references or cited_by can be null
                 if contents["references"] is not None:
-                    citations[pmid].update({str(pmid) for pmid in contents["references"].strip().split()})
+                    citations[pmid].update(
+                        {str(pmid) for pmid in contents["references"].strip().split()}
+                    )
                 if contents["cited_by"] is not None:
-                    citations[pmid].update({str(pmid) for pmid in contents["cited_by"].strip().split()})
+                    citations[pmid].update(
+                        {str(pmid) for pmid in contents["cited_by"].strip().split()}
+                    )
 
     return citations
 
@@ -199,11 +206,17 @@ def _compute_similarity(
         # is less than pos_neg_threshold and the positive examples similarity score exceeds pos_threshold
         # pmid_i is the positive example and pmid_j is the negative example
         if similarity_scores[0] >= pos_threshold:
-            if similarity_scores[1] >= neg_threshold and similarity_scores[1] <= pos_threshold - neg_margin:
+            if (
+                similarity_scores[1] >= neg_threshold
+                and similarity_scores[1] <= pos_threshold - neg_margin
+            ):
                 triplets.append((pmid_i, pmid_j, pmid_k))
         # pmid_j is the positive example and pmid_i is the negative example
         elif similarity_scores[1] >= pos_threshold:
-            if similarity_scores[0] >= neg_threshold and similarity_scores[0] <= pos_threshold - neg_margin:
+            if (
+                similarity_scores[0] >= neg_threshold
+                and similarity_scores[0] <= pos_threshold - neg_margin
+            ):
                 triplets.append((pmid_i, pmid_k, pmid_j))
 
     return triplets

@@ -26,7 +26,8 @@ def _mask_tokens(
     # defaults to 0.15 in Bert/RoBERTa)
     probability_matrix = torch.full(labels.shape, mlm_probability)
     special_tokens_mask = [
-        tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in labels.tolist()
+        tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True)
+        for val in labels.tolist()
     ]
     probability_matrix.masked_fill_(torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0)
     if tokenizer._pad_token is not None:
@@ -40,7 +41,9 @@ def _mask_tokens(
     inputs[indices_replaced] = tokenizer.convert_tokens_to_ids(tokenizer.mask_token)
 
     # 10% of the time, we replace masked input tokens with random word
-    indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+    indices_random = (
+        torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+    )
     random_words = torch.randint(len(tokenizer), labels.shape, dtype=torch.long)
     inputs[indices_random] = random_words[indices_random]
 
@@ -49,7 +52,9 @@ def _mask_tokens(
 
 
 def mask_tokens(
-    tokens: TextFieldTensors, tokenizer: PretrainedTransformerTokenizer, mlm_probability: float = 0.15
+    tokens: TextFieldTensors,
+    tokenizer: PretrainedTransformerTokenizer,
+    mlm_probability: float = 0.15,
 ) -> TextFieldTensors:
     device = tokens["tokens"]["token_ids"].device
     inputs, labels = _mask_tokens(tokens["tokens"]["token_ids"].to("cpu"), tokenizer.tokenizer)

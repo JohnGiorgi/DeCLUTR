@@ -3,14 +3,16 @@ from typing import Dict, Optional
 import torch
 
 from allennlp.data import TextFieldTensors, Vocabulary
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
-from t2t.models.contrastive_text_encoder_util import all_gather_anchor_positive_pairs, sample_anchor_positive_pairs
+from t2t.models.contrastive_text_encoder_util import (
+    all_gather_anchor_positive_pairs,
+    sample_anchor_positive_pairs,
+)
 
 
 @Model.register("constrastive")
@@ -118,7 +120,9 @@ class ContrastiveTextEncoder(Model):
                 embedded_anchor_text, embedded_positive_text
             )
 
-            embeddings, labels = self._loss.get_embeddings_and_labels(embedded_anchor_text, embedded_positive_text)
+            embeddings, labels = self._loss.get_embeddings_and_labels(
+                embedded_anchor_text, embedded_positive_text
+            )
             contrastive_loss = self._loss(embeddings, labels)
             output_dict["loss"] = contrastive_loss
             if anchor_masked_lm_loss is not None:

@@ -1,6 +1,6 @@
 ![build](https://github.com/JohnGiorgi/t2t/workflows/build/badge.svg?branch=master)
 
-# Contrastive Learning of Textual Representations
+# Contrastive Self-supervision for Textual Representations
 
 A contrastive, self-supervised method for learning textual representations.
 
@@ -44,7 +44,7 @@ Datasets should be text files where each line contains a raw text sequence. You 
 To train the model, run the following command
 
 ```bash
-allennlp train contrastive.jsonnet -s output --include-package t2t
+allennlp train configs/contrastive.jsonnet -s output --include-package t2t
 ```
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
@@ -65,17 +65,17 @@ allennlp predict output path/to/input.txt \
 
 This will:
 
-1. Load the model serialized to `output` with the weights from the epoch that achieved the best performance on the validation set.
+1. Load the model serialized to `output` with the "best" weights (i.e. the ones that achieved the lowest loss during training).
 2. Use that model to embed the text in the provided input file (`path/to/input.txt`).
 3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`output/embeddings.jsonl`)
 
 The text embeddings are stored in the field `"embeddings"` in `output/embeddings.jsonl`.
 
-> If your model was trained with a `FeedForward` module, it will also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).
+> If your model was trained with a `FeedForward` module, it would also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).
 
 ### Evaluating with SentEval
 
-[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to easily evaluate our model against SentEval.
+[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to evaluate our model against SentEval.
 
 First, clone the SentEval repository and download the transfer task datasets (you only need to do this once)
 
@@ -83,6 +83,7 @@ First, clone the SentEval repository and download the transfer task datasets (yo
 git clone https://github.com/facebookresearch/SentEval.git
 cd SentEval/data/downstream/
 ./get_transfer_data.bash
+cd ../../../
 ```
 
 > See the SentEval repository for full details.
@@ -97,6 +98,8 @@ python scripts/run_senteval.py allennlp SentEval output "contrastive" \
 ```
 
 The results will be saved to `output/senteval_results.json`. This can be changed to any path you like.
+
+> Pass the flag `--prototyping-config` to get a proxy of the results while dramatically reducing computation time.
 
 For a list of commands, run
 

@@ -44,7 +44,10 @@ Datasets should be text files where each line contains a raw text sequence. You 
 To train the model, run the following command
 
 ```bash
-allennlp train configs/contrastive.jsonnet -s output --include-package t2t
+allennlp train configs/contrastive.jsonnet \
+    -s output \
+    -o '{"train_data_path": "path/to/input.txt"}' \
+    --include-package t2t
 ```
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.

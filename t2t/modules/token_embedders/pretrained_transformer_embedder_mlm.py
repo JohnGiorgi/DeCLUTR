@@ -94,18 +94,24 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         # and fail even when it's given as None.
         # Also, as of transformers v2.5.1, they are taking FloatTensor masks.
         parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}
+        masked_lm_loss = None
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
-        if masked_lm_labels is not None:
-            parameters["masked_lm_labels"] = masked_lm_labels
-            loss, _, hidden_states = self.transformer_model(**parameters)
+        if self.masked_language_modeling:
+            # Even if masked_language_modeling is True, we may not be masked language modeling on the current
+            # batch. We still need to check if masked language modeling labels are present in the input.
+            if masked_lm_labels is not None:
+                parameters["masked_lm_labels"] = masked_lm_labels
+                masked_lm_loss, _, hidden_states = self.transformer_model(**parameters)
+            else:
+                _, hidden_states = self.transformer_model(**parameters)
             embeddings = hidden_states[-1]
         else:
-            loss, embeddings = None, self.transformer_model(**parameters)[0]
+            embeddings = self.transformer_model(**parameters)[0]
 
         if fold_long_sequences:
             embeddings = self._unfold_long_sequences(
                 embeddings, segment_concat_mask, batch_size, num_segment_concat_wordpieces
             )
 
-        return loss, embeddings
+        return masked_lm_loss, embeddings

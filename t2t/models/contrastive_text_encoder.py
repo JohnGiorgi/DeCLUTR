@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 import torch
 
+from allennlp.common.checks import ConfigurationError
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
@@ -68,6 +69,14 @@ class ContrastiveTextEncoder(Model):
         self._feedforward = feedforward
 
         self._loss = loss
+        if self._loss is None and not self._masked_language_modeling:
+            raise ConfigurationError(
+                (
+                    "No loss function provided. You must provide a contrastive loss"
+                    " (ContrastiveTextEncoder.loss) and/or specify masked_language_modeling=True in"
+                    " the config when training."
+                )
+            )
         initializer(self)
 
     def forward(  # type: ignore
@@ -128,14 +137,6 @@ class ContrastiveTextEncoder(Model):
                 output_dict["loss"] += self._loss(embeddings, labels)
             if anchor_masked_lm_loss is not None:
                 output_dict["loss"] += anchor_masked_lm_loss
-            if self._loss is None and anchor_masked_lm_loss is None:
-                raise ValueError(
-                    (
-                        "No loss function provided. You must provide a contrastive loss"
-                        " (ContrastiveTextEncoder.loss) and/or specify masked_language_modeling=True in"
-                        " the config when training."
-                    )
-                )
 
         return output_dict
 

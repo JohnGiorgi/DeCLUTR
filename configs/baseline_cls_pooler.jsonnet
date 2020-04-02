@@ -54,7 +54,7 @@ local token_embedding_size = 768;
         },
     },
     "data_loader": {
-        "batch_size": 1,
+        "batch_size": 10,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

@@ -278,6 +278,7 @@ def transformers(
     def prepare(params, samples):
         return
 
+    @torch.no_grad()
     def batcher(params, batch):
         # Re-tokenize the input text using the pre-trained tokenizer
         batch = [tokenizer.encode(" ".join(tokens)) for tokens in batch]
@@ -291,8 +292,7 @@ def transformers(
             torch.ones_like(input_ids),
         )
 
-        with torch.no_grad():
-            sequence_output, _ = params.model(input_ids=input_ids, attention_mask=attention_masks)
+        sequence_output, _ = params.model(input_ids=input_ids, attention_mask=attention_masks)
 
         # If mean_pool, we take the average of the token-level embeddings, accounting for pads.
         # Otherwise, we take the pooled output for this specific model, which is typically the linear projection
@@ -362,11 +362,11 @@ def sentence_transformers(
     def prepare(params, samples):
         return
 
+    @torch.no_grad()
     def batcher(params, batch):
         # Sentence Transformers API expects un-tokenized sentences.
         batch = [" ".join(tokens) for tokens in batch]
-        with torch.no_grad():
-            embeddings = params.model.encode(batch)
+        embeddings = params.model.encode(batch)
         embeddings = np.vstack(embeddings)
         return embeddings
 
@@ -415,11 +415,11 @@ def allennlp(
     def prepare(params, samples):
         return
 
+    @torch.no_grad()
     def batcher(params, batch):
-        with torch.no_grad():
-            # Re-tokenize the input text using the tokenizer of the dataset reader
-            inputs = [{"text": " ".join(tokens)} for tokens in batch]
-            outputs = params.predictor.predict_batch_json(inputs)
+        # Re-tokenize the input text using the tokenizer of the dataset reader
+        inputs = [{"text": " ".join(tokens)} for tokens in batch]
+        outputs = params.predictor.predict_batch_json(inputs)
         # AllenNLP models return a dictionary, so we need to access the embeddings with the given key.
         embeddings = [output[embeddings_field] for output in outputs]
 

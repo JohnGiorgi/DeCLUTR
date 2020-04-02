@@ -32,6 +32,7 @@ local token_embedding_size = 768;
         "cache_directory": null
     }, 
     "train_data_path": "t2t/tests/fixtures/data/wikitext-103/train.txt",
+    "validation_data_path": "t2t/tests/fixtures/data/wikitext-103/valid.txt",
     "model": {
         "type": "t2t.models.contrastive_text_encoder.ContrastiveTextEncoder",
         "text_field_embedder": {

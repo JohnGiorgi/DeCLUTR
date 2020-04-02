@@ -8,9 +8,12 @@ from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
+from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
-from t2t.models.contrastive_text_encoder_util import all_gather_anchor_positive_pairs, sample_anchor_positive_pairs
-
+from t2t.models.contrastive_text_encoder_util import (
+    all_gather_anchor_positive_pairs,
+    sample_anchor_positive_pairs,
+)
 
 @Model.register("MoCo")
 class MoCoText(Model):
@@ -22,8 +25,6 @@ class MoCoText(Model):
     vocab : `Vocabulary`
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
-    seq2seq_encoder : `Seq2SeqEncoder`, optional, (default=`None`)
-        Optional Seq2Seq encoder layer for the input text.
     seq2vec_encoder : `Seq2VecEncoder`
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
         will pool its output. Otherwise, this encoder will operate directly on the output
@@ -40,21 +41,23 @@ class MoCoText(Model):
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         loss: PyTorchMetricLearningLoss,
-        seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feedforward: Optional[FeedForward] = None,
         initializer: InitializerApplicator = InitializerApplicator(),
         dim: int = 768, # get this from config or somewhere else
         K: int = 1200, #queue size; number of negative keys (default: 65536)
         m: float = 0.999, # moco momentum of updating key encoder (default: 0.999)
-        T: float = 0.05, # softmax temperature (default: 0.07)
+        T: float = 0.001, # softmax temperature (default: 0.07)
         **kwargs,
     ) -> None:
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
+        # (HACK): This prevents the user from having to specify the tokenizer / masked language modeling
+        # objective again. In the future it would be great to come up with something more elegant.
+        self._token_embedder = self._text_field_embedder._token_embedders["tokens"]
+        self._tokenizer = self._token_embedder.tokenizer
+        self._masked_language_modeling = self._token_embedder.masked_language_modeling
 
-        self._seq2seq_encoder_q = seq2seq_encoder
-        self._seq2seq_encoder_k = seq2seq_encoder
         self._seq2vec_encoder_q = seq2vec_encoder
         self._seq2vec_encoder_k = seq2vec_encoder
         self._feedforward_q = feedforward
@@ -62,12 +65,6 @@ class MoCoText(Model):
         self.K = K
         self.m = m
         self.T = T
-
-        # Would be nice to turn the entire encoder into a self.encoder_k/q
-        if seq2seq_encoder is not None:
-            for param_q, param_k in zip(self._seq2seq_encoder_q.parameters(), self._seq2seq_encoder_k.parameters()):
-                param_k.data.copy_(param_q.data)  # initialize
-                #param_k.requires_grad = False  # not update by gradient
 
         if feedforward is not None:
             for param_q, param_k in zip(self._feedforward_q.parameters(), self._feedforward_k.parameters()):
@@ -86,7 +83,6 @@ class MoCoText(Model):
 
         # TODO: change this in config rather than hardcoding it here
         self._loss = nn.CrossEntropyLoss().cuda()
-        #self._loss = loss
         initializer(self)
 
     #@torch.no_grad()
@@ -97,11 +93,6 @@ class MoCoText(Model):
         for param_q, param_k in zip(self._seq2vec_encoder_q.parameters(), self._seq2vec_encoder_k.parameters()):
             param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
 
-        # TODO: find nicer way fo checking this, or make self.encoder_q/k
-        if self._seq2seq_encoder_q is not None:
-            for param_q, param_k in zip(self._seq2seq_encoder_q.parameters(), self._seq2seq_encoder_k.parameters()):
-                param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
-
         if self._feedforward_q is not None:
             for param_q, param_k in zip(self._feedforward_q.parameters(), self._feedforward_k.parameters()):
                 param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
@@ -110,7 +101,7 @@ class MoCoText(Model):
     def _dequeue_and_enqueue(self, keys):
         # gather keys before updating queue
         
-        # TODO: not used on w/o ddp
+        # TODO: uncomment if using ddp
         #keys = concat_all_gather(keys)
 
         batch_size = keys.shape[0]
@@ -120,7 +111,6 @@ class MoCoText(Model):
             print('leftover batch size:', batch_size)
 
         # replace the keys at ptr (dequeue and enqueue)
-        #TODO: find more elegant way to handle wrap-around
         if (ptr + batch_size) > self.queue.shape[1]:
             remainder = (ptr + batch_size) - self.queue.shape[1]
             self.queue[:, ptr:ptr + batch_size] = keys.T[:, :batch_size - remainder]
@@ -130,53 +120,6 @@ class MoCoText(Model):
         ptr = (ptr + batch_size) % self.K  # move pointer
 
         self.queue_ptr[0] = ptr
-
-    @torch.no_grad() #TODO: is shuffle needed for BN? if no -> remove
-    def _batch_shuffle_ddp(self, x):
-        """
-        Batch shuffle, for making use of BatchNorm.
-        *** Only support DistributedDataParallel (DDP) model. ***
-        """
-        # gather from all gpus
-        batch_size_this = x.shape[0]
-        x_gather = concat_all_gather(x)
-        batch_size_all = x_gather.shape[0]
-
-        num_gpus = batch_size_all // batch_size_this
-
-        # random shuffle index
-        idx_shuffle = torch.randperm(batch_size_all).cuda()
-
-        # broadcast to all gpus
-        torch.distributed.broadcast(idx_shuffle, src=0)
-
-        # index for restoring
-        idx_unshuffle = torch.argsort(idx_shuffle)
-
-        # shuffled index for this gpu
-        gpu_idx = torch.distributed.get_rank()
-        idx_this = idx_shuffle.view(num_gpus, -1)[gpu_idx]
-
-        return x_gather[idx_this], idx_unshuffle
-
-    @torch.no_grad()
-    def _batch_unshuffle_ddp(self, x, idx_unshuffle):
-        """
-        Undo batch shuffle.
-        *** Only support DistributedDataParallel (DDP) model. ***
-        """
-        # gather from all gpus
-        batch_size_this = x.shape[0]
-        x_gather = concat_all_gather(x)
-        batch_size_all = x_gather.shape[0]
-
-        num_gpus = batch_size_all // batch_size_this
-
-        # restored index for this gpu
-        gpu_idx = torch.distributed.get_rank()
-        idx_this = idx_unshuffle.view(num_gpus, -1)[gpu_idx]
-
-        return x_gather[idx_this]
 
     def forward(  # type: ignore
         self, tokens: TextFieldTensors,
@@ -210,43 +153,25 @@ class MoCoText(Model):
         # sample_anchor_positive_pairs splits the batch on the second dimension to get our anchor, positive pairs.
         if tokens["tokens"]["token_ids"].dim() == 3:
             anchors, positives = sample_anchor_positive_pairs(tokens)
+            # Mask anchor input ids and get labels required for MLM
+            if self._masked_language_modeling:
+                anchors = mask_tokens(anchors, self._tokenizer)
         else:
             anchors, positives = tokens, None
 
 
         # This is the textual representation learned by a trained model that will be used for downstream tasks.
-        q = self._forward_internal(anchors, output_dict, encoder_type='Query')
-        #TODO: is this normalize still necessary? taken from MoCo
+        anchor_masked_lm_loss, q = self._forward_internal(anchors, output_dict, encoder_type='Query')
+        #TODO: is this normalize still necessary? taken from MoCo, try ablation
         q = nn.functional.normalize(q, dim=1)
 
         if positives is not None:
             #with torch.no_grad():  # no gradient to keys
             self._momentum_update_key_encoder()  # update the key encoder
 
-            #TODO: is this necessary? functions need to be chhend to handle dicts
-            # shuffle for making use of BN
-            #positives, idx_unshuffle = self._batch_shuffle_ddp(positives)
-
-            k = self._forward_internal(positives, encoder_type='Key')
+            #TODO: modify so that this internal call doesn't giv mlm loss
+            _, k = self._forward_internal(positives, encoder_type='Key')
             k = nn.functional.normalize(k, dim=1)
-
-            # undo shuffle
-            #k = self._batch_unshuffle_ddp(k, idx_unshuffle)
-
-            #TODO: is this still necessary? probably not
-            # If we are training on multiple GPUs using DistributedDataParallel, then a naive application would
-            # result in 2 * (batch_size/n_gpus - 1) number of negatives per GPU. To avoid this, we need to
-            # gather the anchors/positives from each replica on every other replica in order to generate the
-            # correct number of negatives, 2 * (batch_size - 1), before computing the contrastive loss.
-            
-            #(q, k,) = all_gather_anchor_positive_pairs(
-            #    q, k
-            #)
-            
-            #embeddings, labels = PyTorchMetricLearningLoss.get_embeddings_and_labels(
-            #    q, k
-            #)
-
             
             # compute logits
             # Einstein sum is more intuitive
@@ -267,7 +192,10 @@ class MoCoText(Model):
             # dequeue and enqueue
             self._dequeue_and_enqueue(k)
 
+            #TODO: store as two separate losses
             output_dict["loss"] = self._loss(logits, labels)
+            if anchor_masked_lm_loss is not None:
+                output_dict["loss"] = output_dict["loss"] + anchor_masked_lm_loss
             
 
         return output_dict
@@ -280,19 +208,14 @@ class MoCoText(Model):
         '''
 
         if encoder_type == "Query":
-            seq2seq_encoder = self._seq2seq_encoder_q
             seq2vec_encoder = self._seq2vec_encoder_q
             feedforward = self._feedforward_q
         elif encoder_type == "Key":
-            seq2seq_encoder = self._seq2seq_encoder_k
             seq2vec_encoder = self._seq2vec_encoder_k
             feedforward = self._feedforward_k
 
-        embedded_text = self._text_field_embedder(tokens)
+        masked_lm_loss, embedded_text = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens).float()
-
-        if seq2seq_encoder is not None:
-            embedded_text = seq2seq_encoder(embedded_text, mask=mask)
 
         embedded_text = seq2vec_encoder(embedded_text, mask=mask)
         # Don't hold on to embeddings and projections during training.
@@ -308,7 +231,7 @@ class MoCoText(Model):
             if output_dict is not None and not self.training:
                 output_dict["projections"] = embedded_text.clone().detach()
 
-        return embedded_text
+        return masked_lm_loss, embedded_text
 
 
 # utils

@@ -15,6 +15,8 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     This is a wrapper around `PretrainedTransformerEmbedder` that allows us to train against a masked language
     modelling objective while we are embedding text. I don't like that we had to modify this class and hope in
     the future that we can replace it with a model from the https://github.com/allenai/allennlp-models repo.
+
+    Registered as a `TokenEmbedder` with name "pretrained_transformer_mlm".
     """
 
     def __init__(
@@ -22,8 +24,8 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     ) -> None:
         super().__init__(model_name, max_length)
         self.masked_language_modeling = masked_language_modeling
-        self.tokenizer = PretrainedTransformerTokenizer(model_name)
         if self.masked_language_modeling:
+            self.tokenizer = PretrainedTransformerTokenizer(model_name)
             # Models with LM heads may NOT include hidden states in their outputs by default
             config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
             self.transformer_model = AutoModelWithLMHead.from_pretrained(model_name, config=config)
@@ -96,10 +98,10 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
             parameters["token_type_ids"] = type_ids
         if masked_lm_labels is not None:
             parameters["masked_lm_labels"] = masked_lm_labels
-            loss, _, embeddings = self.transformer_model(**parameters)
+            loss, _, hidden_states = self.transformer_model(**parameters)
+            embeddings = hidden_states[-1]
         else:
-            loss, embeddings = None, self.transformer_model(**parameters)[1]
-        embeddings = embeddings[-1]  # The model returns hidden states from every layer
+            loss, embeddings = None, self.transformer_model(**parameters)[0]
 
         if fold_long_sequences:
             embeddings = self._unfold_long_sequences(

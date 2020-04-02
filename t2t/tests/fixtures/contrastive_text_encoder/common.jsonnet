@@ -35,28 +35,14 @@ local token_embedding_size = 768;
     "validation_data_path": "t2t/tests/fixtures/data/wikitext-103/valid.txt",
     "model": {
         "type": "t2t.models.contrastive_text_encoder.ContrastiveTextEncoder",
-        "text_field_embedder": {
-            "type": "t2t.modules.text_field_embedders.mlm_text_field_embedder.MLMTextFieldEmbedder",
-            "token_embedders": {
-                "tokens": {
-                    "type": "t2t.modules.token_embedders.pretrained_transformer_embedder_mlm.PretrainedTransformerEmbedderMLM",
-                    "model_name": pretrained_transformer_model_name,
-                    "masked_language_modeling": true
-                },
-            },
-        },
         "seq2vec_encoder": {
             "type": "bag_of_embeddings",
             "embedding_dim": token_embedding_size,
             "averaged": true
         },
-        "loss": {
-            "type": "t2t.losses.pytorch_metric_learning.NTXentLoss",
-            "temperature": 0.001,
-        },
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 5,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

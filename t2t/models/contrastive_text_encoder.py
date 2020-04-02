@@ -21,16 +21,15 @@ class ContrastiveTextEncoder(Model):
     This `Model` implements a text encoder trained against a contrastive, self-supervised objective.
     After embedding the text into a text field, we will optionally encode the embeddings with a `Seq2SeqEncoder`.
     The resulting sequence is pooled using a `Seq2VecEncoder` and then passed to a `FeedFoward` layer, which
-    projects the embeddings to a certain size. If a `Seq2SeqEncoder` is not provided, we will pass the embedded
-    text directly to the `Seq2VecEncoder`.
+    projects the embeddings to a certain size.
+
+    Registered as a `Model` with name "constrastive".
 
     # Parameters
 
     vocab : `Vocabulary`
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
-    seq2seq_encoder : `Seq2SeqEncoder`, optional, (default=`None`)
-        Optional Seq2Seq encoder layer for the input text.
     seq2vec_encoder : `Seq2VecEncoder`
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
         will pool its output. Otherwise, this encoder will operate directly on the output
@@ -61,8 +60,9 @@ class ContrastiveTextEncoder(Model):
         # (HACK): This prevents the user from having to specify the tokenizer / masked language modeling
         # objective. In the future it would be great to come up with something more elegant.
         token_embedder = self._text_field_embedder._token_embedders["tokens"]
-        self._tokenizer = token_embedder.tokenizer
         self._masked_language_modeling = token_embedder.masked_language_modeling
+        if self._masked_language_modeling:
+            self._tokenizer = token_embedder.tokenizer
 
         self._seq2vec_encoder = seq2vec_encoder
         self._feedforward = feedforward
@@ -125,10 +125,8 @@ class ContrastiveTextEncoder(Model):
                 embeddings, labels = self._loss.get_embeddings_and_labels(
                     embedded_anchor_text, embedded_positive_text
                 )
-                output_dict["contrastive_loss"] = self._loss(embeddings, labels)
                 output_dict["loss"] += self._loss(embeddings, labels)
             if anchor_masked_lm_loss is not None:
-                output_dict["masked_lm_loss"] = anchor_masked_lm_loss
                 output_dict["loss"] += anchor_masked_lm_loss
             if self._loss is None and anchor_masked_lm_loss is None:
                 raise ValueError(

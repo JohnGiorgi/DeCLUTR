@@ -25,12 +25,16 @@ class ContrastiveDatasetReader(DatasetReader):
     The output of `read` is a list of `Instance` s with the field:
         tokens : `ListField[TextField]`
 
+    Registered as a `DatasetReader` with name "contrastive".
+
     # Parameters
 
+   token_indexers : `Dict[str, TokenIndexer]`, optional
+        optional (default=`{"tokens": SingleIdTokenIndexer()}`)
+        We use this to define the input representation for the text.
+        See :class:`TokenIndexer`.
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
-    token_indexers : `Dict[str, TokenIndexer]`, optional (default=`{"tokens": SingleIdTokenIndexer()}`)
-        We use this to define the input representation for the text. See :class:`TokenIndexer`.
     sample_spans : `bool`, optional (default = True)
         If True, two spans will be sampled from each input, tokenized and indexed.
     min_span_len : `int`, optional (default = 1)
@@ -40,8 +44,8 @@ class ContrastiveDatasetReader(DatasetReader):
 
     def __init__(
         self,
-        tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
+        tokenizer: Tokenizer = None,
         sample_spans: bool = False,
         min_span_len: Optional[int] = None,
         **kwargs,

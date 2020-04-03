@@ -49,7 +49,9 @@ class PyTorchMetricLearningLoss(Registrable):
 @PyTorchMetricLearningLoss.register("nt_xent")
 class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
     """Wraps the `NTXentLoss` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#ntxentloss)
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#ntxentloss).
+
+    Registered as a `PyTorchMetricLearningLoss` with name "nt_xent".
     """
 
     def __init__(
@@ -71,7 +73,9 @@ class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
 @PyTorchMetricLearningLoss.register("cross_batch_memory")
 class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
     """Wraps the `CrossBatchMemory` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#crossbatchmemory)
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#crossbatchmemory).
+
+    Registered as a `PyTorchMetricLearningLoss` with name "cross_batch_memory".
     """
 
     def __init__(

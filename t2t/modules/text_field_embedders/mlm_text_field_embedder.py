@@ -19,6 +19,8 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
     language modelling objective as well as some embedded text. I don't like that we had to modify this class
     and hope in the future that we can replace it with a model from the https://github.com/allenai/allennlp-models
     repo.
+
+    Registered as a `TextFieldEmbedder` with name "mlm".
     """
 
     def __init__(self, token_embedders: Dict[str, TokenEmbedder]) -> None:

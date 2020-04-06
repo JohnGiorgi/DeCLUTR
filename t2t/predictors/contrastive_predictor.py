@@ -9,7 +9,10 @@ from allennlp.predictors.predictor import Predictor
 
 @Predictor.register("contrastive")
 class ContrastivePredictor(Predictor):
-    """Predictor wrapper for the ContrastiveTextEncoder"""
+    """Predictor wrapper for the ContrastiveTextEncoder.
+
+    Registered as a `Predictor` with name "contrastive".
+    """
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:

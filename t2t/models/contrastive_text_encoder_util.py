@@ -6,7 +6,7 @@ import torch.distributed as dist
 from allennlp.data import TextFieldTensors
 
 
-def sample_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensors]:
+def get_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensors]:
     """Returns a tuple of `TextFieldTensors` containing random batches of anchors and positives from tokens.
 
     # Parameters

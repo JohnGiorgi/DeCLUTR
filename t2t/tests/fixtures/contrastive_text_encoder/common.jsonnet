@@ -11,7 +11,7 @@ local token_embedding_size = 768;
 
 {
     "dataset_reader": {
-        "type": "contrastive",
+        "type": "t2t.data.dataset_readers.contrastive.ContrastiveDatasetReader",
         "lazy": true,
         "sample_spans": true,
         // This is (approximately an upper bound on sentence length in English
@@ -31,31 +31,18 @@ local token_embedding_size = 768;
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     }, 
-    "train_data_path": "",
+    "train_data_path": "t2t/tests/fixtures/data/wikitext-103/train.txt",
+    "validation_data_path": "t2t/tests/fixtures/data/wikitext-103/valid.txt",
     "model": {
-        "type": "constrastive",
-        "text_field_embedder": {
-            "type": "mlm",
-            "token_embedders": {
-                "tokens": {
-                    "type": "pretrained_transformer_mlm",
-                    "model_name": pretrained_transformer_model_name,
-                    "masked_language_modeling": true
-                },
-            },
-        },
+        "type": "t2t.models.contrastive_text_encoder.ContrastiveTextEncoder",
         "seq2vec_encoder": {
             "type": "bag_of_embeddings",
             "embedding_dim": token_embedding_size,
             "averaged": true
         },
-        "loss": {
-            "type": "nt_xent",
-            "temperature": 0.001,
-        },
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 5,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -80,10 +67,7 @@ local token_embedding_size = 768;
         "checkpointer": {
             "num_serialized_models_to_keep": 1,
         },
+        "cuda_device": -1,
         "grad_norm": 1.0,
-    },
-    // This is where you would specify the CUDA devices to use for training
-    "distributed" : {
-        "cuda_devices": [0, 1],
     },
 }

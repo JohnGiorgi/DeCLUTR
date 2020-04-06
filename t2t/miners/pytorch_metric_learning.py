@@ -17,7 +17,9 @@ class PyTorchMetricLearningMiner(Registrable):
 @PyTorchMetricLearningMiner.register("batch_hard")
 class BatchHardMiner(PyTorchMetricLearningMiner, miners.BatchHardMiner):
     """Wraps the `BatchHardMinder` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#batchhardminer)
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#batchhardminer).
+
+    Registered as a `PyTorchMetricLearningMiner` with name "batch_hard".
     """
 
     def __init__(
@@ -34,11 +36,12 @@ class BatchHardMiner(PyTorchMetricLearningMiner, miners.BatchHardMiner):
         )
 
 
-@PyTorchMetricLearningMiner.register("hdc")
 @PyTorchMetricLearningMiner.register("hard_aware")
 class HDCMiner(PyTorchMetricLearningMiner, miners.HDCMiner):
     """Wraps the `HDCMiner` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#hdcminer)
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#hdcminer).
+
+    Registered as a `PyTorchMetricLearningMiner` with name "hard_aware".
     """
 
     def __init__(

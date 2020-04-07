@@ -280,8 +280,7 @@ def transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # I am not sure why, but some SentEval tasks contain empty batches which triggers an error
-        # with HuggingfFace's tokenizer.
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
         batch = [sent if sent != [] else ["."] for sent in batch]
@@ -369,8 +368,7 @@ def sentence_transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # I am not sure why, but some SentEval tasks contain empty batches which triggers an error
-        # with HuggingfFace's tokenizer.
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
         batch = [sent if sent != [] else ["."] for sent in batch]
@@ -428,8 +426,7 @@ def allennlp(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # I am not sure why, but some SentEval tasks contain empty batches which triggers an error
-        # with HuggingfFace's tokenizer.
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
         batch = [sent if sent != [] else ["."] for sent in batch]

@@ -284,7 +284,7 @@ def transformers(
         # with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ['.'] for sent in batch]
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Re-tokenize the input text using the pre-trained tokenizer
         batch = [tokenizer.encode(" ".join(tokens)) for tokens in batch]
         batch = _pad_sequences(batch, tokenizer.pad_token_id)
@@ -373,7 +373,7 @@ def sentence_transformers(
         # with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ['.'] for sent in batch]
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Sentence Transformers API expects un-tokenized sentences.
         batch = [" ".join(tokens) for tokens in batch]
         embeddings = params.model.encode(batch)
@@ -432,7 +432,7 @@ def allennlp(
         # with HuggingfFace's tokenizer.
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ['.'] for sent in batch]
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Re-tokenize the input text using the tokenizer of the dataset reader
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)

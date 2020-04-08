@@ -56,7 +56,18 @@ allennlp train configs/contrastive.jsonnet \
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
 
-> We also provide a config for distributed training ([`contrastive_distributed.jsonnet`](configs/contrastive_distributed.jsonnet)).
+#### Multi-GPU training
+
+To train on more than one GPU, provide a list of CUDA devices in your call to `allennlp train`. For example, to train with four CUDA devices with IDs `0, 1, 2, 3`
+
+```bash
+allennlp train configs/contrastive.jsonnet \
+    -s output \
+    -o '{"train_data_path": "path/to/input.txt", "distributed.cuda_devices": [0, 1, 2, 3]}' \
+    --include-package t2t
+```
+
+> You can also add this to a [config](config), if you prefer.
 
 ### Embedding
 

@@ -67,7 +67,7 @@ allennlp train configs/contrastive.jsonnet \
     --include-package t2t
 ```
 
-> You can also add this to a [config](config), if you prefer.
+> You can also add this to a [config](configs), if you prefer.
 
 ### Embedding
 

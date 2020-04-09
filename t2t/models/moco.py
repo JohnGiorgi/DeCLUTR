@@ -10,10 +10,7 @@ from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
-from t2t.models.contrastive_text_encoder_util import (
-    all_gather_anchor_positive_pairs,
-    sample_anchor_positive_pairs,
-)
+from t2t.models.contrastive_text_encoder_util import get_anchor_positive_pairs
 
 @Model.register("MoCo")
 class MoCoText(Model):
@@ -152,7 +149,7 @@ class MoCoText(Model):
         # If token_ids contains a third dimension, then spans were sampled during the data loading process.
         # sample_anchor_positive_pairs splits the batch on the second dimension to get our anchor, positive pairs.
         if tokens["tokens"]["token_ids"].dim() == 3:
-            anchors, positives = sample_anchor_positive_pairs(tokens)
+            anchors, positives = get_anchor_positive_pairs(tokens)
             # Mask anchor input ids and get labels required for MLM
             if self._masked_language_modeling:
                 anchors = mask_tokens(anchors, self._tokenizer)

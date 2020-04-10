@@ -88,7 +88,7 @@ To use the model "as a library," import `Encoder` and pass it some text (it acce
 from t2t import Encoder
 
 encoder = Encoder("path/to/serialized/model")
-embeddings = encode([
+embeddings = encoder([
     "A smiling costumed woman is holding an umbrella.",
     "A happy woman in a fairy costume holds an umbrella."
 ])

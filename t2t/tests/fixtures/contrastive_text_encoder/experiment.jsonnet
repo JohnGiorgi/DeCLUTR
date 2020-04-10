@@ -1,8 +1,5 @@
 local COMMON = import 'common.jsonnet';
-local pretrained_transformer_model_name = "distilroberta-base";
-
-local COMMON = import 'common.jsonnet';
-local pretrained_transformer_model_name = "distilroberta-base";
+local transformer_model = "distilroberta-base";
 
 {
     "dataset_reader": COMMON['dataset_reader'],
@@ -16,7 +13,7 @@ local pretrained_transformer_model_name = "distilroberta-base";
             "token_embedders": {
                 "tokens": {
                     "type": "t2t.modules.token_embedders.pretrained_transformer_embedder_mlm.PretrainedTransformerEmbedderMLM",
-                    "model_name": pretrained_transformer_model_name,
+                    "model_name": transformer_model,
                     "masked_language_modeling": true
                 },
             },

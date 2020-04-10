@@ -440,13 +440,13 @@ def allennlp(
         return embeddings
 
     # This allows us to import custom dataset readers and models that may exist in the AllenNLP archive.
-    # See: https://github.com/allenai/allennlp/blob/e19605aae05eff60b0f41dc521b9787867fa58dd/allennlp/commands/train.py#L404
+    # See: https://tinyurl.com/whkmoqh
     include_package = include_package or []
     for package_name in include_package:
         common_util.import_module_and_submodules(package_name)
 
     # Load the archived Model
-    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device)
+    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device, opt_level=opt_level)
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(
         f"{SUCCESS}  Model from AllenNLP archive loaded successfully.",

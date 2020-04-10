@@ -280,6 +280,10 @@ def transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
+        # I am using the solution found in the SentEvel repo here:
+        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Re-tokenize the input text using the pre-trained tokenizer
         batch = [tokenizer.encode(" ".join(tokens)) for tokens in batch]
         batch = _pad_sequences(batch, tokenizer.pad_token_id)
@@ -364,6 +368,10 @@ def sentence_transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
+        # I am using the solution found in the SentEvel repo here:
+        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Sentence Transformers API expects un-tokenized sentences.
         batch = [" ".join(tokens) for tokens in batch]
         embeddings = params.model.encode(batch)
@@ -401,6 +409,7 @@ def allennlp(
     prototyping_config: bool = False,
     embeddings_field: str = "embeddings",
     cuda_device: int = -1,
+    opt_level: str = "O0",
     include_package: List[str] = None,
     verbose: bool = False,
 ) -> None:
@@ -417,6 +426,10 @@ def allennlp(
 
     @torch.no_grad()
     def batcher(params, batch):
+        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
+        # I am using the solution found in the SentEvel repo here:
+        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
+        batch = [sent if sent != [] else ["."] for sent in batch]
         # Re-tokenize the input text using the tokenizer of the dataset reader
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)
@@ -427,13 +440,13 @@ def allennlp(
         return embeddings
 
     # This allows us to import custom dataset readers and models that may exist in the AllenNLP archive.
-    # See: https://github.com/allenai/allennlp/blob/e19605aae05eff60b0f41dc521b9787867fa58dd/allennlp/commands/train.py#L404
+    # See: https://tinyurl.com/whkmoqh
     include_package = include_package or []
     for package_name in include_package:
         common_util.import_module_and_submodules(package_name)
 
     # Load the archived Model
-    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device)
+    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device, opt_level=opt_level)
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(
         f"{SUCCESS}  Model from AllenNLP archive loaded successfully.",

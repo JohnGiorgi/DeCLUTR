@@ -31,13 +31,23 @@ For the time being, please install [AllenNLP](https://github.com/allenai/allennl
 
 #### Enabling mixed-precision training
 
-If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs).
+If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs), or, equivalently, pass the following flag to `allennlp train`
+
+```bash
+--overrides '{"trainer.opt_level": "O1"}'
+```
 
 ## Usage
 
 ### Preparing a dataset
 
 Datasets should be text files where each line contains a raw text sequence. You can specify different partitions in the [configs](configs) under `"train_data_path"`, `"validation_data_path"` and `"test_data_path"`.
+
+We provide scripts to download some popular datasets and prepare them for training with our model. For example, to download [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) (with minimal preprocessing), you can call
+
+```bash
+python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt
+```
 
 ### Training
 
@@ -51,6 +61,19 @@ allennlp train configs/contrastive.jsonnet \
 ```
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
+
+#### Multi-GPU training
+
+To train on more than one GPU, provide a list of CUDA devices in your call to `allennlp train`. For example, to train with four CUDA devices with IDs `0, 1, 2, 3`
+
+```bash
+allennlp train configs/contrastive.jsonnet \
+    -s output \
+    -o '{"train_data_path": "path/to/input.txt", "distributed.cuda_devices": [0, 1, 2, 3]}' \
+    --include-package t2t
+```
+
+> You can also add this to a [config](configs), if you prefer.
 
 ### Embedding
 

@@ -147,7 +147,7 @@ def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = Non
 
         model = amp.initialize(model, opt_level=opt_level)
         typer.secho(
-            f'{FAST} Using mixed-precision with "opt_level={opt_level}".',
+            f'{FAST}  Using mixed-precision with "opt_level={opt_level}".',
             fg=typer.colors.WHITE,
             bold=True,
         )
@@ -174,8 +174,8 @@ def _setup_senteval(
     if prototyping_config:
         typer.secho(
             (
-                f"{WARNING} Using prototyping config. Pass --no-prototyping-config to get results comparable to"
-                "  the literature."
+                f"{WARNING}  Using prototyping config. Pass --no-prototyping-config to get results comparable to"
+                " the literature."
             ),
             fg=typer.colors.YELLOW,
             bold=True,
@@ -222,7 +222,7 @@ def _run_senteval(
 
     aggregate_scores = _compute_aggregate_scores(results)
     typer.secho(
-        f'{SCORE} Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
+        f'{SCORE}  Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
         fg=typer.colors.WHITE,
         bold=True,
     )
@@ -242,7 +242,7 @@ def _run_senteval(
         )
     else:
         typer.secho(
-            f"{WARNING} --output_filepath was not provided, printing results to console instead.",
+            f"{WARNING}  --output_filepath was not provided, printing results to console instead.",
             fg=typer.colors.YELLOW,
             bold=True,
         )
@@ -262,10 +262,10 @@ def transformers(
     path_to_senteval: str,
     pretrained_model_name_or_path: str,
     output_filepath: str = None,
-    prototyping_config: bool = False,
     mean_pool: bool = False,
     cuda_device: int = -1,
     opt_level: str = None,
+    prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
     """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark.
@@ -328,7 +328,7 @@ def transformers(
     model = AutoModel.from_pretrained(pretrained_model_name_or_path).to(device)
     model.eval()
     typer.secho(
-        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -351,9 +351,9 @@ def sentence_transformers(
     path_to_senteval: str,
     pretrained_model_name_or_path: str,
     output_filepath: str = None,
-    prototyping_config: bool = False,
     cuda_device: int = -1,
     opt_level: str = None,
+    prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
     """Evaluates a pre-trained model from the Sentence Transformers library against the SentEval benchmark.
@@ -385,7 +385,7 @@ def sentence_transformers(
     model = SentenceTransformer(pretrained_model_name_or_path, device=device)
     model.eval()
     typer.secho(
-        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
+        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -404,13 +404,14 @@ def sentence_transformers(
 def allennlp(
     path_to_senteval: str,
     path_to_allennlp_archive: str,
-    predictor_name: str,
     output_filepath: str = None,
-    prototyping_config: bool = False,
-    embeddings_field: str = "embeddings",
+    weights_file: str = None,
     cuda_device: int = -1,
     opt_level: str = "O0",
+    output_dict_field: str = "embeddings",
+    predictor_name: str = None,
     include_package: List[str] = None,
+    prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
     """Evaluates a trained AllenNLP model against the SentEval benchmark.
@@ -434,7 +435,7 @@ def allennlp(
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)
         # AllenNLP models return a dictionary, so we need to access the embeddings with the given key.
-        embeddings = [output[embeddings_field] for output in outputs]
+        embeddings = [output[output_dict_field] for output in outputs]
 
         embeddings = np.vstack(embeddings)
         return embeddings
@@ -446,10 +447,15 @@ def allennlp(
         common_util.import_module_and_submodules(package_name)
 
     # Load the archived Model
-    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device, opt_level=opt_level)
+    archive = load_archive(
+        path_to_allennlp_archive,
+        cuda_device=cuda_device,
+        opt_level=opt_level,
+        weights_file=weights_file,
+    )
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(
-        f"{SUCCESS}  Model from AllenNLP archive loaded successfully.",
+        f'{SUCCESS}  Model from AllenNLP archive "{path_to_allennlp_archive}" loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )

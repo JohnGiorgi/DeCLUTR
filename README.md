@@ -77,7 +77,36 @@ allennlp train configs/contrastive.jsonnet \
 
 ### Embedding
 
-To embed text with a trained model, run the following command
+1. As a library (e.g. import and initialize an object which can be used to embed sentences/paragraphs).
+2. Bulk embed all text in a given text file with a simple command-line interface.
+
+#### As a library
+
+To use the model "as a library," import `Encoder` and pass it some text (it accepts both strings and lists of strings)
+
+```python
+from t2t import Encoder
+
+encoder = Encoder("path/to/serialized/model")
+embeddings = encoder([
+    "A smiling costumed woman is holding an umbrella.",
+    "A happy woman in a fairy costume holds an umbrella."
+])
+```
+
+these embeddings can then be used, for example, to compute the semantic similarity between some number of sentences or paragraphs
+
+```python
+from scipy.spatial.distance import cosine
+
+semantic_sim = cosine(embeddings[0], embeddings[1])
+```
+
+> In the future, we will host pre-trained weights online, so that a model name can be passed to `Encoder` and the model will be automatically downloaded. 
+
+#### Bulk embed a file
+
+To embed all text in a given file with a trained model, run the following command
 
 ```bash
 allennlp predict output path/to/input.txt \
@@ -117,9 +146,10 @@ cd ../../../
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval.py allennlp SentEval output "contrastive" \
+python scripts/run_senteval.py allennlp SentEval output 
  --output-filepath output/senteval_results.json \
  --cuda-device 0  \
+ --predictor-name "contrastive" \
  --include-package t2t
 ```
 

@@ -51,8 +51,10 @@ local token_embedding_size = 768;
         },
         "loss": {
             "type": "nt_xent", // TODO: MoCo currently has hardcoded loss
-            "temperature": 0.005,
+            "temperature": 0.0005,
         },
+        "K": 6000,
+        "T": 0.0005,
     },
     "data_loader": {
         "batch_size": 10,
@@ -67,7 +69,7 @@ local token_embedding_size = 768;
         "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
-            "lr": 2e-6,
+            "lr": 2e-5,
             "weight_decay": 0.0,
             "parameter_groups": [
                 # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases

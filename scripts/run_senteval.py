@@ -251,6 +251,33 @@ def _run_senteval(
 
 
 @app.command()
+def random(
+    path_to_senteval: str,
+    embedding_dim: int = 512,
+    output_filepath: str = None,
+    prototyping_config: bool = False,
+    verbose: bool = False,
+) -> None:
+    """Sanity check that evaluates randomly initialized vectors against the SentEval benchmark.
+    """
+
+    # SentEval prepare and batcher
+    def prepare(params, samples):
+        return
+
+    @torch.no_grad()
+    def batcher(params, batch):
+        embeddings = torch.randn(len(batch), embedding_dim)
+        return embeddings.numpy()
+
+    # Performs a few setup steps and returns the SentEval params
+    params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
+    _run_senteval(params_senteval, path_to_senteval, batcher, prepare, output_filepath)
+
+    return
+
+
+@app.command()
 def bow() -> None:
     """Evaluates pre-trained word vectors against the SentEval benchmark.
     """

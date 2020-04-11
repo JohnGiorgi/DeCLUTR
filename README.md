@@ -82,7 +82,7 @@ allennlp train configs/contrastive.jsonnet \
 
 #### As a library
 
-To use the model "as a library," import `Encoder` and pass it some text (it accepts both strings and lists of strings)
+To use the model as a library, import `Encoder` and pass it some text (it accepts both strings and lists of strings)
 
 ```python
 from t2t import Encoder
@@ -99,7 +99,7 @@ these embeddings can then be used, for example, to compute the semantic similari
 ```python
 from scipy.spatial.distance import cosine
 
-semantic_sim = cosine(embeddings[0], embeddings[1])
+semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
 
 > In the future, we will host pre-trained weights online, so that a model name can be passed to `Encoder` and the model will be automatically downloaded. 
@@ -141,7 +141,7 @@ cd SentEval/data/downstream/
 cd ../../../
 ```
 
-> See the SentEval repository for full details.
+> See the [SentEval](https://github.com/facebookresearch/SentEval) repository for full details.
 
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 

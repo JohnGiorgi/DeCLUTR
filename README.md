@@ -146,9 +146,10 @@ cd ../../../
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval.py allennlp SentEval output "contrastive" \
+python scripts/run_senteval.py allennlp SentEval output 
  --output-filepath output/senteval_results.json \
  --cuda-device 0  \
+ --predictor-name "contrastive" \
  --include-package t2t
 ```
 

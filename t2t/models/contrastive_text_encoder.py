@@ -151,7 +151,6 @@ class ContrastiveTextEncoder(Model):
         # Don't hold on to embeddings or projections during training.
         if output_dict is not None and not self.training:
             output_dict["embeddings"] = embedded_text.clone().detach()
-            # output_dict["embeddings"] /= torch.norm(output_dict["embeddings"])
 
         # Representations produced by a non-linear projection can be used for training with a contrastive loss.
         # Previous works in computer vision have found this projection head to improve the quality of the learned
@@ -162,6 +161,5 @@ class ContrastiveTextEncoder(Model):
             embedded_text = self._feedforward(embedded_text)
             if output_dict is not None and not self.training:
                 output_dict["projections"] = embedded_text.clone().detach()
-                # output_dict["projections"] /= torch.norm(output_dict["projections"])
 
         return masked_lm_loss, embedded_text

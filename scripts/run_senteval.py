@@ -28,23 +28,28 @@ app = typer.Typer()
 # Set up logger
 logger = logging.getLogger(__name__)
 
+# URL to the TF Hub download for Google USE large model
+GOOGLE_USE_TF_HUB = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+
 DOWNSTREAM_TASKS = [
-    "STS12",
-    "STS13",
-    "STS14",
-    "STS15",
-    "STS16",
-    "MR",
     "CR",
+    "MR",
     "MPQA",
     "SUBJ",
     "SST2",
     "SST5",
     "TREC",
     "MRPC",
+    # "SNLI",
     "SICKEntailment",
     "SICKRelatedness",
     "STSBenchmark",
+    # "ImageCaptionRetrieval",
+    "STS12",
+    "STS13",
+    "STS14",
+    "STS15",
+    "STS16",
 ]
 PROBING_TASKS = [
     "Length",
@@ -71,8 +76,8 @@ SCORE = "\U0001F4CB"
 
 
 def _get_device(cuda_device):
-    """Return a `torch.cuda` device if `torch.cuda.is_available()` and `cuda_device` is non-negative. Otherwise
-    returns a `torch.cpu` device.
+    """Return a `torch.cuda` device if `torch.cuda.is_available()` and `cuda_device>=0`.
+    Otherwise returns a `torch.cpu` device.
     """
     if cuda_device != -1 and torch.cuda.is_available():
         device = torch.device("cuda")
@@ -95,7 +100,7 @@ def _compute_aggregate_scores(results):
         # All of this conditional logic is required to deal with the various ways performance is
         # reported for each task.
         # These two tasks report pearsonr for dev and spearman for test. Not sure why?
-        if task == "STSBenchmark" or task == "SICKRelatedness":
+        if task == "SICKRelatedness" or task == "STSBenchmark":
             aggregate_scores[task_set]["dev"] += scores["devpearson"] * 100
             aggregate_scores[task_set]["test"] += scores["spearman"] * 100
         # There are no partitions for these tasks as no model is trained on top of the embeddings,
@@ -147,7 +152,7 @@ def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = Non
 
         model = amp.initialize(model, opt_level=opt_level)
         typer.secho(
-            f'{FAST}  Using mixed-precision with "opt_level={opt_level}".',
+            f'{FAST} Using mixed-precision with "opt_level={opt_level}".',
             fg=typer.colors.WHITE,
             bold=True,
         )
@@ -174,7 +179,7 @@ def _setup_senteval(
     if prototyping_config:
         typer.secho(
             (
-                f"{WARNING}  Using prototyping config. Pass --no-prototyping-config to get results comparable to"
+                f"{WARNING} Using prototyping config. Pass --no-prototyping-config to get results comparable to"
                 " the literature."
             ),
             fg=typer.colors.YELLOW,
@@ -208,21 +213,21 @@ def _run_senteval(
     import senteval
 
     typer.secho(
-        f"{SUCCESS}  SentEval repository and transfer task data loaded successfully.",
+        f"{SUCCESS} SentEval repository and transfer task data loaded successfully.",
         fg=typer.colors.GREEN,
         bold=True,
     )
     typer.secho(
-        f"{RUNNING}  Running evaluation. This may take a while!", fg=typer.colors.WHITE, bold=True
+        f"{RUNNING} Running evaluation. This may take a while!", fg=typer.colors.WHITE, bold=True
     )
 
     se = senteval.engine.SE(params, batcher, prepare)
     results = se.eval(TRANSFER_TASKS)
-    typer.secho(f"{SUCCESS}  Evaluation complete!", fg=typer.colors.GREEN, bold=True)
+    typer.secho(f"{SUCCESS} Evaluation complete!", fg=typer.colors.GREEN, bold=True)
 
     aggregate_scores = _compute_aggregate_scores(results)
     typer.secho(
-        f'{SCORE}  Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
+        f'{SCORE} Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
         fg=typer.colors.WHITE,
         bold=True,
     )
@@ -238,11 +243,11 @@ def _run_senteval(
             json_safe_results["aggregate_scores"] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
         typer.secho(
-            f"{SAVING}  Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True
+            f"{SAVING} Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True
         )
     else:
         typer.secho(
-            f"{WARNING}  --output_filepath was not provided, printing results to console instead.",
+            f"{WARNING} --output_filepath was not provided, printing results to console instead.",
             fg=typer.colors.YELLOW,
             bold=True,
         )
@@ -282,6 +287,52 @@ def bow() -> None:
     """Evaluates pre-trained word vectors against the SentEval benchmark.
     """
     raise NotImplementedError
+
+
+@app.command()
+def google_use(
+    path_to_senteval: str,
+    output_filepath: str = None,
+    tfhub_model_url: str = GOOGLE_USE_TF_HUB,
+    tfhub_cache_dir: str = None,
+    prototyping_config: bool = False,
+    verbose: bool = False,
+) -> None:
+    """Evaluates a Google USE model from TF Hub against the SentEval benchmark
+    (see: https://tfhub.dev/google/universal-sentence-encoder-large/5 for information on the pre-trained model).
+    If you would like to use a cached model instead of downloading one, following the instructions
+    here: https://medium.com/@xianbao.qian/how-to-run-tf-hub-locally-without-internet-connection-4506b850a915
+    and provide the TF Hub cache dir with `--tfhub-cache-dir`.
+    """
+    if tfhub_cache_dir is not None:
+        os.environ["TFHUB_CACHE_DIR"] = tfhub_cache_dir
+
+    # This prevents import errors when a user doesn't have the dependencies for this command installed
+    import tensorflow_hub as hub
+
+    # SentEval prepare and batcher
+    def prepare(params, samples):
+        return
+
+    def batcher(params, batch):
+        batch = [" ".join(sent) if sent != [] else "." for sent in batch]
+        embeddings = params["google_use"](batch).numpy()
+        return embeddings
+
+    # Download the Google Universal Sentence Encoder (will be cached)
+    encoder = hub.load(tfhub_model_url)
+    typer.secho(
+        f"{SUCCESS} Google USE model from TensorFlow Hub loaded successfully.",
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
+
+    # Performs a few setup steps and returns the SentEval params
+    params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
+    params_senteval["google_use"] = encoder
+    _run_senteval(params_senteval, path_to_senteval, batcher, prepare, output_filepath)
+
+    return
 
 
 @app.command()
@@ -346,7 +397,7 @@ def transformers(
     # Load the Transformers tokenizer
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
     typer.secho(
-        f'{SUCCESS}  Tokenizer "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        f'{SUCCESS} Tokenizer "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -355,7 +406,7 @@ def transformers(
     model = AutoModel.from_pretrained(pretrained_model_name_or_path).to(device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -412,7 +463,7 @@ def sentence_transformers(
     model = SentenceTransformer(pretrained_model_name_or_path, device=device)
     model.eval()
     typer.secho(
-        f'{SUCCESS}  Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
+        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -482,7 +533,7 @@ def allennlp(
     )
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(
-        f'{SUCCESS}  Model from AllenNLP archive "{path_to_allennlp_archive}" loaded successfully.',
+        f'{SUCCESS} Model from AllenNLP archive "{path_to_allennlp_archive}" loaded successfully.',
         fg=typer.colors.GREEN,
         bold=True,
     )

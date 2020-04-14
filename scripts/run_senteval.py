@@ -29,7 +29,7 @@ app = typer.Typer()
 logger = logging.getLogger(__name__)
 
 # URL to the TF Hub download for Google USE large model
-GOOGLE_USE_TF_HUB = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+GOOGLE_USE_TF_HUB = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
 DOWNSTREAM_TASKS = [
     "CR",
@@ -109,6 +109,10 @@ def _compute_aggregate_scores(results):
             sts_score = scores["all"]["spearman"]["mean"] * 100
             aggregate_scores[task_set]["dev"] += sts_score
             aggregate_scores[task_set]["test"] += sts_score
+        # The image caption retrival task reportes 4 scores per partition, average them.
+        elif task == "ImageCaptionRetrieval":
+            aggregate_scores[task_set]["dev"] += mean(scores["devacc"])
+            aggregate_scores[task_set]["test"] += mean(scores["acc"])
         # The rest of the tasks seem to all contain a dev and test accuracy
         elif "devacc" in scores and "acc" in scores:
             aggregate_scores[task_set]["dev"] += scores["devacc"]
@@ -272,8 +276,8 @@ def random(
 
     @torch.no_grad()
     def batcher(params, batch):
-        embeddings = torch.randn(len(batch), embedding_dim)
-        return embeddings.numpy()
+        embeddings = np.random.rand(len(batch), embedding_dim)
+        return embeddings
 
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
@@ -452,7 +456,7 @@ def sentence_transformers(
         batch = [sent if sent != [] else ["."] for sent in batch]
         # Sentence Transformers API expects un-tokenized sentences.
         batch = [" ".join(tokens) for tokens in batch]
-        embeddings = params.model.encode(batch)
+        embeddings = params.model.encode(batch, batch_size=len(batch), show_progress_bar=False)
         embeddings = np.vstack(embeddings)
         return embeddings
 

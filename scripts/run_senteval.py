@@ -28,7 +28,7 @@ app = typer.Typer()
 # Set up logger
 logger = logging.getLogger(__name__)
 
-# URL to the TF Hub download for Google USE large model
+# URL to the TF Hub download for Google USE base model
 GOOGLE_USE_TF_HUB = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
 DOWNSTREAM_TASKS = [
@@ -40,7 +40,7 @@ DOWNSTREAM_TASKS = [
     "SST5",
     "TREC",
     "MRPC",
-    # "SNLI",
+    "SNLI",
     "SICKEntailment",
     "SICKRelatedness",
     "STSBenchmark",

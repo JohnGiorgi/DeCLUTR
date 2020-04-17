@@ -45,10 +45,10 @@ def main(
     min_length: Optional[int] = None,
     pretrained_model_name_or_path: Optional[str] = None,
 ) -> None:
-    """Downloads and lightly pre-processes WikiText-103. If `min_lengthgth` is not None, only documents with at
+    """Downloads and lightly pre-processes WikiText-103. If `min_length` is not None, only documents with at
     least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the tokenizer will be
     loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)` using the HuggingfFace Transformers
-    library. Otherwise `.split()` is used. This argument has no effect if `min_lengthgth is None`.
+    library. Otherwise `.split()` is used. This argument has no effect if `min_length is None`.
     """
     # Setup the pre-trained tokenizer, if specified
     if pretrained_model_name_or_path is not None:

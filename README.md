@@ -43,10 +43,10 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 
 Datasets should be text files where each line contains a raw text sequence. You can specify different partitions in the [configs](configs) under `"train_data_path"`, `"validation_data_path"` and `"test_data_path"`.
 
-We provide scripts to download some popular datasets and prepare them for training with our model. For example, to download [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) (with minimal preprocessing), you can call
+We provide scripts to download some popular datasets and prepare them for training with our model. For example, to download [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) (and match our minimal preprocessing), you can call
 
 ```bash
-python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt
+python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt --min-length 1024
 ```
 
 ### Training

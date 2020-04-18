@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, unicode_literals
 
+import io
 import json
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, List
 from statistics import mean
+from typing import Callable, List
 
 import numpy as np
 import torch
@@ -287,10 +288,149 @@ def random(
 
 
 @app.command()
-def bow() -> None:
+def bow(
+    path_to_senteval: str,
+    path_to_vectors: str,
+    output_filepath: str = None,
+    prototyping_config: bool = False,
+    verbose: bool = False,
+) -> None:
     """Evaluates pre-trained word vectors against the SentEval benchmark.
+    Adapted from: https://github.com/facebookresearch/SentEval/blob/master/examples/bow.py.
     """
-    raise NotImplementedError
+    # Create dictionary
+    def create_dictionary(sentences, threshold=0):
+        words = {}
+        for s in sentences:
+            for word in s:
+                words[word] = words.get(word, 0) + 1
+
+        if threshold > 0:
+            newwords = {}
+            for word in words:
+                if words[word] >= threshold:
+                    newwords[word] = words[word]
+            words = newwords
+        words["<s>"] = 1e9 + 4
+        words["</s>"] = 1e9 + 3
+        words["<p>"] = 1e9 + 2
+
+        sorted_words = sorted(words.items(), key=lambda x: -x[1])  # inverse sort
+        id2word = []
+        word2id = {}
+        for i, (w, _) in enumerate(sorted_words):
+            id2word.append(w)
+            word2id[w] = i
+
+        return id2word, word2id
+
+    # Get word vectors from vocabulary (glove, word2vec, fasttext ..)
+    def get_wordvec(path_to_vec, word2id, skip_header=False):
+        word_vec = {}
+
+        with io.open(path_to_vec, "r", encoding="utf-8") as f:
+            if skip_header:
+                next(f)
+            for line in f:
+                word, vec = line.split(" ", 1)
+                if word in word2id:
+                    word_vec[word] = np.fromstring(vec, sep=" ")
+
+        logging.info(
+            "Found {0} words with word vectors, out of \
+            {1} words".format(
+                len(word_vec), len(word2id)
+            )
+        )
+        return word_vec
+
+    # SentEval prepare and batcher
+    def prepare(params, samples):
+        _, params.word2id = create_dictionary(samples)
+        params.word_vec = get_wordvec(params.path_to_vectors, params.word2id, params.skip_header)
+        # TODO (John): This was hardcoded in SentEval example script. Can we set it based on the loaded vectors?
+        params.wvec_dim = 300
+        return
+
+    def batcher(params, batch):
+        batch = [sent if sent != [] else ["."] for sent in batch]
+        embeddings = []
+
+        for sent in batch:
+            sentvec = []
+            for word in sent:
+                if word in params.word_vec:
+                    sentvec.append(params.word_vec[word])
+            if not sentvec:
+                vec = np.zeros(params.wvec_dim)
+                sentvec.append(vec)
+            sentvec = np.mean(sentvec, 0)
+            embeddings.append(sentvec)
+
+        embeddings = np.vstack(embeddings)
+        return embeddings
+
+    # A dumb heuristic to determine whether or not the file has a header that we should skip.
+    skip_header = True if "word2vec" or "fasttext" in path_to_vectors.lower() else False
+
+    # Performs a few setup steps and returns the SentEval params
+    params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
+    params_senteval["path_to_vectors"] = path_to_vectors
+    params_senteval["skip_header"] = skip_header
+    _run_senteval(params_senteval, path_to_senteval, batcher, prepare, output_filepath)
+
+    return
+
+
+@app.command()
+def infersent(
+    path_to_senteval: str,
+    output_filepath: str = None,
+    cuda_device: int = -1,
+    prototyping_config: bool = False,
+    verbose: bool = False,
+) -> None:
+    """Evaluates an InferSent model against the SentEval benchmark
+    (see: https://github.com/facebookresearch/InferSent for information on the pre-trained model).
+    Adapted from: https://github.com/facebookresearch/SentEval/blob/master/examples/infersent.py.
+    """
+    from models import InferSent
+
+    def prepare(params, samples):
+        params.infersent.build_vocab([" ".join(s) for s in samples], tokenize=False)
+
+    def batcher(params, batch):
+        sentences = [" ".join(s) for s in batch]
+        embeddings = params.infersent.encode(sentences, bsize=params.batch_size, tokenize=False)
+        return embeddings
+
+    # Determine the torch device
+    device = _get_device(cuda_device)
+
+    # Load InferSent model
+    V = 2
+    MODEL_PATH = "encoder/infersent%s.pkl" % V
+    params_model = {
+        "bsize": 64,
+        "word_emb_dim": 300,
+        "enc_lstm_dim": 2048,
+        "pool_type": "max",
+        "dpout_model": 0.0,
+        "version": V,
+    }
+    infersent = InferSent(params_model)
+    infersent.load_state_dict(torch.load(MODEL_PATH))
+    infersent.to(device)
+    # Load and initialize the model with word vectors
+    W2V_PATH = "fastText/crawl-300d-2M.vec"
+    infersent.set_w2v_path(W2V_PATH)
+
+    # Performs a few setup steps and returns the SentEval params
+    params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
+    params_senteval["infersent"] = infersent
+    _run_senteval(params_senteval, path_to_senteval, batcher, prepare, output_filepath)
+
+    return
 
 
 @app.command()

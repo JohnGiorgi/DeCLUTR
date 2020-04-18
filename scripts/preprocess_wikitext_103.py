@@ -6,13 +6,13 @@ from typing import List, Optional
 
 import requests
 import typer
-from transformers import AutoTokenizer
 
 WIKITEXT_103_URL = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-raw-v1.zip"
 
 # Emoji's used in typer.secho calls
 # See: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py"
 SAVING = "\U0001F4BE"
+DOWNLOAD = "\U00002B07"
 
 
 def _sanitize(text: str) -> str:
@@ -45,14 +45,22 @@ def main(
     min_length: Optional[int] = None,
     pretrained_model_name_or_path: Optional[str] = None,
 ) -> None:
-    """Downloads and lightly pre-processes WikiText-103. If `min_length` is not None, only documents with at
-    least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the tokenizer will be
-    loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)` using the HuggingfFace Transformers
-    library. Otherwise `.split()` is used. This argument has no effect if `min_length is None`.
+    """Downloads and lightly preprocesses WikiText-103. If `min_length` is not None, only documents
+    with at least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the
+    tokenizer will be loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)`
+    using the HuggingFace Transformers library. Otherwise `str.split()` is used. This argument has
+    no effect if `min_length is None`.
     """
     # Setup the pre-trained tokenizer, if specified
-    if pretrained_model_name_or_path is not None:
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
+    if min_length is not None:
+        if pretrained_model_name_or_path is not None:
+            # Import transformers here to prevent ImportError errors if the
+            # user doesn't want to use it.
+            from transformers import AutoTokenizer
+
+            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path).tokenize
+        else:
+            tokenizer = lambda x: x.split()  # noqa
     else:
         tokenizer = None
 
@@ -60,8 +68,9 @@ def main(
     r = requests.get(WIKITEXT_103_URL, stream=True)
     z = zipfile.ZipFile(io.BytesIO(r.content))
     partition_filenames = z.namelist()[1:]
+    typer.secho(f"{DOWNLOAD} Downloaded WikiText-103", fg=typer.colors.WHITE, bold=True)
 
-    preprocessed_text = []
+    preprocessed_documents = []
     for filename in partition_filenames:
         text = z.open(filename).read().decode("utf-8")
 
@@ -70,27 +79,23 @@ def main(
         documents = re.split(r"=\s.*\s=", no_subtitles)
 
         with typer.progressbar(
-            documents, label=typer.style(f"Processing {filename}", bold=True)
+            documents, label=typer.style(f"Preprocessing text", bold=True)
         ) as progress:
             for doc in progress:
                 doc = _sanitize(doc)
-
                 if not doc:
                     continue
 
-                # Retain the document if min_length is None, or min_length is not None and this document contains
-                # greater than or equal to min_length tokens.
-                if min_length is not None:
-                    if tokenizer is not None:
-                        tokens = tokenizer.tokenize(doc)
-                    else:
-                        tokens = doc.split()
-                    if len(tokens) >= min_length:
-                        preprocessed_text.append(doc)
-                else:
-                    preprocessed_text.append(doc)
+                # Retain documents if the length of their shortest document is
+                # equal to or greater than the minimum specified length
+                if tokenizer is not None:
+                    num_tokens = len(tokenizer(doc))
+                    if num_tokens < min_length:
+                        continue
 
-    _write_output_to_disk(preprocessed_text, output_filepath)
+                preprocessed_documents.append(doc)
+
+    _write_output_to_disk(preprocessed_documents, output_filepath)
 
 
 if __name__ == "__main__":

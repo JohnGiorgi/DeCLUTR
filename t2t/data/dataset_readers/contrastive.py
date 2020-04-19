@@ -1,5 +1,6 @@
 import logging
 import random
+from contextlib import contextmanager
 from typing import Dict, Iterable, List, Optional
 
 import torch.distributed as dist
@@ -69,6 +70,14 @@ class ContrastiveDatasetReader(DatasetReader):
     @sample_spans.setter
     def sample_spans(self, sample_spans):
         self._sample_spans = sample_spans
+
+    @contextmanager
+    def no_sample(self):
+        """Context manager that disables sampling of spans."""
+        prev = self.sample_spans
+        self.sample_spans = False
+        yield self
+        self.sample_spans = prev
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:

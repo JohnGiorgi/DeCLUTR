@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 # TODO (John): Filter to PMCIDs only (or at least provide the option)
 # TODO (John): Filter out abstracts will less than a certain number of words?
-# Query this: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=31881139&retmode=json&tool=my_tool&email=my_email%40example.com
+# Query this: https://tinyurl.com/tbcatjg
 # And if there is no PMCID under "articleids", this article is not in PMC.
 
 

@@ -334,7 +334,7 @@ def transformers(
     )
 
     # Used mixed-precision to speed up inference
-    model = _setup_mixed_precision_with_amp(model, opt_level)
+    #model = _setup_mixed_precision_with_amp(model, opt_level)
 
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
@@ -390,7 +390,7 @@ def sentence_transformers(
         bold=True,
     )
     # Used mixed-precision to speed up inference
-    model = _setup_mixed_precision_with_amp(model, opt_level)
+    #model = _setup_mixed_precision_with_amp(model, opt_level)
 
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
@@ -409,7 +409,7 @@ def allennlp(
     prototyping_config: bool = False,
     embeddings_field: str = "embeddings",
     cuda_device: int = -1,
-    opt_level: str = "O0",
+    #opt_level: str = "O0",
     include_package: List[str] = None,
     verbose: bool = False,
 ) -> None:
@@ -446,7 +446,7 @@ def allennlp(
         common_util.import_module_and_submodules(package_name)
 
     # Load the archived Model
-    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device, opt_level=opt_level)
+    archive = load_archive(path_to_allennlp_archive, cuda_device=cuda_device)#, opt_level=opt_level)
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(
         f"{SUCCESS}  Model from AllenNLP archive loaded successfully.",

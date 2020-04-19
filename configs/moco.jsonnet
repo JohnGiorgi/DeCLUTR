@@ -31,7 +31,7 @@ local token_embedding_size = 768;
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     }, 
-    "train_data_path": "/home/osvald/Projects/NLP/datasets/debug-1K/train.txt", // /home/osvald/Projects/NLP/datasets/wikitext-103/train.txt
+    "train_data_path": "/home/osvald/Projects/NLP/datasets/openwebtext/train.txt",
     "model": {
         "type": "MoCo",
         "text_field_embedder": {
@@ -53,9 +53,11 @@ local token_embedding_size = 768;
             "type": "nt_xent", // TODO: MoCo currently has hardcoded loss
             "temperature": 0.005,
         },
+	"T": 0.0005,
+	"K": 12000,
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 8,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -67,7 +69,7 @@ local token_embedding_size = 768;
         "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
-            "lr": 2e-6,
+            "lr": 2e-5,
             "weight_decay": 0.0,
             "parameter_groups": [
                 # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
@@ -76,11 +78,16 @@ local token_embedding_size = 768;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 10,
+        "num_epochs": 1,
         "checkpointer": {
             "num_serialized_models_to_keep": -1,
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
+	"learning_rate_scheduler": {
+            "type": "slanted_triangular",
+            "num_epochs": 1,
+            "num_steps_per_epoch": 12500
+	},
     },
 }

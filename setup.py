@@ -41,5 +41,5 @@ setuptools.setup(
         "pytorch-metric-learning>=0.9.81",
         "typer>=0.1.1",
     ],
-    extras_require={"dev": ["black", "flake8", "pytest"]},
+    extras_require={"dev": ["black", "flake8", "hypothesis", "pytest"]},
 )

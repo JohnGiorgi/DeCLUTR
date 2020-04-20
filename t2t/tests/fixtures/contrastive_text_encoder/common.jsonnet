@@ -11,8 +11,7 @@ local max_length = 512;
         "type": "t2t.data.dataset_readers.contrastive.ContrastiveDatasetReader",
         "lazy": true,
         "sample_spans": true,
-        // This is (approximately) an upper bound on sentence length in English
-        "min_span_len": 30,
+        "max_span_len": max_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,

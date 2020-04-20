@@ -45,6 +45,10 @@ def sample_spans(
     tokens = tokenizer(text) if tokenizer is not None else text.split()
     num_tokens = len(tokens)
     tok_method = "tokenizer(text)" if tokenizer else "text.split()"
+    if num_tokens < 3:
+        raise ValueError(
+            (f"len({tok_method}) should be at least 3 (ideally much longer), got ({num_tokens}).")
+        )
     if min_span_len > max_span_len:
         raise ValueError(
             f"min_span_len ({min_span_len}) must be less than max_span_len ({max_span_len})."

@@ -12,8 +12,7 @@ local cls_is_last_token = false;
         "type": "contrastive",
         "lazy": true,
         "sample_spans": true,
-        // This is (approximately) an upper bound on sentence length in English
-        "min_span_len": 30,
+        "max_span_len": max_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,

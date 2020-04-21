@@ -8,9 +8,7 @@ setuptools.setup(
     version="0.1.0",
     author="John Giorgi",
     author_email="johnmgiorgi@gmail.com",
-    description=(
-        "A contrastive, self-supervised method for learning textual representations."
-    ),
+    description=("A contrastive, self-supervised method for learning textual representations."),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/JohnGiorgi/t2t",
@@ -36,10 +34,6 @@ setuptools.setup(
         "Typing :: Typed",
     ],
     python_requires=">=3.7",
-    install_requires=[
-        "torch>=1.4.0",
-        "pytorch-metric-learning>=0.9.81",
-        "typer>=0.1.1",
-    ],
-    extras_require={"dev": ["black", "flake8", "pytest"]},
+    install_requires=["torch>=1.4.0", "pytorch-metric-learning>=0.9.81", "typer>=0.1.1"],
+    extras_require={"dev": ["black", "flake8", "hypothesis", "pytest"]},
 )

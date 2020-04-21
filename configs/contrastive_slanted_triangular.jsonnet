@@ -6,6 +6,8 @@ local transformer_dim = 768;
 // This will be used to set the max # of tokens in the positive and negative examples.
 local max_length = 512;
 
+local num_epochs = 1;
+
 {
     "dataset_reader": {
         "type": "contrastive",
@@ -53,9 +55,36 @@ local max_length = 512;
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
-        "num_workers": 1
+        "num_workers": 1,
+        // This should be the number of instances in the train set / the batch size
+        "batches_per_epoch": null
     },
     "trainer": {
-        "type": "no_op"
+        // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
+        "opt_level": null,
+        "optimizer": {
+            "type": "huggingface_adamw",
+            "lr": 2e-5,
+            "weight_decay": 0.0,
+            "parameter_groups": [
+                # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
+                # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
+                # Regex: https://regex101.com/r/ZUyDgR/3/tests
+                [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
+            ],
+        },
+        "num_epochs": num_epochs,
+        "checkpointer": {
+            // A value of null or -1 will save the weights of the model at the end of every epoch
+            "num_serialized_models_to_keep": -1,
+        },
+        "cuda_device": 0,
+        "grad_norm": 1.0,
+        "learning_rate_scheduler": {
+            "type": "slanted_triangular",
+            "num_epochs": num_epochs,
+            // This should be the number of instances in the train set / the batch size
+            "num_steps_per_epoch": null
+        },
     },
 }

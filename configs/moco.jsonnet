@@ -1,37 +1,35 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
 // OR a path on disk to a serialized transformer model. 
-// Note, to avoid issues, please name the serialized model folder in roughly the same format as the
-// Transformers library, e.g.
-// [bert|roberta|gpt2|distillbert|etc]-[base|large|etc]-[uncased|cased|etc]
-local pretrained_transformer_model_name = "distilroberta-base";
-// This will be used to set the max # of tokens in the anchor, positive and negative examples.
+local transformer_model = "distilroberta-base";
+// The hidden size of the model, which can be found in its config as "hidden_size".
+local transformer_dim = 768;
+// This will be used to set the max # of tokens in the positive and negative examples.
 local max_length = 512;
-// This corresponds to PretrainedTransformerEmbedder.transformer_model.config.hidden_size
-local token_embedding_size = 768;
+
+local num_epochs = 1;
 
 {
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
         "sample_spans": true,
-        // This is (approximately an upper bound on sentence length in English
-        "min_span_len": 30,
+	"max_span_len": max_length,
         "tokenizer": {
             "type": "pretrained_transformer",
-            "model_name": pretrained_transformer_model_name,
+            "model_name": transformer_model,
             "max_length": max_length,
         },
         "token_indexers": {
             "tokens": {
                 "type": "pretrained_transformer",
-                "model_name": pretrained_transformer_model_name,
+                "model_name": transformer_model,
             },
         },
         // If not null, a cache of already-processed data will be stored in this directory.
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     }, 
-    "train_data_path": "/home/osvald/Projects/NLP/datasets/openwebtext/train.txt",
+    "train_data_path": "/home/osvald/Projects/NLP/datasets/wikitext_test/train.txt",
     "model": {
         "type": "MoCo",
         "text_field_embedder": {
@@ -39,14 +37,14 @@ local token_embedding_size = 768;
             "token_embedders": {
                 "tokens": {
                     "type": "pretrained_transformer_mlm",
-                    "model_name": pretrained_transformer_model_name,
+                    "model_name": transformer_model,
                     "masked_language_modeling": true
                 },
             },
         },
         "seq2vec_encoder": {
             "type": "bag_of_embeddings",
-            "embedding_dim": token_embedding_size,
+            "embedding_dim": transformer_dim,
             "averaged": true
         },
         "loss": {
@@ -78,7 +76,7 @@ local token_embedding_size = 768;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 1,
+        "num_epochs": num_epochs,
         "checkpointer": {
             "num_serialized_models_to_keep": -1,
         },
@@ -86,8 +84,8 @@ local token_embedding_size = 768;
         "grad_norm": 1.0,
 	"learning_rate_scheduler": {
             "type": "slanted_triangular",
-            "num_epochs": 1,
-            "num_steps_per_epoch": 12500
+            "num_epochs": num_epochs,
+            "num_steps_per_epoch": 1500
 	},
     },
 }

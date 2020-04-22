@@ -10,6 +10,7 @@ from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
+from t2t.miners import PyTorchMetricLearningMiner
 from t2t.models.contrastive_text_encoder_util import get_anchor_positive_pairs
 
 @Model.register("MoCo")
@@ -28,10 +29,13 @@ class MoCoText(Model):
         of the `text_field_embedder`.
     feedforward : `FeedForward`, optional, (default = None).
         An optional feedforward layer to apply after the seq2vec_encoder.
+    miner: `PyTorchMetricLearningMiner`, option (default = None).
+        An optional mining function which will mine hard negatives from each batch before computing
+        the loss. See https://kevinmusgrave.github.io/pytorch-metric-learning/miners/ for a list
+        of available mining functions.
     initializer : `InitializerApplicator`, optional (default=`InitializerApplicator()`)
         If provided, will be used to initialize the model parameters.
     """
-    #TODO: add new args to config file
     def __init__(
         self,
         vocab: Vocabulary,
@@ -39,8 +43,9 @@ class MoCoText(Model):
         seq2vec_encoder: Seq2VecEncoder,
         loss: PyTorchMetricLearningLoss,
         feedforward: Optional[FeedForward] = None,
+        miner: Optional[PyTorchMetricLearningMiner] = None,
         initializer: InitializerApplicator = InitializerApplicator(),
-        dim: int = 768, # get this from config or somewhere else
+        dim: int = 768, # TODO: get this from config or somewhere else
         K: int = 1200, #queue size; number of negative keys (default: 65536)
         m: float = 0.999, # moco momentum of updating key encoder (default: 0.999)
         T: float = 0.001, # softmax temperature (default: 0.07)
@@ -78,6 +83,7 @@ class MoCoText(Model):
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
 
+        self._miner = miner
         # TODO: change this in config rather than hardcoding it here
         self._loss = nn.CrossEntropyLoss().cuda()
         initializer(self)
@@ -159,7 +165,6 @@ class MoCoText(Model):
 
         # This is the textual representation learned by a trained model that will be used for downstream tasks.
         anchor_masked_lm_loss, q = self._forward_internal(anchors, output_dict, encoder_type='Query')
-        #TODO: is this normalize still necessary? taken from MoCo, try ablation
         q = nn.functional.normalize(q, dim=1)
 
         if positives is not None:
@@ -189,10 +194,11 @@ class MoCoText(Model):
             # dequeue and enqueue
             self._dequeue_and_enqueue(k)
 
-            #TODO: store as two separate losses
+            #TODO: implement miner with MoCo loss
+            #indices_tuple = self._miner(embeddings, labels) if self._miner is not None else None
             output_dict["loss"] = self._loss(logits, labels)
             if anchor_masked_lm_loss is not None:
-                output_dict["loss"] = output_dict["loss"] + anchor_masked_lm_loss
+                output_dict["loss"] += anchor_masked_lm_loss
             
 
         return output_dict

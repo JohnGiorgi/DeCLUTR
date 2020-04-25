@@ -3,6 +3,7 @@ from typing import Tuple
 import torch
 import torch.distributed as dist
 
+from allennlp.common import util
 from allennlp.data import TextFieldTensors
 
 
@@ -45,12 +46,13 @@ def get_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensor
 def all_gather_anchor_positive_pairs(
     anchors: torch.Tensor, positives: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """If training on 2 or more GPUs, `all_gather`s the embeddings produced on each replica, ensuring that the
-    gradients for the embeddings produced on each replica are not lost. The returned anchor, positive pairs can be
-    fed to a contrastive loss. This method is necessary to ensure that we train against the expected number of
-    negatives 2 * (batch size - 1) per batch, as a naive implementation would end up training against
-    2 * (batch size / n_gpus - 1) number of negatives. If we are not training on 2 or more GPUs, this method is a
-    no-op and returns its inputs.
+    """If training on 2 or more GPUs, `all_gather`s the embeddings produced on each replica,
+    ensuring that the gradients for the embeddings produced on each replica are not lost. The
+    returned anchor, positive pairs can be fed to a contrastive loss. This method is necessary to
+    ensure that we train against the expected number of negatives 2 * (batch size - 1) per batch,
+    as a naive implementation would end up training against 2 * (batch size / n_gpus - 1) number of
+    negatives. If we are not training on 2 or more GPUs, this method is a no-op and returns its
+    inputs.
 
     # Parameters
 
@@ -62,11 +64,11 @@ def all_gather_anchor_positive_pairs(
     # Returns
 
     Tuple[torch.Tensor, torch.Tensor]
-    Embedded anchor, positive pairs that can be fed to a contrastive loss.
+        Embedded anchor, positive pairs that can be fed to a contrastive loss.
     """
 
-    # If we are not training on at least 2 GPUs, this is a no-op.
-    if not dist.is_initialized() or dist.get_world_size() < 2:
+    # If we are not using distributed training, this is a no-op.
+    if not util.is_distributed():
         return anchors, positives
 
     # Gather the encoded anchors and positives on all replicas

@@ -58,3 +58,18 @@ class HDCMiner(PyTorchMetricLearningMiner, miners.HDCMiner):
             squared_distances=squared_distances,
             normalize_embeddings=normalize_embeddings,
         )
+
+
+@PyTorchMetricLearningMiner.register("multi_sim_miner")
+class MultiSimilarityMiner(PyTorchMetricLearningMiner, miners.MultiSimilarityMiner):
+    """Wraps the `MultiSimilarityMiner` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#multisimilarityminer).
+
+    Registered as a `PyTorchMetricLearningMiner` with name "multi_sim_miner".
+    """
+
+    def __init__(self, epsilon: float, normalize_embeddings: bool = True,) -> None:
+
+        super().__init__(
+            epsilon=epsilon, normalize_embeddings=normalize_embeddings,
+        )

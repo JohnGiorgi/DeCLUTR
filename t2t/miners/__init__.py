@@ -1,1 +1,5 @@
-from t2t.miners.pytorch_metric_learning import BatchHardMiner, PyTorchMetricLearningMiner
+from t2t.miners.pytorch_metric_learning import (
+    BatchHardMiner,
+    MultiSimilarityMiner,
+    PyTorchMetricLearningMiner,
+)

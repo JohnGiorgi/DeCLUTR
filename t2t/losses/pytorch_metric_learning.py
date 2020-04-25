@@ -46,25 +46,27 @@ class PyTorchMetricLearningLoss(Registrable):
         return embeddings, labels
 
 
-@PyTorchMetricLearningLoss.register("nt_xent")
-class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
-    """Wraps the `NTXentLoss` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#ntxentloss).
+@PyTorchMetricLearningLoss.register("circle_loss")
+class CircleLoss(PyTorchMetricLearningLoss, losses.CircleLoss):
+    """Wraps the `CircleLoss` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#circleloss).
 
-    Registered as a `PyTorchMetricLearningLoss` with name "nt_xent".
+    Registered as a `PyTorchMetricLearningLoss` with name "circle_loss".
     """
 
     def __init__(
         self,
-        temperature: float,
-        normalize_embeddings: bool = True,
+        m: float = 0.4,
+        gamma: int = 80,
+        triplets_per_anchor: str = "all",
         num_class_per_param: int = None,
         learnable_param_names: List[str] = None,
     ) -> None:
 
         super().__init__(
-            temperature=temperature,
-            normalize_embeddings=normalize_embeddings,
+            m=m,
+            gamma=gamma,
+            triplets_per_anchor=triplets_per_anchor,
             num_class_per_param=num_class_per_param,
             learnable_param_names=learnable_param_names,
         )
@@ -88,4 +90,56 @@ class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
 
         super().__init__(
             loss=loss, embedding_size=embedding_size, memory_size=memory_size, miner=miner,
+        )
+
+
+@PyTorchMetricLearningLoss.register("multi_sim_loss")
+class MultiSimilarityLoss(PyTorchMetricLearningLoss, losses.MultiSimilarityLoss):
+    """Wraps the `MultiSimilarityLoss` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#multisimilarityloss).
+
+    Registered as a `PyTorchMetricLearningLoss` with name "multi_sim_loss".
+    """
+
+    def __init__(
+        self,
+        alpha: float,
+        beta: float,
+        base: float = 0.5,
+        normalize_embeddings: bool = True,
+        num_class_per_param: int = None,
+        learnable_param_names: List[str] = None,
+    ) -> None:
+
+        super().__init__(
+            alpha=alpha,
+            beta=beta,
+            base=base,
+            normalize_embeddings=normalize_embeddings,
+            num_class_per_param=num_class_per_param,
+            learnable_param_names=learnable_param_names,
+        )
+
+
+@PyTorchMetricLearningLoss.register("nt_xent")
+class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
+    """Wraps the `NTXentLoss` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#ntxentloss).
+
+    Registered as a `PyTorchMetricLearningLoss` with name "nt_xent".
+    """
+
+    def __init__(
+        self,
+        temperature: float,
+        normalize_embeddings: bool = True,
+        num_class_per_param: int = None,
+        learnable_param_names: List[str] = None,
+    ) -> None:
+
+        super().__init__(
+            temperature=temperature,
+            normalize_embeddings=normalize_embeddings,
+            num_class_per_param=num_class_per_param,
+            learnable_param_names=learnable_param_names,
         )

@@ -152,7 +152,7 @@ class ContrastiveTextEncoder(Model):
                     embedded_anchor_text, embedded_positive_text
                 )
                 indices_tuple = self._miner(embeddings, labels) if self._miner is not None else None
-                output_dict["loss"] += self._loss(embeddings, labels, indices_tuple=indices_tuple)
+                output_dict["loss"] += self._loss(embeddings, labels, indices_tuple)
             if anchor_masked_lm_loss is not None:
                 output_dict["loss"] += anchor_masked_lm_loss
 

@@ -14,7 +14,7 @@ class PyTorchMetricLearningLoss(Registrable):
     to the constructor the same arguments that the loss function does. See `NTXentLoss` below for an example.
     """
 
-    default_implementation = "nt_xent"
+    default_implementation = "contrastive"
 
     @classmethod
     def get_embeddings_and_labels(
@@ -72,6 +72,38 @@ class CircleLoss(PyTorchMetricLearningLoss, losses.CircleLoss):
         )
 
 
+@PyTorchMetricLearningLoss.register("contrastive")
+class ContrastiveLoss(PyTorchMetricLearningLoss, losses.ContrastiveLoss):
+    """Wraps the `ContrastiveLoss` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#contrastiveloss).
+
+    Registered as a `PyTorchMetricLearningLoss` with name "contrastive".
+    """
+
+    def __init__(
+        self,
+        pos_margin: int = 1,
+        neg_margin: int = 0,
+        use_similarity: bool = True,
+        power: int = 1,
+        avg_non_zero_only: bool = True,
+        normalize_embeddings: bool = True,
+        num_class_per_param: int = None,
+        learnable_param_names: List[str] = None,
+    ) -> None:
+
+        super().__init__(
+            pos_margin=pos_margin,
+            neg_margin=neg_margin,
+            use_similarity=use_similarity,
+            power=power,
+            avg_non_zero_only=avg_non_zero_only,
+            normalize_embeddings=normalize_embeddings,
+            num_class_per_param=num_class_per_param,
+            learnable_param_names=learnable_param_names,
+        )
+
+
 @PyTorchMetricLearningLoss.register("cross_batch_memory")
 class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
     """Wraps the `CrossBatchMemory` implementation from Pytorch Metric Learning:
@@ -93,7 +125,7 @@ class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
         )
 
 
-@PyTorchMetricLearningLoss.register("multi_sim_loss")
+@PyTorchMetricLearningLoss.register("multi_sim")
 class MultiSimilarityLoss(PyTorchMetricLearningLoss, losses.MultiSimilarityLoss):
     """Wraps the `MultiSimilarityLoss` implementation from Pytorch Metric Learning:
     (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#multisimilarityloss).

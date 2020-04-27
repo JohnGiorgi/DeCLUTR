@@ -60,7 +60,7 @@ class HDCMiner(PyTorchMetricLearningMiner, miners.HDCMiner):
         )
 
 
-@PyTorchMetricLearningMiner.register("multi_sim_miner")
+@PyTorchMetricLearningMiner.register("multi_sim")
 class MultiSimilarityMiner(PyTorchMetricLearningMiner, miners.MultiSimilarityMiner):
     """Wraps the `MultiSimilarityMiner` implementation from Pytorch Metric Learning:
     (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#multisimilarityminer).

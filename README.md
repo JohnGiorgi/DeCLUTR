@@ -34,7 +34,7 @@ For the time being, please install [AllenNLP](https://github.com/allenai/allennl
 If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs), or, equivalently, pass the following flag to `allennlp train`
 
 ```bash
---overrides '{"trainer.opt_level": "O1"}'
+--overrides "{'trainer.opt_level': 'O1'}"
 ```
 
 ## Usage
@@ -56,7 +56,7 @@ To train the model, run the following command
 ```bash
 allennlp train configs/contrastive.jsonnet \
     -s output \
-    -o '{"train_data_path": "path/to/input.txt"}' \
+    -o "{'train_data_path': 'path/to/input.txt'}" \
     --include-package t2t
 ```
 
@@ -69,7 +69,7 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 ```bash
 allennlp train configs/contrastive.jsonnet \
     -s output \
-    -o '{"train_data_path": "path/to/input.txt", "distributed.cuda_devices": [0, 1, 2, 3]}' \
+    -o "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
     --include-package t2t
 ```
 

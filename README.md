@@ -2,11 +2,10 @@
 
 # Contrastive Self-supervision for Textual Representations
 
-A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results are presented below, along with existing state-of-the-art methods.
+A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below, along with existing state-of-the-art methods.
 
-|                                                  |             |  SentEval  |         |       |            |
-|--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|
 | __Model__                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
+|--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|
 | [InferSent V2](https://github.com/facebookresearch/InferSent)                  |     4096    |    77.45   |  72.84  | 75.14 |    -0.77   |
 | [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/4) |     512     |    77.45   |  62.73  | 70.09 |    -5.82   |
 | [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens")    |     768     |    __78.53__   |  63.94  | 71.23 |    -4.68   |

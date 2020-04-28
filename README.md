@@ -4,7 +4,7 @@
 
 A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
-| __Model__                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
+| Model                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
 |--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|
 | [InferSent V2](https://github.com/facebookresearch/InferSent)                  |     4096    |    77.45   |  72.84  | 75.14 |    -0.77   |
 | [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/4) |     512     |    77.45   |  62.73  | 70.09 |    -5.82   |

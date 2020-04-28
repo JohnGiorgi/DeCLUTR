@@ -2,7 +2,17 @@
 
 # Contrastive Self-supervision for Textual Representations
 
-A contrastive, self-supervised method for learning textual representations.
+A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
+
+| Model                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
+|--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                  |     4096    |    77.45   |  72.84  | 75.14 |    -0.77   |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/4) |     512     |    77.45   |  62.73  | 70.09 |    -5.82   |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens")    |     768     |    __78.53__   |  63.94  | 71.23 |    -4.68   |
+| Transformer-CLS ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))               |     768     |    70.98   |  68.00  | 69.49 |    -6.42   |
+| Transformer-Mean ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))              |     768     |    73.76   |  74.57  | 74.16 |    -1.75   |
+| Ours ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                                             |     768     |    77.13   |  __74.69__  | __75.91__ |     --     |
+
 
 ## Installation
 

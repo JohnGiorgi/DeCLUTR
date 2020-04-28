@@ -2,7 +2,7 @@
 
 # Contrastive Self-supervision for Textual Representations
 
-A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below, along with existing state-of-the-art methods.
+A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
 | __Model__                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
 |--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|

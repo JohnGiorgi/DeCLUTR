@@ -2,7 +2,6 @@ from typing import Dict, Optional
 
 import torch
 
-from allennlp.common.checks import ConfigurationError
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
@@ -80,7 +79,7 @@ class ContrastiveTextEncoder(Model):
         self._miner = miner
         self._loss = loss
         if self._loss is None and not self._masked_language_modeling:
-            raise ConfigurationError(
+            raise ValueError(
                 (
                     "No loss function provided. You must provide a contrastive loss"
                     " (ContrastiveTextEncoder.loss) and/or specify `masked_language_modeling=True`"

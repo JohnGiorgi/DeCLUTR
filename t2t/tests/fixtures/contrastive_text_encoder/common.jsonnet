@@ -24,8 +24,8 @@ local max_length = 512;
             },
         },
     }, 
-    "train_data_path": "t2t/tests/fixtures/data/wikitext-103/train.txt",
-    "validation_data_path": "t2t/tests/fixtures/data/wikitext-103/valid.txt",
+    "train_data_path": "t2t/tests/fixtures/data/openwebtext/train.txt",
+    "validation_data_path": "t2t/tests/fixtures/data/openwebtext/valid.txt",
     "model": {
         "type": "t2t.models.contrastive_text_encoder.ContrastiveTextEncoder",
         "seq2vec_encoder": {

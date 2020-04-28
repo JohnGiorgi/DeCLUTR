@@ -82,10 +82,10 @@ class ContrastiveLoss(PyTorchMetricLearningLoss, losses.ContrastiveLoss):
 
     def __init__(
         self,
-        pos_margin: int = 1,
-        neg_margin: int = 0,
+        pos_margin: float = 1,
+        neg_margin: float = 0,
         use_similarity: bool = True,
-        power: int = 1,
+        power: float = 1,
         avg_non_zero_only: bool = True,
         normalize_embeddings: bool = True,
         num_class_per_param: int = None,

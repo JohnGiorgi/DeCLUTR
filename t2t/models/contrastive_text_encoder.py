@@ -12,7 +12,7 @@ from t2t.losses import PyTorchMetricLearningLoss
 from t2t.miners import PyTorchMetricLearningMiner
 from t2t.models.contrastive_text_encoder_util import (
     all_gather_anchor_positive_pairs,
-    get_anchor_positive_pairs,
+    unpack_pack_chunks,
 )
 
 
@@ -89,7 +89,7 @@ class ContrastiveTextEncoder(Model):
         initializer(self)
 
     def forward(  # type: ignore
-        self, tokens: TextFieldTensors,
+        self, anchors: TextFieldTensors, positives: TextFieldTensors = None
     ) -> Dict[str, torch.Tensor]:
 
         """
@@ -116,44 +116,44 @@ class ContrastiveTextEncoder(Model):
         """
         output_dict: Dict[str, torch.Tensor] = {}
 
-        # If token_ids contains a third dimension, then spans were sampled during the data loading
-        # process. get_anchor_positive_pairs splits the batch on the second dimension to get our
-        # anchor, positive pairs.
-        if self.training and tokens["tokens"]["token_ids"].dim() == 3:
-            anchors, positives = get_anchor_positive_pairs(tokens)
-            # Mask anchor input ids and get labels required for MLM
-            if self._masked_language_modeling:
-                anchors = mask_tokens(anchors, self._tokenizer)
-        else:
-            anchors, positives = tokens, None
-
-        # `embedded_anchor_text` is the textual representation learned by a trained model that will
+        # Mask anchor input ids and get labels required for MLM.
+        if self.training and self._masked_language_modeling:
+            anchors = mask_tokens(anchors, self._tokenizer)
+        # embedded_anchors is the textual representation learned by a trained model that will
         # be used for downstream tasks.
-        anchor_masked_lm_loss, embedded_anchor_text = self._forward_internal(anchors, output_dict)
+        masked_lm_loss, embedded_anchors = self._forward_internal(anchors, output_dict)
 
-        if positives is not None:
+        # If positives are supplied by the DataLoader, this is our signal that we are training and
+        # should compute a loss.
+        if self.training and positives:
             output_dict["loss"] = 0
-            # The loss may be derived from the contrastive objective, masked language modeling
-            # objective or both.
             if self._loss is not None:
-                _, embedded_positive_text = self._forward_internal(positives)
+                embedded_positives = []
+                # We have to unpack and then repack the positives into TextFieldTensors.
+                for chunks in unpack_pack_chunks(positives):
+                    _, embedded_chunks = self._forward_internal(chunks)
+                    # Positives are represented by their mean embedding a la
+                    # https://arxiv.org/abs/1902.09229.
+                    embedded_positives.append(torch.mean(embedded_chunks, dim=0))
+                embedded_positives = torch.stack(embedded_positives)
                 # If we are training on multiple GPUs using DistributedDataParallel, then a naive
                 # application would result in 2 * (batch_size/n_gpus - 1) number of negatives per
                 # GPU. To avoid this, we need to gather the anchors/positives from each replica on
-                # every other replica in order to generate the correct number of
-                # negatives, 2 * (batch_size - 1), before computing the contrastive loss.
-                (embedded_anchor_text, embedded_positive_text,) = all_gather_anchor_positive_pairs(
-                    embedded_anchor_text, embedded_positive_text
+                # every other replica in order to generate the correct number of negatives,
+                # i.e. 2 * (batch_size - 1), before computing the contrastive loss.
+                embedded_anchors, embedded_positives = all_gather_anchor_positive_pairs(
+                    embedded_anchors, embedded_positives
                 )
                 # Get embeddings into the format that the PyTorch Metric Learning library expects
-                # before computing the loss (optionally hard-mining negatives)
+                # before computing the loss (with an optional mining step)
                 embeddings, labels = self._loss.get_embeddings_and_labels(
-                    embedded_anchor_text, embedded_positive_text
+                    embedded_anchors, embedded_positives
                 )
                 indices_tuple = self._miner(embeddings, labels) if self._miner is not None else None
                 output_dict["loss"] += self._loss(embeddings, labels, indices_tuple)
-            if anchor_masked_lm_loss is not None:
-                output_dict["loss"] += anchor_masked_lm_loss
+            # Loss may be derived from contrastive objective, MLM objective or both.
+            if masked_lm_loss is not None:
+                output_dict["loss"] += masked_lm_loss
 
         return output_dict
 

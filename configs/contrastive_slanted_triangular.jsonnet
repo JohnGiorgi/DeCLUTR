@@ -12,8 +12,7 @@ local num_epochs = 1;
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "sample_spans": true,
-        "max_span_len": max_length,
+        "num_chunks": 8,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
@@ -50,7 +49,7 @@ local num_epochs = 1;
         },
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 8,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

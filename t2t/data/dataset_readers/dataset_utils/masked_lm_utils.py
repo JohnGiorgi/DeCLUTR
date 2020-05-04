@@ -10,14 +10,15 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 def _mask_tokens(
     inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, mlm_probability: float = 0.15
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Prepare masked tokens inputs/labels for masked language modeling: 80% MASK, 10% random, 10% original.
-    Copied from: https://github.com/huggingface/transformers/blob/master/examples/run_language_modeling.py"""
+    """Prepare masked tokens inputs/labels for masked language modeling: 80% MASK, 10% random, 10%
+    original. Copied from:
+    https://github.com/huggingface/transformers/blob/master/examples/run_language_modeling.py"""
 
     if tokenizer.mask_token is None:
         raise ValueError(
             (
-                "This tokenizer does not have a mask token which is necessary for masked language modeling. Remove"
-                "the --mlm flag if you want to use this tokenizer."
+                "This tokenizer does not have a mask token which is necessary for masked language"
+                " modeling. Remove the --mlm flag if you want to use this tokenizer."
             )
         )
 

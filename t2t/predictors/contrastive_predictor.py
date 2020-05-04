@@ -16,5 +16,5 @@ class ContrastivePredictor(Predictor):
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         text = json_dict["text"]
         # Context manager ensures that the sample_spans property of our DatasetReader is False
-        with self._dataset_reader.no_sample():
+        with self._dataset_reader.no_chunk():
             return self._dataset_reader.text_to_instance(text=text)

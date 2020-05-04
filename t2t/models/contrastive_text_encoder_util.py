@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import torch
 import torch.distributed as dist
@@ -7,7 +7,7 @@ from allennlp.common import util
 from allennlp.data import TextFieldTensors
 
 
-def get_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensors]:
+def unpack_pack_chunks(tokens: TextFieldTensors) -> List[TextFieldTensors]:
     """Returns a tuple of `TextFieldTensors` containing random batches of anchors and positives from tokens.
 
     # Parameters
@@ -20,27 +20,20 @@ def get_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensor
     positives : TextFieldTensors
         `TextFieldTensors` containing the sampled positives.
     """
+    batch_size = tokens["tokens"]["token_ids"].size(0)
 
-    anchor_token_ids, positive_token_ids = torch.chunk(tokens["tokens"]["token_ids"], 2, dim=1)
-    anchor_masks, positive_masks = torch.chunk(tokens["tokens"]["mask"], 2, dim=1)
-    anchor_type_ids, positive_type_ids = torch.chunk(tokens["tokens"]["type_ids"], 2, dim=1)
+    token_ids = torch.chunk(tokens["tokens"]["token_ids"], batch_size, dim=0)
+    masks = torch.chunk(tokens["tokens"]["mask"], batch_size, dim=0)
+    type_ids = torch.chunk(tokens["tokens"]["type_ids"], batch_size, dim=0)
 
-    anchors: TextFieldTensors = {
-        "tokens": {
-            "token_ids": anchor_token_ids.squeeze(1),
-            "mask": anchor_masks.squeeze(1),
-            "type_ids": anchor_type_ids.squeeze(1),
+    chunks = []
+    for x, y, z in zip(token_ids, masks, type_ids):
+        chunk: TextFieldTensors = {
+            "tokens": {"token_ids": x.squeeze(0), "mask": y.squeeze(0), "type_ids": z.squeeze(0)}
         }
-    }
-    positives: TextFieldTensors = {
-        "tokens": {
-            "token_ids": positive_token_ids.squeeze(1),
-            "mask": positive_masks.squeeze(1),
-            "type_ids": positive_type_ids.squeeze(1),
-        }
-    }
+        chunks.append(chunk)
 
-    return anchors, positives
+    return chunks
 
 
 def all_gather_anchor_positive_pairs(

@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 
+import numpy as np
 import torch
 
 from allennlp.data import TextFieldTensors, Vocabulary
@@ -12,7 +13,7 @@ from t2t.losses import PyTorchMetricLearningLoss
 from t2t.miners import PyTorchMetricLearningMiner
 from t2t.models.contrastive_text_encoder_util import (
     all_gather_anchor_positive_pairs,
-    unpack_pack_chunks,
+    chunk_positives,
 )
 
 
@@ -128,14 +129,19 @@ class ContrastiveTextEncoder(Model):
         if self.training and positives:
             output_dict["loss"] = 0
             if self._loss is not None:
+                # Chunk the positives along the smallest dimension (e.g. batch or positives). This
+                # leads to the smallest for loop and the biggest pseudo-batch size, which
+                # dramatically improves training times.
                 embedded_positives = []
-                # We have to unpack and then repack the positives into TextFieldTensors.
-                for chunks in unpack_pack_chunks(positives):
-                    _, embedded_chunks = self._forward_internal(chunks)
-                    # Positives are represented by their mean embedding a la
-                    # https://arxiv.org/abs/1902.09229.
-                    embedded_positives.append(torch.mean(embedded_chunks, dim=0))
-                embedded_positives = torch.stack(embedded_positives)
+                chunk_dim = np.argmin(positives["tokens"]["token_ids"].size()[:2]).item()
+                for chunk in chunk_positives(positives, chunk_dim=chunk_dim):
+                    _, embedded_chunk = self._forward_internal(chunk)
+                    embedded_positives.append(embedded_chunk)
+                # Stack and average across the same dim that we chunked on.
+                # Positives are represented by their mean embedding a la
+                # https://arxiv.org/abs/1902.09229.
+                embedded_positives = torch.stack(embedded_positives, dim=chunk_dim)
+                embedded_positives = torch.mean(embedded_positives, dim=1)
                 # If we are training on multiple GPUs using DistributedDataParallel, then a naive
                 # application would result in 2 * (batch_size/n_gpus - 1) number of negatives per
                 # GPU. To avoid this, we need to gather the anchors/positives from each replica on
@@ -181,3 +187,5 @@ class ContrastiveTextEncoder(Model):
                 output_dict["projections"] = embedded_text.clone().detach()
 
         return masked_lm_loss, embedded_text
+
+    default_predictor = "contrastive"

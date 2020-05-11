@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
 import torch
 import torch.distributed as dist
@@ -7,29 +7,33 @@ from allennlp.common import util
 from allennlp.data import TextFieldTensors
 
 
-def unpack_pack_chunks(tokens: TextFieldTensors) -> List[TextFieldTensors]:
-    """Returns a tuple of `TextFieldTensors` containing random batches of anchors and positives from tokens.
+def chunk_positives(tokens: TextFieldTensors, chunk_dim: int) -> List[TextFieldTensors]:
+    """Chunks the tensors in `tokens` along `chunk_dim`, returning a list of tensors.
 
     # Parameters
 
     tokens : TextFieldTensors
         From a `TextField`
 
-    anchors : TextFieldTensors
-        `TextFieldTensors` containing the sampled anchors.
-    positives : TextFieldTensors
-        `TextFieldTensors` containing the sampled positives.
+    tokens : TextFieldTensors
+        `TextFieldTensors` containing the tensors to chunk.
+    chunk_dim : int
+        The dimension of the tensors in `tokens` to chunk.
     """
-    batch_size = tokens["tokens"]["token_ids"].size(0)
+    chunk_size = tokens["tokens"]["token_ids"].size(chunk_dim)
 
-    token_ids = torch.chunk(tokens["tokens"]["token_ids"], batch_size, dim=0)
-    masks = torch.chunk(tokens["tokens"]["mask"], batch_size, dim=0)
-    type_ids = torch.chunk(tokens["tokens"]["type_ids"], batch_size, dim=0)
+    token_ids = torch.chunk(tokens["tokens"]["token_ids"], chunk_size, dim=chunk_dim)
+    masks = torch.chunk(tokens["tokens"]["mask"], chunk_size, dim=chunk_dim)
+    type_ids = torch.chunk(tokens["tokens"]["type_ids"], chunk_size, dim=chunk_dim)
 
     chunks = []
     for x, y, z in zip(token_ids, masks, type_ids):
         chunk: TextFieldTensors = {
-            "tokens": {"token_ids": x.squeeze(0), "mask": y.squeeze(0), "type_ids": z.squeeze(0)}
+            "tokens": {
+                "token_ids": x.squeeze(chunk_dim),
+                "mask": y.squeeze(chunk_dim),
+                "type_ids": z.squeeze(chunk_dim),
+            }
         }
         chunks.append(chunk)
 

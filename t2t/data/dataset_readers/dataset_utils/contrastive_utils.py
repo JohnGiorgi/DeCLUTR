@@ -66,8 +66,7 @@ def sample_anchor_positives(
         positive_length = int(np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len)
         # Be careful not to run off the edges of the document, as this error will pass silently.
         positive_start = randint(
-            max(0, anchor_start - positive_length),
-            min(anchor_end + max_span_len - positive_length, num_tokens - positive_length),
+            max(0, anchor_start - positive_length), min(anchor_end, num_tokens - positive_length),
         )
         positive_end = positive_start + positive_length
         positives.append(" ".join(tokens[positive_start:positive_end]))

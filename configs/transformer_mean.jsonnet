@@ -3,15 +3,13 @@
 local transformer_model = "distilroberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
-// This will be used to set the max # of tokens in the positive and negative examples.
+// This will be used to set the max/min # of tokens in the positive and negative examples.
 local max_length = 512;
 
 {
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "sample_spans": true,
-        "max_span_len": max_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
@@ -42,18 +40,15 @@ local max_length = 512;
             "embedding_dim": transformer_dim,
             "averaged": true
         },
-        "loss": {
-            "type": "nt_xent",
-            "temperature": 0.001,
-        },
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 8,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
-        "num_workers": 1
+        "num_workers": 1,
+        "drop_last": true,
     },
     "trainer": {
         "type": "no_op"

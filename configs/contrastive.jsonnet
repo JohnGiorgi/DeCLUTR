@@ -7,7 +7,15 @@ local transformer_dim = 768;
 local max_length = 512;
 local min_length = 32;
 
+local num_epochs = 1;
+
 {
+    "vocabulary": {
+        "type": "from_files",
+        // You must set this to the directory that contains the vocabulary.
+        // You can create this by passing the --dry-run flag to allennlp train
+        "directory": null
+    },
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
@@ -57,6 +65,8 @@ local min_length = 32;
         // in order to support multi-processing.
         "num_workers": 1,
         "drop_last": true,
+        // This should be (# of instances in the train set)/(batch size)
+        "batches_per_epoch": null
     },
     "trainer": {
         // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
@@ -72,12 +82,18 @@ local min_length = 32;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": 1,
+        "num_epochs": num_epochs,
         "checkpointer": {
             // A value of null or -1 will save the weights of the model at the end of every epoch
             "num_serialized_models_to_keep": -1,
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
+        "learning_rate_scheduler": {
+            "type": "slanted_triangular",
+            "num_epochs": num_epochs,
+            // This should be (# of instances in the train set)/(batch size)
+            "num_steps_per_epoch": null
+        },
     },
 }

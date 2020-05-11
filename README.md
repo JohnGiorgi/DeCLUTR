@@ -47,6 +47,8 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 --overrides "{'trainer.opt_level': 'O1'}"
 ```
 
+> You can also add this to a [config](configs), if you prefer.
+
 ## Usage
 
 ### Preparing a dataset
@@ -64,7 +66,7 @@ python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt 
 To train the model, run the following command
 
 ```bash
-allennlp train configs/contrastive.jsonnet \
+allennlp train configs/contrastive_simple.jsonnet \
     -s output \
     -o "{'train_data_path': 'path/to/input.txt'}" \
     --include-package t2t
@@ -72,12 +74,14 @@ allennlp train configs/contrastive.jsonnet \
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
 
+> Note, we provide a second config, [`contrastive.jsonnet`](configs/contrastive.jsonnet) that requires slightly more configuration but leads to slightly better scores.
+
 #### Multi-GPU training
 
 To train on more than one GPU, provide a list of CUDA devices in your call to `allennlp train`. For example, to train with four CUDA devices with IDs `0, 1, 2, 3`
 
 ```bash
-allennlp train configs/contrastive.jsonnet \
+allennlp train configs/contrastive_simple.jsonnet \
     -s output \
     -o "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
     --include-package t2t

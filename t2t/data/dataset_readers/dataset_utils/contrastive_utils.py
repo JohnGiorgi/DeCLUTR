@@ -1,87 +1,75 @@
-import random
 from random import randint
-from typing import Callable, Optional, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 
 
-def sample_spans(
+def sample_anchor_positives(
     text: str,
     max_span_len: int,
-    min_span_len: Optional[int] = None,
+    min_span_len: int,
+    num_spans: Optional[int] = 1,
     tokenizer: Optional[Callable[[str], List[str]]] = None,
-) -> Tuple[str, str]:
-    """Returns two randomly sampled spans from `text`. The sampling procedure is as follows:
-
-    First, a "context window" of length `max_span_len * 2` is randomly chosen from `text`.
-    Then, with equal probability, we sample either:
-
-        1) Two adjacent spans from the context window of length `max_span_len`
-        2) One "global" span from the context window of length `max_span_len` and one "local"
-           span from the global span of length `min_span_len`.
+) -> Tuple[str, List[str]]:
+    """Returns a tuple of anchor (`str`) and `num_spans` positive (`List[str]`) spans sampled from
+    `text`.
 
     # Parameters
 
     text : `str`, required
-        The string to extract spans from.
+        The string to extract anchor and positive spans from.
     max_span_len : `int`, required
-        The maximum length of spans, after whitespace tokenization, to sample. This number decides
-        the length of the adjacent and global span.
+        The maximum length of spans, after tokenization, to sample.
     min_span_len : `int`, optional
-        The minimum length of spans, after whitespace tokenization, to sample. This number decides
-        the length of the local span. Defaults to `int(0.25 * max_span_len)`.
+        The minimum length of spans, after tokenization, to sample.
+    num_spans : `int`, optional (default = 1)
+        The number of spans to sample from `text` to serve as positive examples.
     tokenizer : `Callable`, optional
         Optional tokenizer to use before sampling spans. If `None`, `text.split()` is used.
     """
-    # If not provided, take the min_span_len to be 1/4 of the max_span_len
-    min_span_len = int(0.25 * max_span_len) if min_span_len is None else min_span_len
-    # The context window is taken to be 2X the max_span_len. The basic idea is that
-    # text that is closer together in a document is more likely to be semantically related,
-    # which increases the chance of sampling "clean" (semantically similar) positives.
-    context_window_len = 2 * max_span_len
-
-    # Whitespace tokenization makes it much more straightforward to do whole word masking but a
-    # user can also provide their own tokenization scheme if they want.
+    # Whitespace tokenization is much more straightforward (don't need to worry about chopping up
+    # subword tokens) but a user can also provide their own tokenization scheme if they want.
     tokens = tokenizer(text) if tokenizer is not None else text.split()
     num_tokens = len(tokens)
     tok_method = "tokenizer(text)" if tokenizer else "text.split()"
-    if num_tokens < 3:
+
+    if num_tokens < 1:
         raise ValueError(
-            (f"len({tok_method}) should be at least 3 (ideally much longer), got ({num_tokens}).")
+            (f"len({tok_method}) should be at least 1 (ideally much longer), got {num_tokens}.")
         )
     if min_span_len > max_span_len:
         raise ValueError(
-            f"min_span_len ({min_span_len}) must be less than max_span_len ({max_span_len})."
+            f"min_span_len must be less than max_span_len ({max_span_len}), got {min_span_len}."
         )
-    if context_window_len > num_tokens:
+    if max_span_len > num_tokens:
         raise ValueError(
             (
-                f"context_window_len ({context_window_len}) must be less than or equal to"
-                f" len({tok_method}) ({num_tokens})."
+                f"max_span_len must be less than or equal to"
+                f" len({tok_method}) ({num_tokens}), got {max_span_len}."
             )
         )
 
-    # Sample a "context window" from the full text
-    start = randint(0, num_tokens - context_window_len)
-    end = start + context_window_len
-    tokens = tokens[start:end]
+    # Sample the anchor length from a beta distribution skewed towards longer spans, the intuition
+    # being that longer spans have the best chance of being representative of the document they are
+    # sampled from.
+    anchor_length = int(np.random.beta(4, 2) * (max_span_len - min_span_len) + min_span_len)
+    anchor_start = randint(0, num_tokens - anchor_length)
+    anchor_end = anchor_start + anchor_length
+    anchor = " ".join(tokens[anchor_start:anchor_end])
 
-    adjacent = random.choice([True, False])
-    # With 50% probability, sample two adjacent views from the context window
-    if adjacent:
-        start = 0
-        end = max_span_len
-        adjacent_view_1 = " ".join(tokens[start:end])
-        adjacent_view_2 = " ".join(tokens[end : end + max_span_len])
-        return adjacent_view_1, adjacent_view_2
-    # With 50% probability, sample "global" and "local" views from the context window
-    else:
-        # Global view
-        start = np.random.randint(0, context_window_len - max_span_len)
-        end = start + max_span_len
-        global_view = " ".join(tokens[start:end])
-        # Local view
-        start = np.random.randint(start, end - min_span_len)
-        end = start + min_span_len
-        local_view = " ".join(tokens[start:end])
-        return global_view, local_view
+    # Sample positives from around the anchor. The intuition being that text that appears close
+    # together is the same document is likely to be semantically similar. These may be adjacent or
+    # overlap with each other and the anchor. Their length is sampled from a beta distribution
+    # skewed towards shorter spans.
+    positives = []
+    for _ in range(num_spans):
+        positive_length = int(np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len)
+        # Be careful not to run off the edges of the document, as this error will pass silently.
+        positive_start = randint(
+            max(0, anchor_start - positive_length),
+            min(anchor_end + max_span_len - positive_length, num_tokens - positive_length),
+        )
+        positive_end = positive_start + positive_length
+        positives.append(" ".join(tokens[positive_start:positive_end]))
+
+    return anchor, positives

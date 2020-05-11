@@ -1,8 +1,7 @@
 import logging
 import random
 from contextlib import contextmanager
-from random import randint
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 import torch
 from overrides import overrides
@@ -14,6 +13,7 @@ from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
+from t2t.data.dataset_readers.dataset_utils import contrastive_utils
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class ContrastiveDatasetReader(DatasetReader):
 
     The output of `read` is a list of `Instance` s with the field:
         tokens : `ListField[TextField]`
-    if `sample_spans`, else:
+    if `num_spans > 0`, else:
         tokens : `TextField`
 
 
@@ -40,24 +40,38 @@ class ContrastiveDatasetReader(DatasetReader):
         See :class:`TokenIndexer`.
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
-    sample_spans : `bool`, optional (default = True)
-        If True, two spans will be sampled from each input, tokenized and indexed.
+    num_spans : `int`, optional
+        The number of spans to sample from each instance to serve as positive examples.
     max_span_len : `int`, optional
-        The maximum length of spans which should be sampled. Has no effect if
-        `sample_spans is False`.
+        The maximum length of spans (after tokenization) which should be sampled. Has no effect if
+        `num_spans` is not provided.
+    min_span_len : `int`, optional
+        The minimum length of spans (after tokenization) which should be sampled. Has no effect if
+        `num_spans` is not provided.
     """
 
     def __init__(
         self,
-        token_indexers: Dict[str, TokenIndexer] = None,
-        tokenizer: Tokenizer = None,
-        num_chunks: Optional[int] = None,
+        token_indexers: Optional[Dict[str, TokenIndexer]] = None,
+        tokenizer: Optional[Tokenizer] = None,
+        num_spans: Optional[int] = None,
+        max_span_len: Optional[int] = None,
+        min_span_len: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self._tokenizer = tokenizer or SpacyTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
-        self._num_chunks = num_chunks
+
+        self._num_spans = num_spans
+        if self._num_spans is not None:
+            if max_span_len is None:
+                raise ValueError("max_span_len must be provided if num_spans is not None.")
+            if min_span_len is None:
+                raise ValueError("min_span_len must be provided if num_spans is not None.")
+        self._max_span_len = max_span_len
+        self._min_span_len = min_span_len
+        self.sample_spans = bool(self._num_spans)
 
         # In the v1.0 AllenNLP pre-release, theres a small catch that dataset readers used in the
         # distributed setting need to shard instances to separate processes internally such that one
@@ -77,20 +91,22 @@ class ContrastiveDatasetReader(DatasetReader):
         warnings.filterwarnings("ignore")
 
     @property
-    def num_chunks(self):
-        return self._num_chunks
+    def sample_spans(self) -> None:
+        return self._sample_spans
 
-    @num_chunks.setter
-    def num_chunks(self, num_chunks):
-        self._num_chunks = num_chunks
+    @sample_spans.setter
+    def sample_spans(self, sample_spans: bool) -> None:
+        self._sample_spans = sample_spans
 
     @contextmanager
-    def no_chunk(self):
-        """Context manager that disables chunking."""
-        prev = self.num_chunks
-        self.num_chunks = None
+    def no_sample(self) -> None:
+        """Context manager that disables sampling of spans. Useful at test time when we want to
+        embed unseen text.
+        """
+        prev = self.sample_spans
+        self.sample_spans = False
         yield self
-        self.num_chunks = prev
+        self.sample_spans = prev
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -101,7 +117,7 @@ class ContrastiveDatasetReader(DatasetReader):
             # we don't yield instances in the same order every epoch. Our current solution is to
             # read the entire file into memory. This is a little expensive (roughly 1G per 1 million
             # docs), so a better solution might be required down the line.
-            if self.num_chunks:
+            if self.sample_spans:
                 data_file = list(enumerate(data_file))
                 random.shuffle(data_file)
                 data_file = iter(data_file)
@@ -124,39 +140,26 @@ class ContrastiveDatasetReader(DatasetReader):
 
         An `Instance` containing the following fields:
             tokens : `Union[TextField, ListField[TextField]]`
-                If `self.num_chunks`, returns a `ListField` containing two random, tokenized
+                If `self.sample_spans`, returns a `ListField` containing two random, tokenized
                 spans from `text`. Else, returns a `TextField` containing tokenized `text`.
         """
         fields: Dict[str, Field] = {}
-        if self.num_chunks:
-            # Anchors are randomly sampled "contexts" of length self._tokenizer.tokenizer.max_len
-            context = self._get_context(text, self._tokenizer.tokenizer.max_len)
-            tokens = self._tokenizer.tokenize(context)
-            fields["anchors"] = TextField(tokens, self._token_indexers)
-            # Positives are contiguous "chunks" of this context
-            chunks: List[Field] = []
-            for chunk in self._chunk_context(context, self.num_chunks):
-                tokens = self._tokenizer.tokenize(chunk)
-                chunks.append(TextField(tokens, self._token_indexers))
-            fields["positives"] = ListField(chunks)
+        if self.sample_spans:
+            # Choose the anchor/positives at random (spans are not contigous)
+            anchor_text, positives_text = contrastive_utils.sample_anchor_positives(
+                text=text,
+                max_span_len=self._max_span_len,
+                min_span_len=self._min_span_len,
+                num_spans=self._num_spans,
+            )
+            anchor_tokens = self._tokenizer.tokenize(anchor_text)
+            fields["anchors"] = TextField(anchor_tokens, self._token_indexers)
+            positives: List[Field] = []
+            for positive_text in positives_text:
+                positive_tokens = self._tokenizer.tokenize(positive_text)
+                positives.append(TextField(positive_tokens, self._token_indexers))
+            fields["positives"] = ListField(positives)
         else:
             tokens = self._tokenizer.tokenize(text)
             fields["anchors"] = TextField(tokens, self._token_indexers)
         return Instance(fields)
-
-    def _get_context(
-        self, text: str, length: int, tokenizer: Optional[Callable[[str], List[str]]] = None,
-    ) -> str:
-        tokens = tokenizer(text) if tokenizer is not None else text.split()
-        num_tokens = len(tokens)
-        start = randint(0, num_tokens - length)
-        end = start + length
-        return " ".join(tokens[start:end])
-
-    def _chunk_context(
-        self, text: str, num_chunks: int, tokenizer: Optional[Callable[[str], List[str]]] = None
-    ) -> List[str]:
-        tokens = tokenizer(text) if tokenizer is not None else text.split()
-        num_tokens = len(tokens)
-        chunk_size = num_tokens // num_chunks
-        return [" ".join(tokens[i : i + chunk_size]) for i in range(0, num_tokens, chunk_size)]

@@ -18,12 +18,6 @@ import typer
 # who don't want to evaluate AllenNLP models.
 from allennlp.common import util as common_util
 
-try:
-    from apex import amp
-except ImportError:
-    amp = None
-
-
 app = typer.Typer()
 
 # Set up logger
@@ -45,7 +39,7 @@ DOWNSTREAM_TASKS = [
     "SICKEntailment",
     "SICKRelatedness",
     "STSBenchmark",
-    # "ImageCaptionRetrieval",
+    "ImageCaptionRetrieval",
     "STS12",
     "STS13",
     "STS14",
@@ -110,7 +104,7 @@ def _compute_aggregate_scores(results):
             sts_score = scores["all"]["spearman"]["mean"] * 100
             aggregate_scores[task_set]["dev"] += sts_score
             aggregate_scores[task_set]["test"] += sts_score
-        # The image caption retrival task reportes 4 scores per partition, average them.
+        # The image caption retrival task reports 4 scores per partition, average them.
         elif task == "ImageCaptionRetrieval":
             aggregate_scores[task_set]["dev"] += mean(scores["devacc"])
             aggregate_scores[task_set]["test"] += mean(scores["acc"])
@@ -140,29 +134,6 @@ def _compute_aggregate_scores(results):
     )
 
     return aggregate_scores
-
-
-def _setup_mixed_precision_with_amp(model: torch.nn.Module, opt_level: str = None):
-    """Wraps a model with NVIDIAs amp API for mixed-precision inference. This is a no-op if `opt_level is None`.
-    """
-
-    if opt_level is not None:
-        if amp is None:
-            raise ValueError(
-                (
-                    "Apex not installed but opt_level was provided. Please install NVIDIA's Apex to enable"
-                    " automatic mixed precision (AMP) for inference. See: https://github.com/NVIDIA/apex."
-                )
-            )
-
-        model = amp.initialize(model, opt_level=opt_level)
-        typer.secho(
-            f'{FAST} Using mixed-precision with "opt_level={opt_level}".',
-            fg=typer.colors.WHITE,
-            bold=True,
-        )
-
-    return model
 
 
 def _pad_sequences(sequences, pad_token):
@@ -555,9 +526,6 @@ def transformers(
         bold=True,
     )
 
-    # Used mixed-precision to speed up inference
-    model = _setup_mixed_precision_with_amp(model, opt_level)
-
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
     params_senteval["tokenizer"] = tokenizer
@@ -611,8 +579,6 @@ def sentence_transformers(
         fg=typer.colors.GREEN,
         bold=True,
     )
-    # Used mixed-precision to speed up inference
-    model = _setup_mixed_precision_with_amp(model, opt_level)
 
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)

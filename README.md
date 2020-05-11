@@ -124,7 +124,6 @@ allennlp predict output path/to/input.txt \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
- --predictor "contrastive" \
  --include-package t2t
 ```
 
@@ -159,7 +158,6 @@ Then you can run our [script](scripts/run_senteval.py) to evaluate a trained mod
 python scripts/run_senteval.py allennlp SentEval output 
  --output-filepath output/senteval_results.json \
  --cuda-device 0  \
- --predictor-name "contrastive" \
  --include-package t2t
 ```
 

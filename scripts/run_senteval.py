@@ -619,6 +619,12 @@ def allennlp(
         # I am using the solution found in the SentEvel repo here:
         # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
         batch = [sent if sent != [] else ["."] for sent in batch]
+        # HACK (John): This is neccesary b/c at some point SentEval converts these to bytes.
+        # We probably want a better fix.
+        batch = [
+            [token.decode("utf-8") if isinstance(token, bytes) else token for token in sent]
+            for sent in batch
+        ]
         # Re-tokenize the input text using the tokenizer of the dataset reader
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)

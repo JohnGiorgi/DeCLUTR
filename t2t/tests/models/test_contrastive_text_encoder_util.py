@@ -1,27 +1,36 @@
-from t2t.models.contrastive_text_encoder_util import get_anchor_positive_pairs
-from allennlp.data import TextFieldTensors
+import numpy as np
 import torch
+from hypothesis import given
+from hypothesis.strategies import integers
+
+from allennlp.data import TextFieldTensors
+from t2t.models.contrastive_text_encoder_util import chunk_positives
 
 
 class TestContrastiveTextEncoderUtil:
-    def test_get_anchor_positive_pairs(self):
-        batch_size, max_len = 4, 12  # arbitrary
-
+    @given(
+        batch_size=integers(min_value=1, max_value=3),
+        num_positives=integers(min_value=1, max_value=3),
+    )
+    def test_chunk_positives(self, batch_size: int, num_positives: int):
         # Create some dummy data
-        anchors_expected = torch.randn(batch_size, 1, max_len)
-        positives_expected = torch.randn(batch_size, 1, max_len)
-        token_ids = torch.cat((anchors_expected, positives_expected), dim=1)
-        mask = token_ids.clone()
-        type_ids = token_ids.clone()
+        max_len = 12  # arbitrary, pick a small value so tests are fast
+        chunks_expected = torch.randn(batch_size, num_positives, max_len)
+        token_ids = chunks_expected.clone()
+        mask = chunks_expected.clone()
+        type_ids = chunks_expected.clone()
+
+        chunk_dim = np.argmin([batch_size, num_positives]).item()
+        chunk_size = chunks_expected.size(chunk_dim)
 
         tokens: TextFieldTensors = {
             "tokens": {"token_ids": token_ids, "mask": mask, "type_ids": type_ids}
         }
 
-        anchors_actual, positives_actual = get_anchor_positive_pairs(tokens)
+        chunks_actual = chunk_positives(tokens, chunk_dim=chunk_dim)
 
-        # Check that the function properly splits up the input TextFieldTensors
-        for tensor in anchors_actual["tokens"].values():
-            assert torch.equal(tensor, anchors_expected.squeeze(1))
-        for tensor in positives_actual["tokens"].values():
-            assert torch.equal(tensor, positives_expected.squeeze(1))
+        # Check that the number of chunks and their sizes are as expected
+        assert len(chunks_actual) == chunk_size
+        for chunk in chunks_actual:
+            for tensor in chunk["tokens"].values():
+                assert tensor.size() == (max(batch_size, num_positives), max_len)

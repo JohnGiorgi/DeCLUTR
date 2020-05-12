@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import torch
 import torch.distributed as dist
@@ -7,40 +7,37 @@ from allennlp.common import util
 from allennlp.data import TextFieldTensors
 
 
-def get_anchor_positive_pairs(tokens) -> Tuple[TextFieldTensors, TextFieldTensors]:
-    """Returns a tuple of `TextFieldTensors` containing random batches of anchors and positives from tokens.
+def chunk_positives(tokens: TextFieldTensors, chunk_dim: int) -> List[TextFieldTensors]:
+    """Chunks the tensors in `tokens` along `chunk_dim`, returning a list of tensors.
 
     # Parameters
 
     tokens : TextFieldTensors
         From a `TextField`
 
-    anchors : TextFieldTensors
-        `TextFieldTensors` containing the sampled anchors.
-    positives : TextFieldTensors
-        `TextFieldTensors` containing the sampled positives.
+    tokens : TextFieldTensors
+        `TextFieldTensors` containing the tensors to chunk.
+    chunk_dim : int
+        The dimension of the tensors in `tokens` to chunk.
     """
+    chunk_size = tokens["tokens"]["token_ids"].size(chunk_dim)
 
-    anchor_token_ids, positive_token_ids = torch.chunk(tokens["tokens"]["token_ids"], 2, dim=1)
-    anchor_masks, positive_masks = torch.chunk(tokens["tokens"]["mask"], 2, dim=1)
-    anchor_type_ids, positive_type_ids = torch.chunk(tokens["tokens"]["type_ids"], 2, dim=1)
+    token_ids = torch.chunk(tokens["tokens"]["token_ids"], chunk_size, dim=chunk_dim)
+    masks = torch.chunk(tokens["tokens"]["mask"], chunk_size, dim=chunk_dim)
+    type_ids = torch.chunk(tokens["tokens"]["type_ids"], chunk_size, dim=chunk_dim)
 
-    anchors: TextFieldTensors = {
-        "tokens": {
-            "token_ids": anchor_token_ids.squeeze(1),
-            "mask": anchor_masks.squeeze(1),
-            "type_ids": anchor_type_ids.squeeze(1),
+    chunks = []
+    for x, y, z in zip(token_ids, masks, type_ids):
+        chunk: TextFieldTensors = {
+            "tokens": {
+                "token_ids": x.squeeze(chunk_dim),
+                "mask": y.squeeze(chunk_dim),
+                "type_ids": z.squeeze(chunk_dim),
+            }
         }
-    }
-    positives: TextFieldTensors = {
-        "tokens": {
-            "token_ids": positive_token_ids.squeeze(1),
-            "mask": positive_masks.squeeze(1),
-            "type_ids": positive_type_ids.squeeze(1),
-        }
-    }
+        chunks.append(chunk)
 
-    return anchors, positives
+    return chunks
 
 
 def all_gather_anchor_positive_pairs(

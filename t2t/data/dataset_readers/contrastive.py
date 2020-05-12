@@ -13,7 +13,7 @@ from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
-from t2t.data.dataset_readers.dataset_utils.contrastive_utils import sample_spans
+from t2t.data.dataset_readers.dataset_utils import contrastive_utils
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class ContrastiveDatasetReader(DatasetReader):
 
     The output of `read` is a list of `Instance` s with the field:
         tokens : `ListField[TextField]`
-    if `sample_spans`, else:
+    if `num_spans > 0`, else:
         tokens : `TextField`
 
 
@@ -40,26 +40,38 @@ class ContrastiveDatasetReader(DatasetReader):
         See :class:`TokenIndexer`.
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
-    sample_spans : `bool`, optional (default = True)
-        If True, two spans will be sampled from each input, tokenized and indexed.
+    num_spans : `int`, optional
+        The number of spans to sample from each instance to serve as positive examples.
     max_span_len : `int`, optional
-        The maximum length of spans which should be sampled. Has no effect if
-        `sample_spans is False`.
+        The maximum length of spans (after tokenization) which should be sampled. Has no effect if
+        `num_spans` is not provided.
+    min_span_len : `int`, optional
+        The minimum length of spans (after tokenization) which should be sampled. Has no effect if
+        `num_spans` is not provided.
     """
 
     def __init__(
         self,
-        token_indexers: Dict[str, TokenIndexer] = None,
-        tokenizer: Tokenizer = None,
-        sample_spans: bool = False,
+        token_indexers: Optional[Dict[str, TokenIndexer]] = None,
+        tokenizer: Optional[Tokenizer] = None,
+        num_spans: Optional[int] = None,
         max_span_len: Optional[int] = None,
+        min_span_len: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self._tokenizer = tokenizer or SpacyTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
-        self._sample_spans = sample_spans
+
+        self._num_spans = num_spans
+        if self._num_spans is not None:
+            if max_span_len is None:
+                raise ValueError("max_span_len must be provided if num_spans is not None.")
+            if min_span_len is None:
+                raise ValueError("min_span_len must be provided if num_spans is not None.")
         self._max_span_len = max_span_len
+        self._min_span_len = min_span_len
+        self.sample_spans = bool(self._num_spans)
 
         # In the v1.0 AllenNLP pre-release, theres a small catch that dataset readers used in the
         # distributed setting need to shard instances to separate processes internally such that one
@@ -79,16 +91,18 @@ class ContrastiveDatasetReader(DatasetReader):
         warnings.filterwarnings("ignore")
 
     @property
-    def sample_spans(self):
+    def sample_spans(self) -> None:
         return self._sample_spans
 
     @sample_spans.setter
-    def sample_spans(self, sample_spans):
+    def sample_spans(self, sample_spans: bool) -> None:
         self._sample_spans = sample_spans
 
     @contextmanager
-    def no_sample(self):
-        """Context manager that disables sampling of spans."""
+    def no_sample(self) -> None:
+        """Context manager that disables sampling of spans. Useful at test time when we want to
+        embed unseen text.
+        """
         prev = self.sample_spans
         self.sample_spans = False
         yield self
@@ -102,8 +116,8 @@ class ContrastiveDatasetReader(DatasetReader):
             # If we are sampling spans (i.e. we are training) we need to shuffle the data so that
             # we don't yield instances in the same order every epoch. Our current solution is to
             # read the entire file into memory. This is a little expensive (roughly 1G per 1 million
-            # paragraphs), so a better solution might be required down the line.
-            if self._sample_spans:
+            # docs), so a better solution might be required down the line.
+            if self.sample_spans:
                 data_file = list(enumerate(data_file))
                 random.shuffle(data_file)
                 data_file = iter(data_file)
@@ -126,17 +140,26 @@ class ContrastiveDatasetReader(DatasetReader):
 
         An `Instance` containing the following fields:
             tokens : `Union[TextField, ListField[TextField]]`
-                If `self._sample_spans`, returns a `ListField` containing two random, tokenized
+                If `self.sample_spans`, returns a `ListField` containing two random, tokenized
                 spans from `text`. Else, returns a `TextField` containing tokenized `text`.
         """
         fields: Dict[str, Field] = {}
-        if self._sample_spans:
-            spans: List[Field] = []
-            for span in sample_spans(text, max_span_len=self._max_span_len):
-                tokens = self._tokenizer.tokenize(span)
-                spans.append(TextField(tokens, self._token_indexers))
-            fields["tokens"] = ListField(spans)
+        if self.sample_spans:
+            # Choose the anchor/positives at random (spans are not contigous)
+            anchor_text, positives_text = contrastive_utils.sample_anchor_positives(
+                text=text,
+                max_span_len=self._max_span_len,
+                min_span_len=self._min_span_len,
+                num_spans=self._num_spans,
+            )
+            anchor_tokens = self._tokenizer.tokenize(anchor_text)
+            fields["anchors"] = TextField(anchor_tokens, self._token_indexers)
+            positives: List[Field] = []
+            for positive_text in positives_text:
+                positive_tokens = self._tokenizer.tokenize(positive_text)
+                positives.append(TextField(positive_tokens, self._token_indexers))
+            fields["positives"] = ListField(positives)
         else:
             tokens = self._tokenizer.tokenize(text)
-            fields["tokens"] = TextField(tokens, self._token_indexers)
+            fields["anchors"] = TextField(tokens, self._token_indexers)
         return Instance(fields)

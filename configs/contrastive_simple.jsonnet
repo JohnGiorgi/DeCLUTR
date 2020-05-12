@@ -1,19 +1,19 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
-// OR a path on disk to a serialized transformer model. 
+// OR a path on disk to a serialized transformer model.
 local transformer_model = "distilroberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
-// This will be used to set the max # of tokens in the positive and negative examples.
+// This will be used to set the max/min # of tokens in the positive and negative examples.
 local max_length = 512;
-
-local num_epochs = 1;
+local min_length = 32;
 
 {
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "sample_spans": true,
+        "num_spans": 8,
         "max_span_len": max_length,
+        "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
@@ -50,14 +50,13 @@ local num_epochs = 1;
         },
     },
     "data_loader": {
-        "batch_size": 10,
+        "batch_size": 8,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
         // I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
         "num_workers": 1,
-        // This should be the number of instances in the train set / the batch size
-        "batches_per_epoch": null
+        "drop_last": true,
     },
     "trainer": {
         // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
@@ -73,18 +72,12 @@ local num_epochs = 1;
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
-        "num_epochs": num_epochs,
+        "num_epochs": 1,
         "checkpointer": {
             // A value of null or -1 will save the weights of the model at the end of every epoch
             "num_serialized_models_to_keep": -1,
         },
         "cuda_device": 0,
         "grad_norm": 1.0,
-        "learning_rate_scheduler": {
-            "type": "slanted_triangular",
-            "num_epochs": num_epochs,
-            // This should be the number of instances in the train set / the batch size
-            "num_steps_per_epoch": null
-        },
     },
 }

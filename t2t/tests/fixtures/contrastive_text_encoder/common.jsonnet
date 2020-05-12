@@ -3,15 +3,17 @@
 local transformer_model = "distilroberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
-// This will be used to set the max # of tokens in the positive and negative examples.
+// This will be used to set the max/min # of tokens in the positive and negative examples.
 local max_length = 512;
+local min_length = 32;
 
 {
     "dataset_reader": {
         "type": "t2t.data.dataset_readers.contrastive.ContrastiveDatasetReader",
         "lazy": true,
-        "sample_spans": true,
+        "num_spans": 8,
         "max_span_len": max_length,
+        "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,

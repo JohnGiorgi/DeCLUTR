@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 from statistics import mean
-from typing import Callable, List
+from typing import Callable, Iterable, List, Union
 
 import numpy as np
 import torch
@@ -68,6 +68,16 @@ RUNNING = "\U000023F3"
 SAVING = "\U0001F4BE"
 FAST = "\U0001F3C3"
 SCORE = "\U0001F4CB"
+
+
+def _cleanup_batch(batch: List[Iterable[Union[str, bytes]]]) -> List[Iterable[str]]:
+    batch = [
+        [token.decode("utf-8") if isinstance(token, bytes) else token for token in sent]
+        if sent
+        else ["."]
+        for sent in batch
+    ]
+    return batch
 
 
 def _get_device(cuda_device):
@@ -327,7 +337,7 @@ def bow(
         return
 
     def batcher(params, batch):
-        batch = [sent if sent != [] else ["."] for sent in batch]
+        batch = _cleanup_batch(batch)
         embeddings = []
 
         for sent in batch:
@@ -359,6 +369,7 @@ def bow(
 @app.command()
 def infersent(
     path_to_senteval: str,
+    path_to_vectors: str,
     output_filepath: str = None,
     cuda_device: int = -1,
     prototyping_config: bool = False,
@@ -374,6 +385,7 @@ def infersent(
         params.infersent.build_vocab([" ".join(s) for s in samples], tokenize=False)
 
     def batcher(params, batch):
+        batch = _cleanup_batch(batch)
         sentences = [" ".join(s) for s in batch]
         embeddings = params.infersent.encode(sentences, bsize=params.batch_size, tokenize=False)
         return embeddings
@@ -396,8 +408,17 @@ def infersent(
     infersent.load_state_dict(torch.load(MODEL_PATH))
     infersent.to(device)
     # Load and initialize the model with word vectors
-    W2V_PATH = "fastText/crawl-300d-2M.vec"
-    infersent.set_w2v_path(W2V_PATH)
+    infersent.set_w2v_path(path_to_vectors)
+
+    trainable_params = sum(p.numel() for p in infersent.parameters() if p.requires_grad)
+    typer.secho(
+        (
+            f"{SUCCESS} Loaded InferSent model {MODEL_PATH}"
+            f" with {trainable_params} trainable parameters."
+        ),
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
 
     # Performs a few setup steps and returns the SentEval params
     params_senteval = _setup_senteval(path_to_senteval, prototyping_config, verbose)
@@ -433,7 +454,8 @@ def google_use(
         return
 
     def batcher(params, batch):
-        batch = [" ".join(sent) if sent != [] else "." for sent in batch]
+        batch = _cleanup_batch(batch)
+        batch = [" ".join(sent) for sent in batch]
         embeddings = params["google_use"](batch).numpy()
         return embeddings
 
@@ -476,10 +498,7 @@ def transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
-        # I am using the solution found in the SentEvel repo here:
-        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ["."] for sent in batch]
+        batch = _cleanup_batch(batch)
         # Re-tokenize the input text using the pre-trained tokenizer
         batch = [tokenizer.encode(" ".join(tokens)) for tokens in batch]
         batch = _pad_sequences(batch, tokenizer.pad_token_id)
@@ -561,10 +580,7 @@ def sentence_transformers(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
-        # I am using the solution found in the SentEvel repo here:
-        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ["."] for sent in batch]
+        batch = _cleanup_batch(batch)
         # Sentence Transformers API expects un-tokenized sentences.
         batch = [" ".join(tokens) for tokens in batch]
         embeddings = params.model.encode(batch, batch_size=len(batch), show_progress_bar=False)
@@ -618,16 +634,7 @@ def allennlp(
 
     @torch.no_grad()
     def batcher(params, batch):
-        # Some SentEval tasks contain empty batches which triggers an error with HuggingfFace's tokenizer.
-        # I am using the solution found in the SentEvel repo here:
-        # https://github.com/facebookresearch/SentEval/blob/6b13ac2060332842f59e84183197402f11451c94/examples/bow.py#L77
-        batch = [sent if sent != [] else ["."] for sent in batch]
-        # HACK (John): This is neccesary b/c at some point SentEval converts these to bytes.
-        # We probably want a better fix.
-        batch = [
-            [token.decode("utf-8") if isinstance(token, bytes) else token for token in sent]
-            for sent in batch
-        ]
+        batch = _cleanup_batch(batch)
         # Re-tokenize the input text using the tokenizer of the dataset reader
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)

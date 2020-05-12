@@ -104,10 +104,13 @@ def _compute_aggregate_scores(results):
             sts_score = scores["all"]["spearman"]["mean"] * 100
             aggregate_scores[task_set]["dev"] += sts_score
             aggregate_scores[task_set]["test"] += sts_score
-        # The image caption retrival task reports 4 scores per partition, average them.
         elif task == "ImageCaptionRetrieval":
-            aggregate_scores[task_set]["dev"] += mean(scores["devacc"])
-            aggregate_scores[task_set]["test"] += mean(scores["acc"])
+            aggregate_scores[task_set]["dev"] += scores["devacc"]
+            # Produce an average the same way SentEval produces its devacc average:
+            # https://tinyurl.com/y9wcxjtr
+            aggregate_scores[task_set]["test"] += mean(
+                scores["acc"][0][:-1] + scores["acc"][-1][:-1]
+            )
         # The rest of the tasks seem to all contain a dev and test accuracy
         elif "devacc" in scores and "acc" in scores:
             aggregate_scores[task_set]["dev"] += scores["devacc"]

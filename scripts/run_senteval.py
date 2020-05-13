@@ -115,7 +115,8 @@ def _compute_aggregate_scores(results):
             aggregate_scores[task_set]["dev"] += sts_score
             aggregate_scores[task_set]["test"] += sts_score
         elif task == "ImageCaptionRetrieval":
-            aggregate_scores[task_set]["dev"] += scores["devacc"]
+            # HACK (John): The divisor here is missing from SentEval, so add it manually ourselves.
+            aggregate_scores[task_set]["dev"] += scores["devacc"] / 6
             # Produce an average the same way SentEval produces its devacc average:
             # https://tinyurl.com/y9wcxjtr
             aggregate_scores[task_set]["test"] += mean(
@@ -382,11 +383,12 @@ def infersent(
     from models import InferSent
 
     def prepare(params, samples):
-        params.infersent.build_vocab([" ".join(s) for s in samples], tokenize=False)
+        samples = _cleanup_batch(samples)
+        params.infersent.build_vocab([" ".join(tokens) for tokens in samples], tokenize=False)
 
     def batcher(params, batch):
         batch = _cleanup_batch(batch)
-        sentences = [" ".join(s) for s in batch]
+        sentences = [" ".join(tokens) for tokens in batch]
         embeddings = params.infersent.encode(sentences, bsize=params.batch_size, tokenize=False)
         return embeddings
 

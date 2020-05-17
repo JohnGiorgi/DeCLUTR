@@ -11,7 +11,7 @@ local min_length = 32;
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "num_spans": 8,
+        "num_spans": 2,
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
@@ -46,7 +46,7 @@ local min_length = 32;
         },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.001,
+            "temperature": 0.0005,
         },
     },
     "data_loader": {
@@ -63,7 +63,7 @@ local min_length = 32;
         "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
-            "lr": 2e-5,
+            "lr": 5e-5,
             "weight_decay": 0.0,
             "parameter_groups": [
                 # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases

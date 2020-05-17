@@ -4,7 +4,7 @@ import sys
 
 from allennlp.commands import main
 
-config_file = "configs/contrastive.jsonnet"
+config_file = "configs/contrastive_ht.jsonnet"
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})
@@ -25,7 +25,7 @@ sys.argv = [
     config_file,
     "-s", serialization_dir,
     "--include-package", "t2t",
-    "-o", overrides,
+    # "-o", overrides, # uncomment if use cpu
 ]
 
 main()

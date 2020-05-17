@@ -12,6 +12,7 @@ from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
 from t2t.data.dataset_readers.dataset_utils.contrastive_utils import sample_spans
+from t2t.miners.augmentations import NLPAug
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class ContrastiveDatasetReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         sample_spans: bool = False,
         min_span_len: Optional[int] = None,
-        augmentations: Optional[List[nlpaug.augmenter]] = None,
+        augmentations: Optional[List[NLPAug]] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -84,6 +85,11 @@ class ContrastiveDatasetReader(DatasetReader):
             # instances in the same order every epoch. Our current solution is to read the entire file into memory.
             # This is a little expensive (roughly 1G per 1 million paragraphs), so a better solution might be
             # required down the line.
+            """
+            the data_file here contains the text in the training file. Each entry is a line of text.
+            For example, data_file[9] is a tuple of (id, text) 
+            '(9, 'Nebraska Highway 88 ( N @-@ 88 ) is a highway in northwestern Nebraska . It has a western terminus...')'
+            """
             if self._sample_spans:
                 data_file = list(enumerate(data_file))
                 random.shuffle(data_file)
@@ -119,7 +125,12 @@ class ContrastiveDatasetReader(DatasetReader):
             for span in sample_spans(text, num_spans=2, min_span_len=self._min_span_len,):
                 if self._augmentations is not None:
                     for aug in self._augmentations:
-                        span = aug(span)
+                        try:
+                            span = aug.augment(span)
+                        except:
+                            print(f'can not augment the span: {span}')
+                        # FIXME (Haotian): when multiple augs, only the last one stored
+                        # FIXME (Haotian): Make sure we add augmented text into the training as positive examples
                 tokens = self._tokenizer.tokenize(span)
                 spans.append(TextField(tokens, self._token_indexers))
             fields["tokens"] = ListField(spans)

@@ -17,11 +17,13 @@ local token_embedding_size = 768;
         "sample_spans": true,
         // This is (approximately an upper bound on sentence length in English
         "min_span_len": 30,
+        "augmentations": [
+            {
+                "type": "synonym-aug"
+            },
+        ],
         "tokenizer": {
-            "model_name": pretrained_transformer_model_name,
-            "max_length": max_length,
-        },
-        "tokenizer": {
+            // this "pretrained_transformer" is from allennlp/allennlp/data/tokenizers/pretrained_transformer_tokenizer.py
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
             "max_length": max_length,
@@ -39,6 +41,10 @@ local token_embedding_size = 768;
     "train_data_path": "datasets/wikitext-103/debug.txt",
     "model": {
         "type": "constrastive",
+        "tokenizer": {
+            "model_name": pretrained_transformer_model_name,
+            "max_length": max_length,
+        },
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

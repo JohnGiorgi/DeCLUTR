@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, unicode_literals
-
+#!/usr/bin/env python3
 import io
 import json
 import logging
@@ -8,14 +6,14 @@ import os
 import sys
 from pathlib import Path
 from statistics import mean
-from typing import Callable, Iterable, List, Union
+from typing import Callable, Iterable, List, Union, Dict
 
 import numpy as np
 import torch
 import typer
 
-# TODO (John): I only need this for the sanitize method. Would be better if this was NOT a dependency for people
-# who don't want to evaluate AllenNLP models.
+# TODO (John): I only need this for the sanitize method. Would be better if this
+# was NOT a dependency for people who don't want to evaluate AllenNLP models.
 from allennlp.common import util as common_util
 
 app = typer.Typer()
@@ -23,9 +21,7 @@ app = typer.Typer()
 # Set up logger
 logger = logging.getLogger(__name__)
 
-# URL to the TF Hub download for Google USE base model
-GOOGLE_USE_TF_HUB = "https://tfhub.dev/google/universal-sentence-encoder/4"
-
+AGGREGATE_SCORES_KEY = "aggregate_scores"
 DOWNSTREAM_TASKS = [
     "CR",
     "MR",
@@ -72,7 +68,10 @@ SCORE = "\U0001F4CB"
 
 def _cleanup_batch(batch: List[Iterable[Union[str, bytes]]]) -> List[Iterable[str]]:
     batch = [
-        [token.decode("utf-8") if isinstance(token, bytes) else token for token in sent]
+        [
+            token.decode("utf-8", errors="ignore") if isinstance(token, bytes) else token
+            for token in sent
+        ]
         if sent
         else ["."]
         for sent in batch
@@ -80,7 +79,7 @@ def _cleanup_batch(batch: List[Iterable[Union[str, bytes]]]) -> List[Iterable[st
     return batch
 
 
-def _get_device(cuda_device):
+def _get_device(cuda_device: int) -> torch.device:
     """Return a `torch.cuda` device if `torch.cuda.is_available()` and `cuda_device>=0`.
     Otherwise returns a `torch.cpu` device.
     """
@@ -91,15 +90,37 @@ def _get_device(cuda_device):
     return device
 
 
-def _compute_aggregate_scores(results):
-    """Computes aggregate scores for the dev and test sets in a given SentEval `results`.
+def _print_aggregate_scores(aggregate_scores: Dict[str, Dict[str, float]]) -> None:
+    """Prints out nicely formatted `aggregate_scores`."""
+    for partition in ["dev", "test"]:
+        typer.secho(f"{SCORE} Aggregate {partition} scores", fg=typer.colors.WHITE, bold=True)
+        for task_set in ["downstream", "probing", "all"]:
+            typer.secho(f"* {task_set.title()}: {aggregate_scores[task_set][partition]:.2f}%")
+
+
+def _compute_aggregate_scores(
+    results: Dict, ignore_tasks: List[str] = None
+) -> Dict[str, Dict[str, float]]:
+    """Computes aggregate scores for the dev and test sets for the given SentEval `results`. Tasks
+    can be ignored (e.g. their score will not be computed and therefore not contribute to the
+    aggregate score) by passing the task name in the list `ignore_tasks`.
     """
+    # The AGGREGATE_SCORES_KEY might exist in the dictionary (it is added to the results by
+    # us). Remove it if so, otherwise an error is raised as it does not exist in TRANSFER_TASKS.
+    ignore_tasks = (
+        [AGGREGATE_SCORES_KEY]
+        if ignore_tasks is None
+        # Unclear why this is cast as tuple, the type hint is List[str]?
+        else list(ignore_tasks) + [AGGREGATE_SCORES_KEY]
+    )
     aggregate_scores = {
         "downstream": {"dev": 0, "test": 0},
         "probing": {"dev": 0, "test": 0},
         "all": {},
     }
     for task, scores in results.items():
+        if ignore_tasks and task in ignore_tasks:
+            continue
         # Tasks belong to two groups only, "downstream" or "probing"
         task_set = "downstream" if task in DOWNSTREAM_TASKS else "probing"
         # All of this conditional logic is required to deal with the various ways performance is
@@ -134,11 +155,17 @@ def _compute_aggregate_scores(results):
             raise ValueError(f'Found an unexpected field in results, "{task}".')
 
     # Aggregate scores for "downstream" tasks
-    aggregate_scores["downstream"]["dev"] /= len(DOWNSTREAM_TASKS)
-    aggregate_scores["downstream"]["test"] /= len(DOWNSTREAM_TASKS)
+    num_downstream_tasks = len(
+        [task for task in results if task in DOWNSTREAM_TASKS and task not in ignore_tasks]
+    )
+    aggregate_scores["downstream"]["dev"] /= num_downstream_tasks
+    aggregate_scores["downstream"]["test"] /= num_downstream_tasks
     # Aggregate scores for "probing" tasks
-    aggregate_scores["probing"]["dev"] /= len(PROBING_TASKS)
-    aggregate_scores["probing"]["test"] /= len(PROBING_TASKS)
+    num_probing_tasks = len(
+        [task for task in results if task in PROBING_TASKS and task not in ignore_tasks]
+    )
+    aggregate_scores["probing"]["dev"] /= num_probing_tasks
+    aggregate_scores["probing"]["test"] /= num_probing_tasks
     # Aggregate score across all of SentEval
     aggregate_scores["all"]["dev"] = mean(
         [aggregate_scores["downstream"]["dev"], aggregate_scores["probing"]["dev"]]
@@ -164,13 +191,14 @@ def _setup_senteval(
         logging.basicConfig(format="%(asctime)s : %(message)s", level=logging.DEBUG)
 
     # Set params for SentEval
-    # See: https://github.com/facebookresearch/SentEval#senteval-parameters for explanation of the protoype config
+    # See: https://github.com/facebookresearch/SentEval#senteval-parameters for explanation of the
+    # protoype config
     path_to_data = os.path.join(path_to_senteval, "data")
     if prototyping_config:
         typer.secho(
             (
-                f"{WARNING} Using prototyping config. Pass --no-prototyping-config to get results comparable to"
-                " the literature."
+                f"{WARNING} Using prototyping config. Pass --no-prototyping-config to get results"
+                " comparable to the literature."
             ),
             fg=typer.colors.YELLOW,
             bold=True,
@@ -216,11 +244,7 @@ def _run_senteval(
     typer.secho(f"{SUCCESS} Evaluation complete!", fg=typer.colors.GREEN, bold=True)
 
     aggregate_scores = _compute_aggregate_scores(results)
-    typer.secho(
-        f'{SCORE} Aggregate dev score: {aggregate_scores["all"]["dev"]:.2f}%',
-        fg=typer.colors.WHITE,
-        bold=True,
-    )
+    _print_aggregate_scores(aggregate_scores)
 
     if output_filepath is not None:
         # Create the directory path if it doesn't exist
@@ -230,19 +254,32 @@ def _run_senteval(
             # Convert anything that can't be serialized to JSON to a python type
             json_safe_results = common_util.sanitize(results)
             # Add aggregate scores to results dict
-            json_safe_results["aggregate_scores"] = aggregate_scores
+            json_safe_results[AGGREGATE_SCORES_KEY] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
         typer.secho(
             f"{SAVING} Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True
         )
     else:
         typer.secho(
-            f"{WARNING} --output_filepath was not provided, printing results to console instead.",
+            f"{WARNING} --output-filepath was not provided, printing results to console instead.",
             fg=typer.colors.YELLOW,
             bold=True,
         )
         print(results)
     return
+
+
+@app.command()
+def compute_aggregate_scores(path_to_results: str, ignore_tasks: List[str] = None) -> None:
+    """Computes aggregate scores from a given results file (generated from a previous call to
+    `run_senteval`) at path_to_results`. Tasks can be ignored (e.g. their score will not be computed
+    and therefore not contribute to the aggregate score) by passing the task name in the list
+    `ignore_tasks`.
+    """
+    with open(path_to_results, "r") as f:
+        results = json.load(f)
+    aggregate_scores = _compute_aggregate_scores(results, ignore_tasks)
+    _print_aggregate_scores(aggregate_scores)
 
 
 @app.command()
@@ -333,7 +370,8 @@ def bow(
     def prepare(params, samples):
         _, params.word2id = create_dictionary(samples)
         params.word_vec = get_wordvec(params.path_to_vectors, params.word2id, params.skip_header)
-        # TODO (John): This was hardcoded in SentEval example script. Can we set it based on the loaded vectors?
+        # TODO (John): This was hardcoded in SentEval example script. Can we set it based on the
+        # loaded vectors?
         params.wvec_dim = 300
         return
 
@@ -396,8 +434,9 @@ def infersent(
     device = _get_device(cuda_device)
 
     # Load InferSent model
+    # TODO (John): Hardcoded these to move things along, but that should be fixed.
     V = 2
-    MODEL_PATH = "encoder/infersent%s.pkl" % V
+    MODEL_PATH = "resources/encoder/infersent%s.pkl" % V
     params_model = {
         "bsize": 64,
         "word_emb_dim": 300,
@@ -434,21 +473,23 @@ def infersent(
 def google_use(
     path_to_senteval: str,
     output_filepath: str = None,
-    tfhub_model_url: str = GOOGLE_USE_TF_HUB,
+    tfhub_model_url: str = None,
     tfhub_cache_dir: str = None,
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
     """Evaluates a Google USE model from TF Hub against the SentEval benchmark
-    (see: https://tfhub.dev/google/universal-sentence-encoder-large/5 for information on the pre-trained model).
-    If you would like to use a cached model instead of downloading one, following the instructions
-    here: https://medium.com/@xianbao.qian/how-to-run-tf-hub-locally-without-internet-connection-4506b850a915
+    (see: https://tfhub.dev/google/universal-sentence-encoder-large/5 for information on the
+    pre-trained model). If you would like to use a cached model instead of downloading one,
+    following the instructions here:
+    https://medium.com/@xianbao.qian/how-to-run-tf-hub-locally-without-internet-connection-4506b850a915
     and provide the TF Hub cache dir with `--tfhub-cache-dir`.
     """
     if tfhub_cache_dir is not None:
         os.environ["TFHUB_CACHE_DIR"] = tfhub_cache_dir
 
-    # This prevents import errors when a user doesn't have the dependencies for this command installed
+    # Prevents import errors when a user doesn't have the dependencies for this command installed
+    import tensorflow as tf
     import tensorflow_hub as hub
 
     # SentEval prepare and batcher
@@ -463,8 +504,12 @@ def google_use(
 
     # Download the Google Universal Sentence Encoder (will be cached)
     encoder = hub.load(tfhub_model_url)
+    trainable_params = tf.reduce_sum([tf.reduce_prod(v.shape) for v in encoder.trainable_variables])
     typer.secho(
-        f"{SUCCESS} Google USE model from TensorFlow Hub loaded successfully.",
+        (
+            f"{SUCCESS} Loaded Google USE model from {tfhub_model_url}"
+            f" with {trainable_params} trainable parameters."
+        ),
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -491,7 +536,6 @@ def transformers(
     """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark.
     """
 
-    # This prevents import errors when a user doesn't have the dependencies for this command installed
     from transformers import AutoModel, AutoTokenizer
 
     # SentEval prepare and batcher
@@ -516,8 +560,9 @@ def transformers(
         sequence_output, _ = params.model(input_ids=input_ids, attention_mask=attention_masks)
 
         # If mean_pool, we take the average of the token-level embeddings, accounting for pads.
-        # Otherwise, we take the pooled output for this specific model, which is typically the linear projection
-        # of a special tokens embedding, like [CLS] or <s>, which is prepended to the input during tokenization.
+        # Otherwise, we take the pooled output for this specific model, which is typically the
+        # linear projection of a special tokens embedding, like [CLS] or <s>, which is prepended to
+        # the input during tokenization.
         if mean_pool:
             embeddings = torch.sum(
                 sequence_output * attention_masks.unsqueeze(-1), dim=1
@@ -536,7 +581,10 @@ def transformers(
     # Load the Transformers tokenizer
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
     typer.secho(
-        f'{SUCCESS} Tokenizer "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
+        (
+            f"{SUCCESS} Tokenizer '{pretrained_model_name_or_path}' from Transformers loaded"
+            " successfully."
+        ),
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -570,10 +618,10 @@ def sentence_transformers(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Evaluates a pre-trained model from the Sentence Transformers library against the SentEval benchmark.
+    """Evaluates a pre-trained model from the Sentence Transformers library against the SentEval
+    benchmark.
     """
 
-    # This prevents import errors when a user doesn't have the dependencies for this command installed
     from sentence_transformers import SentenceTransformer
 
     # SentEval prepare and batcher
@@ -596,7 +644,10 @@ def sentence_transformers(
     model = SentenceTransformer(pretrained_model_name_or_path, device=device)
     model.eval()
     typer.secho(
-        f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Sentence Transformers loaded successfully.',
+        (
+            f"{SUCCESS} Model '{pretrained_model_name_or_path}' from Sentence Transformers loaded."
+            " successfully."
+        ),
         fg=typer.colors.GREEN,
         bold=True,
     )
@@ -626,7 +677,6 @@ def allennlp(
     """Evaluates a trained AllenNLP model against the SentEval benchmark.
     """
 
-    # This prevents import errors when a user doesn't have the dependencies for this command installed
     from allennlp.models.archival import load_archive
     from allennlp.predictors import Predictor
 
@@ -640,13 +690,13 @@ def allennlp(
         # Re-tokenize the input text using the tokenizer of the dataset reader
         inputs = [{"text": " ".join(tokens)} for tokens in batch]
         outputs = params.predictor.predict_batch_json(inputs)
-        # AllenNLP models return a dictionary, so we need to access the embeddings with the given key.
+        # AllenNLP models return a dictionary, so access the embeddings with the given key.
         embeddings = [output[output_dict_field] for output in outputs]
 
         embeddings = np.vstack(embeddings)
         return embeddings
 
-    # This allows us to import custom dataset readers and models that may exist in the AllenNLP archive.
+    # Allows us to import custom dataset readers and models that may exist in the AllenNLP archive.
     # See: https://tinyurl.com/whkmoqh
     include_package = include_package or []
     for package_name in include_package:

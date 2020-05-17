@@ -18,6 +18,10 @@ local token_embedding_size = 768;
         // This is (approximately an upper bound on sentence length in English
         "min_span_len": 30,
         "tokenizer": {
+            "model_name": pretrained_transformer_model_name,
+            "max_length": max_length,
+        },
+        "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": pretrained_transformer_model_name,
             "max_length": max_length,

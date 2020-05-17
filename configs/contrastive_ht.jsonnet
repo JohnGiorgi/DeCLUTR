@@ -1,3 +1,4 @@
+// Run this: allennlp train ./configs/contrastive_ht.jsonnet --include-package t2t -s ./output/tmp
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
 // OR a path on disk to a serialized transformer model. 
 // Note, to avoid issues, please name the serialized model folder in roughly the same format as the
@@ -31,7 +32,7 @@ local token_embedding_size = 768;
         // If a cache file exists at this directory, it will be loaded instead of re-processing the data.
         "cache_directory": null
     }, 
-    "train_data_path": "datasets/wikitext-103/train.txt",
+    "train_data_path": "datasets/wikitext-103/debug.txt",
     "model": {
         "type": "constrastive",
         "text_field_embedder": {

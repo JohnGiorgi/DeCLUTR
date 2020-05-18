@@ -43,6 +43,7 @@ class TestContrastiveUtils:
                 num_spans=num_spans,
                 sampling_strategy=sampling_strategy,
             )
+            assert len(positives) == num_spans
             for anc, pos in zip_longest(anchor, positives, fillvalue=anchor):
                 anc_len, pos_len = len(self.tokenize(anc)), len(self.tokenize(pos))
 

@@ -137,7 +137,6 @@ class ContrastiveTextEncoder(Model):
                 for chunk in chunk_positives(positives, chunk_dim=chunk_dim):
                     _, embedded_chunk = self._forward_internal(chunk)
                     embedded_positives.append(embedded_chunk)
-                # Stack and average across the same dim that we chunked on.
                 # Positives are represented by their mean embedding a la
                 # https://arxiv.org/abs/1902.09229.
                 embedded_positives = torch.stack(embedded_positives, dim=chunk_dim)
@@ -151,7 +150,7 @@ class ContrastiveTextEncoder(Model):
                     embedded_anchors, embedded_positives
                 )
                 # Get embeddings into the format that the PyTorch Metric Learning library expects
-                # before computing the loss (with an optional mining step)
+                # before computing the loss (with an optional mining step).
                 embeddings, labels = self._loss.get_embeddings_and_labels(
                     embedded_anchors, embedded_positives
                 )

@@ -80,14 +80,14 @@ def sample_anchor_positives(
             positive_start = randint(anchor_start, anchor_end - positive_length)
         elif strategy and strategy == strategy.adjacent:
             # There are two types of adjacent positives, those that boarder the beginning of the
-            # anchor and those that boarder the end. These may not be valid in cases where the
+            # anchor and those that border the end. These may not be valid in cases where the
             # positive length is longer than the available space in the document.
             valid_starts = []
             if anchor_start - positive_length > 0:
                 valid_starts.append(anchor_start - positive_length)
-            elif anchor_end + positive_length <= num_tokens:
-                valid_starts.append(anchor_end + positive_length)
-            else:
+            if anchor_end + positive_length <= num_tokens:
+                valid_starts.append(anchor_end)
+            if not valid_starts:
                 raise ValueError(
                     (
                         f"Cannot select adjacent only spans for a span length of {positive_length}"

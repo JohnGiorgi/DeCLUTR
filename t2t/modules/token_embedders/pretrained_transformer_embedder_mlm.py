@@ -12,9 +12,10 @@ from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
 @TokenEmbedder.register("pretrained_transformer_mlm")
 class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     """
-    This is a wrapper around `PretrainedTransformerEmbedder` that allows us to train against a masked language
-    modelling objective while we are embedding text. I don't like that we had to modify this class and hope in
-    the future that we can replace it with a model from the https://github.com/allenai/allennlp-models repo.
+    This is a wrapper around `PretrainedTransformerEmbedder` that allows us to train against a
+    masked language modelling objective while we are embedding text. I don't like that we had to
+    modify this class and hope in the future that we can replace it with a model from the
+    https://github.com/allenai/allennlp-models repo.
 
     Registered as a `TokenEmbedder` with name "pretrained_transformer_mlm".
     """
@@ -66,9 +67,10 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         Shape: [batch_size, num_wordpieces, embedding_size].
         """
 
-        # Some of the huggingface transformers don't support type ids at all and crash when you supply them. For
-        # others, you can supply a tensor of zeros, and if you don't, they act as if you did. There is no practical
-        # difference to the caller, so here we pretend that one case is the same as another case.
+        # Some of the huggingface transformers don't support type ids at all and crash when you
+        # supply them. For others, you can supply a tensor of zeros, and if you don't, they act as
+        # if you did. There is no practical difference to the caller, so here we pretend that one
+        # case is the same as another case.
         if type_ids is not None:
             max_type_id = type_ids.max()
             if max_type_id == 0:
@@ -90,16 +92,17 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         # or if self._max_length is not None:
         # [batch_size * num_segments, self._max_length, embedding_size]
 
-        # We call this with kwargs because some of the huggingface models don't have the token_type_ids parameter
-        # and fail even when it's given as None.
+        # We call this with kwargs because some of the huggingface models don't have the
+        # token_type_ids parameter and fail even when it's given as None.
         # Also, as of transformers v2.5.1, they are taking FloatTensor masks.
         parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}
         masked_lm_loss = None
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
         if self.masked_language_modeling:
-            # Even if masked_language_modeling is True, we may not be masked language modeling on the current
-            # batch. We still need to check if masked language modeling labels are present in the input.
+            # Even if masked_language_modeling is True, we may not be masked language modeling on
+            # the current batch. We still need to check if masked language modeling labels are
+            # present in the input.
             if masked_lm_labels is not None:
                 parameters["masked_lm_labels"] = masked_lm_labels
                 masked_lm_loss, _, hidden_states = self.transformer_model(**parameters)

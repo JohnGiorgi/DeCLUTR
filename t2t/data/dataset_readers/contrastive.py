@@ -48,6 +48,11 @@ class ContrastiveDatasetReader(DatasetReader):
     min_span_len : `int`, optional
         The minimum length of spans (after tokenization) which should be sampled. Has no effect if
         `num_spans` is not provided.
+    sampling_strategy : `str`, optional (default = None)
+        One of "subsuming" or "adjacent". If "subsuming," positive spans are always subsumed by the
+        anchor. If "adjacent", positive spans are always adjacent to the anchor. If not provided,
+        positives may be subsumed, adjacent to, or overlapping with the anchor. Has no effect if
+        `num_spans` is not provided.
     """
 
     def __init__(
@@ -57,6 +62,7 @@ class ContrastiveDatasetReader(DatasetReader):
         num_spans: Optional[int] = None,
         max_span_len: Optional[int] = None,
         min_span_len: Optional[int] = None,
+        sampling_strategy: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -72,6 +78,20 @@ class ContrastiveDatasetReader(DatasetReader):
         self._max_span_len = max_span_len
         self._min_span_len = min_span_len
         self.sample_spans = bool(self._num_spans)
+        self._sampling_strategy = (
+            sampling_strategy.lower() if sampling_strategy is not None else sampling_strategy
+        )
+        if (
+            self._num_spans
+            and self._sampling_strategy is not None
+            and self._sampling_strategy not in ["subsuming", "adjacent"]
+        ):
+            raise ValueError(
+                (
+                    'sampling_strategy must be one of ["subsuming", "adjacent"].'
+                    f" Got {self._sampling_strategy}."
+                )
+            )
 
         # In the v1.0 AllenNLP pre-release, theres a small catch that dataset readers used in the
         # distributed setting need to shard instances to separate processes internally such that one
@@ -151,6 +171,7 @@ class ContrastiveDatasetReader(DatasetReader):
                 max_span_len=self._max_span_len,
                 min_span_len=self._min_span_len,
                 num_spans=self._num_spans,
+                sampling_strategy=self._sampling_strategy,
             )
             anchor_tokens = self._tokenizer.tokenize(anchor_text)
             fields["anchors"] = TextField(anchor_tokens, self._token_indexers)

@@ -78,6 +78,17 @@ def sample_anchor_positives(
         positive_length = int(np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len)
         # A user can specify a subsuming or adjacent only sampling strategy.
         if sampling_strategy == "subsuming":
+            # To be strictly subsuming, we cannot allow the positive_length > anchor_length.
+            if positive_length > anchor_length:
+                logger.warning_once(
+                    (
+                        f"Positive length was longer than anchor length. Temporarily reducing max"
+                        f" span length of positives. This message will not be displayed again."
+                    )
+                )
+                positive_length = int(
+                    np.random.beta(2, 4) * (anchor_length - min_span_len) + min_span_len
+                )
             positive_start = randint(anchor_start, anchor_end - positive_length)
         elif sampling_strategy == "adjacent":
             # We have to restrict positives to a length that will allow them to be adjacent to
@@ -87,10 +98,9 @@ def sample_anchor_positives(
             if positive_length > max_positive_len:
                 logger.warning_once(
                     (
-                        f"There is no room to sample an adjacent positive span of"
-                        f" max_span_len {positive_length}. Temporarily reducing the"
-                        f" maximum span length of positives to {max_positive_len}."
-                        " This message will not be displayed again."
+                        f"There is no room to sample an adjacent positive span. Temporarily"
+                        f" reducing the maximum span length of positives. This message will not be"
+                        f" displayed again."
                     )
                 )
             positive_length = int(

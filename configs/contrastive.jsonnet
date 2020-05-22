@@ -26,6 +26,7 @@ local num_epochs = 1;
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
+            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -47,11 +48,6 @@ local num_epochs = 1;
                 },
             },
         },
-        "seq2vec_encoder": {
-            "type": "bag_of_embeddings",
-            "embedding_dim": transformer_dim,
-            "averaged": true
-        },
         "loss": {
             "type": "nt_xent",
             "temperature": 0.0005,
@@ -59,8 +55,8 @@ local num_epochs = 1;
     },
     "data_loader": {
         "batch_size": 8,
-        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
-        // I need to modify the dataloader according to:
+        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
+        // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
         "num_workers": 1,
@@ -69,14 +65,14 @@ local num_epochs = 1;
         "batches_per_epoch": null
     },
     "trainer": {
-        // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
-        "opt_level": null,
+        // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
+        "opt_level": "O1",
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,
             "weight_decay": 0.0,
             "parameter_groups": [
-                # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
+                # Apply weight decay to pre-trained params, excluding LayerNorm params and biases
                 # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
                 # Regex: https://regex101.com/r/ZUyDgR/3/tests
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],

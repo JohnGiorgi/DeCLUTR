@@ -18,6 +18,7 @@ local min_length = 32;
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
+            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -30,22 +31,18 @@ local min_length = 32;
     "validation_data_path": "t2t/tests/fixtures/data/openwebtext/valid.txt",
     "model": {
         "type": "t2t.models.contrastive_text_encoder.ContrastiveTextEncoder",
-        "seq2vec_encoder": {
-            "type": "bag_of_embeddings",
-            "embedding_dim": transformer_dim,
-            "averaged": true
-        },
     },
     "data_loader": {
-        "batch_size": 5,
-        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
-        // I need to modify the dataloader according to:
+        "batch_size": 4,
+        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
+        // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
-        "num_workers": 1
+        "num_workers": 1,
+        "drop_last": true
     },
     "trainer": {
-        // If you have installed Apex, you can chose one of its opt_levels here to use mixed precision training.
+        // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
         "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",

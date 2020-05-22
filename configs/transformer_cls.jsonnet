@@ -17,6 +17,7 @@ local cls_is_last_token = false;
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
+            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -46,8 +47,8 @@ local cls_is_last_token = false;
     },
     "data_loader": {
         "batch_size": 8,
-        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
-        // I need to modify the dataloader according to:
+        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
+        // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
         "num_workers": 1,

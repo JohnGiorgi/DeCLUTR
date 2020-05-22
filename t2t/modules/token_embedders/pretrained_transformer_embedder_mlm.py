@@ -27,7 +27,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         self.masked_language_modeling = masked_language_modeling
         if self.masked_language_modeling:
             self.tokenizer = PretrainedTransformerTokenizer(model_name)
-            # Models with LM heads may NOT include hidden states in their outputs by default
+            # Models with LM heads may not include hidden states in their outputs by default.
             config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
             self.transformer_model = AutoModelWithLMHead.from_pretrained(model_name, config=config)
 

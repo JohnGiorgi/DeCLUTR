@@ -14,6 +14,7 @@ local max_length = 512;
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
+            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -35,16 +36,11 @@ local max_length = 512;
                 },
             },
         },
-        "seq2vec_encoder": {
-            "type": "bag_of_embeddings",
-            "embedding_dim": transformer_dim,
-            "averaged": true
-        },
     },
     "data_loader": {
         "batch_size": 8,
-        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data more than once.
-        // I need to modify the dataloader according to:
+        // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
+        // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         // in order to support multi-processing.
         "num_workers": 1,

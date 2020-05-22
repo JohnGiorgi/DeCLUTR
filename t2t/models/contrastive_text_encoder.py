@@ -6,6 +6,7 @@ import torch
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
+from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
@@ -32,10 +33,10 @@ class ContrastiveTextEncoder(Model):
     vocab : `Vocabulary`
     text_field_embedder : `TextFieldEmbedder`
         Used to embed the input text into a `TextField`
-    seq2vec_encoder : `Seq2VecEncoder`
-        Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
-        will pool its output. Otherwise, this encoder will operate directly on the output
-        of the `text_field_embedder`.
+    seq2vec_encoder : `Seq2VecEncoder`, optional, (default = `None`)
+        Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder will pool its output.
+        Otherwise, this encoder will operate directly on the output of the `text_field_embedder`.
+        If `None`, defaults to `BagOfEmbeddingsEncoder` with `averaged=True`.
     feedforward : `FeedForward`, optional, (default = None).
         An optional feedforward layer to apply after the seq2vec_encoder.
     loss : `PyTorchMetricLearningLoss`, option (default = None).
@@ -57,7 +58,7 @@ class ContrastiveTextEncoder(Model):
         self,
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
-        seq2vec_encoder: Seq2VecEncoder,
+        seq2vec_encoder: Optional[Seq2VecEncoder] = None,
         feedforward: Optional[FeedForward] = None,
         miner: Optional[PyTorchMetricLearningMiner] = None,
         loss: Optional[PyTorchMetricLearningLoss] = None,
@@ -74,7 +75,10 @@ class ContrastiveTextEncoder(Model):
         if self._masked_language_modeling:
             self._tokenizer = token_embedder.tokenizer
 
-        self._seq2vec_encoder = seq2vec_encoder
+        # Default to mean BOW pooler. This performs well and so it serves as a sensible default.
+        self._seq2vec_encoder = seq2vec_encoder or BagOfEmbeddingsEncoder(
+            text_field_embedder.get_output_dim(), averaged=True
+        )
         self._feedforward = feedforward
 
         self._miner = miner

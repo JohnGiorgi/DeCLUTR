@@ -18,7 +18,6 @@ local transformer_model = "distilroberta-base";
                 },
             },
         },
-        "seq2vec_encoder": COMMON['model']['seq2vec_encoder'],
         "loss": {
             "type": "t2t.losses.pytorch_metric_learning.NTXentLoss",
             "temperature": 0.001,

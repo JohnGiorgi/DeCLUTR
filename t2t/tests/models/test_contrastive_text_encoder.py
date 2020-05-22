@@ -8,8 +8,8 @@ from allennlp.models import Model
 
 
 class TestContrastiveTextEncoder(ModelTestCase):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.FIXTURES_ROOT = Path(
             "t2t/tests/fixtures"  # We need to override the path set by AllenNLP
         )

@@ -18,11 +18,10 @@ local transformer_model = "distilroberta-base";
                 },
             },
         },
-        "seq2vec_encoder": COMMON['model']['seq2vec_encoder'],
         "feedforward": {
             "input_dim": 768,
             "num_layers": 1,
-            "hidden_dims": [16],
+            "hidden_dims": 16,
             "activations": "relu",
         },
         "loss": {

@@ -16,9 +16,10 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
     """
     This is a a simple wrapper around `BasicTextFieldEmbedder` that accounts for the fact that
     our custom PretrainedTransformerEmbedderMLM returns a tuple containing the loss for the masked
-    language modelling objective as well as some embedded text. I don't like that we had to modify
-    this class and hope in the future that we can replace it with a model from the
-    https://github.com/allenai/allennlp-models repo.
+    language modelling objective as well as some embedded text.
+
+    I don't like that we had to modify this class and hope in the future that we can replace it
+    with a model from the https://github.com/allenai/allennlp-models repo.
 
     Registered as a `TextFieldEmbedder` with name "mlm".
     """
@@ -61,8 +62,8 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
                     list(tensors.values())[0], **forward_params_values
                 )
             else:
-                # If there are multiple tensor arguments, we have to require matching names from the
-                # TokenIndexer.  I don't think there's an easy way around that.
+                # If there are multiple tensor arguments, we have to require matching names from
+                # the TokenIndexer. I don't think there's an easy way around that.
                 masked_lm_loss, token_vectors = embedder(**tensors, **forward_params_values)
             if token_vectors is not None:
                 # To handle some very rare use cases, we allow the return value of the embedder to

@@ -23,8 +23,8 @@ def _mask_tokens(
         )
 
     labels = inputs.clone()
-    # We sample a few tokens in each sequence for masked-LM training (with probability args.mlm_probability
-    # defaults to 0.15 in Bert/RoBERTa)
+    # We sample a few tokens in each sequence for masked-LM training (with probability
+    # mlm_probability defaults to 0.15 in Bert/RoBERTa)
     probability_matrix = torch.full(labels.shape, mlm_probability)
     special_tokens_mask = [
         tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True)
@@ -58,7 +58,11 @@ def mask_tokens(
     mlm_probability: float = 0.15,
 ) -> TextFieldTensors:
     device = tokens["tokens"]["token_ids"].device
-    inputs, labels = _mask_tokens(tokens["tokens"]["token_ids"].to("cpu"), tokenizer.tokenizer)
+    inputs, labels = _mask_tokens(
+        inputs=tokens["tokens"]["token_ids"].to("cpu"),
+        tokenizer=tokenizer.tokenizer,
+        mlm_probability=mlm_probability,
+    )
     tokens["tokens"]["token_ids"] = inputs.to(device)
     tokens["tokens"]["masked_lm_labels"] = labels.to(device)
     return tokens

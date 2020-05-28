@@ -11,7 +11,7 @@ class PyTorchMetricLearningMiner(Registrable):
     for an example.
     """
 
-    default_implementation = "batch_hard"
+    default_implementation = "pair_margin"
 
 
 @PyTorchMetricLearningMiner.register("batch_hard")
@@ -72,4 +72,30 @@ class MultiSimilarityMiner(PyTorchMetricLearningMiner, miners.MultiSimilarityMin
 
         super().__init__(
             epsilon=epsilon, normalize_embeddings=normalize_embeddings,
+        )
+
+
+@PyTorchMetricLearningMiner.register("pair_margin")
+class PairMarginMiner(PyTorchMetricLearningMiner, miners.PairMarginMiner):
+    """Wraps the `PairMarginMiner` implementation from Pytorch Metric Learning:
+    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#pairmarginminer).
+
+    Registered as a `PyTorchMetricLearningMiner` with name "pair_margin".
+    """
+
+    def __init__(
+        self,
+        pos_margin: float,
+        neg_margin: float,
+        use_similarity: bool = True,
+        squared_distances: bool = False,
+        normalize_embeddings: bool = True,
+    ) -> None:
+
+        super().__init__(
+            pos_margin=pos_margin,
+            neg_margin=neg_margin,
+            use_similarity=use_similarity,
+            squared_distances=squared_distances,
+            normalize_embeddings=normalize_embeddings,
         )

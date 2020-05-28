@@ -177,13 +177,6 @@ def _compute_aggregate_scores(
     return aggregate_scores
 
 
-def _pad_sequences(sequences, pad_token):
-    """Pads the elements of `sequences` with `pad_token` up to the longest sequence length."""
-    max_len = len(max(sequences, key=len))
-    padded_sequences = [seq + ([pad_token] * (max_len - len(seq))) for seq in sequences]
-    return padded_sequences
-
-
 def _setup_senteval(
     path_to_senteval: str, prototyping_config: bool = False, verbose: bool = False
 ) -> None:
@@ -529,7 +522,6 @@ def transformers(
     output_filepath: str = None,
     mean_pool: bool = False,
     cuda_device: int = -1,
-    opt_level: str = None,
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
@@ -546,33 +538,30 @@ def transformers(
     def batcher(params, batch):
         batch = _cleanup_batch(batch)
         # Re-tokenize the input text using the pre-trained tokenizer
-        batch = [tokenizer.encode(" ".join(tokens)) for tokens in batch]
-        batch = _pad_sequences(batch, tokenizer.pad_token_id)
-
-        # To embed with transformers, we (minimally) need the input ids and the attention masks.
-        input_ids = torch.as_tensor(batch, device=params.device)
-        attention_masks = torch.where(
-            input_ids == params.tokenizer.pad_token_id,
-            torch.zeros_like(input_ids),
-            torch.ones_like(input_ids),
+        batch = [" ".join(tokens) for tokens in batch]
+        # HACK (John): This will save us in the case of tokenizers with no default max_length
+        # Why does this happen? Open an issue on Transformers.
+        max_length = params.tokenizer.max_length if hasattr(tokenizer, "max_length") else 512
+        inputs = params.tokenizer.batch_encode_plus(
+            batch, pad_to_max_length=True, max_length=max_length, return_tensors="pt"
         )
+        # Place all input tensors on same device as the model
+        inputs = {name: tensor.to(params.device) for name, tensor in inputs.items()}
 
-        sequence_output, _ = params.model(input_ids=input_ids, attention_mask=attention_masks)
+        sequence_output, pooled_output = model(**inputs)
 
         # If mean_pool, we take the average of the token-level embeddings, accounting for pads.
         # Otherwise, we take the pooled output for this specific model, which is typically the
-        # linear projection of a special tokens embedding, like [CLS] or <s>, which is prepended to
-        # the input during tokenization.
+        # embedding of a special tokens embedding, like [CLS] or <s>, which is prepended to the
+        # input during tokenization.
         if mean_pool:
             embeddings = torch.sum(
-                sequence_output * attention_masks.unsqueeze(-1), dim=1
-            ) / torch.clamp(torch.sum(attention_masks, dim=1, keepdims=True), min=1e-9)
+                sequence_output * inputs["attention_mask"].unsqueeze(-1), dim=1
+            ) / torch.clamp(torch.sum(inputs["attention_mask"], dim=1, keepdims=True), min=1e-9)
         else:
-            # TODO (John): Replace this with the built in pooler from the Transformers lib,
-            # as it will check if the last token should be used.
-            embeddings = sequence_output[:, 0, :]
-
+            embeddings = pooled_output
         embeddings = embeddings.cpu().numpy()
+
         return embeddings
 
     # Determine the torch device
@@ -590,7 +579,8 @@ def transformers(
     )
 
     # Load the Transformers model
-    model = AutoModel.from_pretrained(pretrained_model_name_or_path).to(device)
+    model = AutoModel.from_pretrained(pretrained_model_name_or_path)
+    model.to(device)
     model.eval()
     typer.secho(
         f'{SUCCESS} Model "{pretrained_model_name_or_path}" from Transformers loaded successfully.',
@@ -614,7 +604,6 @@ def sentence_transformers(
     pretrained_model_name_or_path: str,
     output_filepath: str = None,
     cuda_device: int = -1,
-    opt_level: str = None,
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
@@ -667,7 +656,6 @@ def allennlp(
     output_filepath: str = None,
     weights_file: str = None,
     cuda_device: int = -1,
-    opt_level: str = "O0",
     output_dict_field: str = "embeddings",
     predictor_name: str = None,
     include_package: List[str] = None,
@@ -706,7 +694,7 @@ def allennlp(
     archive = load_archive(
         path_to_allennlp_archive,
         cuda_device=cuda_device,
-        opt_level=opt_level,
+        opt_level="O0",
         weights_file=weights_file,
     )
     predictor = Predictor.from_archive(archive, predictor_name)

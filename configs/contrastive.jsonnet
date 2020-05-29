@@ -19,14 +19,15 @@ local num_epochs = 1;
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "num_spans": 2,
+        "num_anchors": 2,
+        "num_positives": 2,
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
-            "add_special_tokens": false
+            "add_special_tokens": true
         },
         "token_indexers": {
             "tokens": {

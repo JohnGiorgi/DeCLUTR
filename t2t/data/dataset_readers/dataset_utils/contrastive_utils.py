@@ -65,7 +65,8 @@ def sample_anchor_positives(
         )
 
     anchors, positives = [], []
-    valid_anchor_starts = list(range(0, num_tokens, max_span_len))
+    # Valid anchor starts are token indicies which begin a token span of at least max_span_len
+    valid_anchor_starts = list(range(0, num_tokens - max_span_len + 1, max_span_len))
     for _ in range(num_anchors):
         # Sample the anchor length from a beta distribution skewed towards longer spans, the
         # intuition being that longer spans have the best chance of being representative of the

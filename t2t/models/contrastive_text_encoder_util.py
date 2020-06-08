@@ -8,7 +8,8 @@ from allennlp.data import TextFieldTensors
 
 
 def unpack_batch(tokens: TextFieldTensors) -> List[TextFieldTensors]:
-    """Chunks the tensors in `tokens` along `chunk_dim`, returning a list of tensors.
+    """If the tensors of `tokens` are three-dimensional, we reshape them to be two-dimensional
+    before returning the `TextFieldTensors` object. Otherwise, this is a no-op.
 
     # Parameters
 
@@ -16,9 +17,7 @@ def unpack_batch(tokens: TextFieldTensors) -> List[TextFieldTensors]:
         From a `TextField`
 
     tokens : TextFieldTensors
-        `TextFieldTensors` containing the tensors to chunk.
-    chunk_dim : int
-        The dimension of the tensors in `tokens` to chunk.
+        `TextFieldTensors` containing the tensors to (possibly) reshape.
     """
     for name, tensor in tokens["tokens"].items():
         if len(tensor.size()) == 3:

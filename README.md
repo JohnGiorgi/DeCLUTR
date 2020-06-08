@@ -2,17 +2,19 @@
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
-A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
+A contrastive, self-supervised method for learning textual representations. Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
-| Model                                            | Embed. Dim. | Downstream | Probing |  Avg. | Δ |
-|--------------------------------------------------|:-----------:|:----------:|---------|-------|------------|
-| [InferSent V2](https://github.com/facebookresearch/InferSent)                  |     4096    |    77.45   |  72.84  | 75.14 |    -0.77   |
-| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/4) |     512     |    77.45   |  62.73  | 70.09 |    -5.82   |
-| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens")    |     768     |    __78.53__   |  63.94  | 71.23 |    -4.68   |
-| Transformer-CLS ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))               |     768     |    70.98   |  68.00  | 69.49 |    -6.42   |
-| Transformer-Mean ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))              |     768     |    73.76   |  74.57  | 74.16 |    -1.75   |
-| Ours ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                                             |     768     |    77.13   |  __74.69__  | __75.91__ |     --     |
+| Model                                                                                                      | Parameters | Embed. Dim. | Downstream |  Probing  |    Avg.   |   Δ   |
+|------------------------------------------------------------------------------------------------------------|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |     38M    |     4096    |    76.46   |   72.58   |   74.52   | -1.40 |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |    147M    |     512     |  __79.13__ |   66.70   |   72.91   | -3.00 |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |    125M    |     768     |    77.59   |   63.22   |   70.40   | -5.52 |
+| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |     82M    |     768     |    72.69   | __74.27__ |   73.48   | -2.44 |
+| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |    125M    |     768     |    72.22   |   73.38   |   72.80   | -3.12 |
+| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |     82M    |     768     |    76.43   |   73.82   |   75.13   | -0.79 |
+| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |    125M    |     768     |    78.17   |   73.67   | __75.92__ |   --  |
 
+> Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued training with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation.
 
 ## Installation
 
@@ -47,7 +49,7 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 --overrides "{'trainer.opt_level': 'O1'}"
 ```
 
-> You can also add this to a [config](configs), if you prefer.
+> You can also add this to a [config](configs) if you prefer.
 
 ## Usage
 
@@ -72,7 +74,7 @@ allennlp train configs/contrastive_simple.jsonnet \
     --include-package declutr
 ```
 
-During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
+During training, models, vocabulary, configuration, and log files will be saved to `output`. This can be changed to any path you like.
 
 > Note, we provide a second config, [`contrastive.jsonnet`](configs/contrastive.jsonnet) that requires slightly more configuration but leads to slightly better scores.
 
@@ -87,7 +89,7 @@ allennlp train configs/contrastive_simple.jsonnet \
     --include-package declutr
 ```
 
-> You can also add this to a [config](configs), if you prefer.
+> You can also add this to a [config](configs) if you prefer.
 
 ### Embedding
 

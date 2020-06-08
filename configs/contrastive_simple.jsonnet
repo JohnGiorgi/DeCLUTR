@@ -11,14 +11,14 @@ local min_length = 32;
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "num_spans": 2,
+        "num_anchors": 2,
+        "num_positives": 2,
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
-            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -42,11 +42,11 @@ local min_length = 32;
         },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.0005,
+            "temperature": 0.05,
         },
     },
     "data_loader": {
-        "batch_size": 8,
+        "batch_size": 4,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
         // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

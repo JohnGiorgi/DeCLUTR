@@ -13,11 +13,10 @@ local num_epochs = 1;
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        // Technically, we don't need to sample anchors or positives when training with MLM only.
-        // However, to make this experiment as comparable as possible to the "Contrastive only"
-        // and "Both" experiments, we sample the same number of anchors and MLM on all of them.
         "num_anchors": 2,
-        "num_positives": 1,
+        "num_positives": 2,
+        "max_span_len": max_length,
+        "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
@@ -39,9 +38,13 @@ local num_epochs = 1;
                 "tokens": {
                     "type": "pretrained_transformer_mlm",
                     "model_name": transformer_model,
-                    "masked_language_modeling": true
+                    "masked_language_modeling": false
                 },
             },
+        },
+        "loss": {
+            "type": "nt_xent",
+            "temperature": 0.05,
         },
     },
     "data_loader": {

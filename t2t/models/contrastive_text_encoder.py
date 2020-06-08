@@ -126,8 +126,9 @@ class ContrastiveTextEncoder(Model):
         masked_lm_loss, embedded_anchors = self._forward_internal(anchors, output_dict)
 
         # If positives are supplied by DataLoader and we are training, compute a contrastive loss.
-        if self.training and positives:
+        if self.training:
             output_dict["loss"] = 0
+            # TODO: We should throw a ValueError if no postives provided by loss is not None.
             if self._loss is not None:
                 # Like the anchors, if we sampled multiple positives, we need to unpack them.
                 positives = unpack_batch(positives)

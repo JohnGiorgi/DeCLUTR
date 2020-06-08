@@ -34,13 +34,13 @@ jobs:
         pip install -e ".[dev]"
     - name: Format code with black
       run: |
-        black -l 100 t2t
+        black -l 100 declutr
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 t2t --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 declutr --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings.
-        flake8 t2t --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
+        flake8 declutr --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
     - name: Test with pytest
       run: |
-        pytest t2t/tests -v -s
+        pytest declutr/tests -v -s

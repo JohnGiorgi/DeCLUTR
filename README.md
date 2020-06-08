@@ -1,6 +1,6 @@
-![build](https://github.com/JohnGiorgi/t2t/workflows/build/badge.svg?branch=master)
+![build](https://github.com/JohnGiorgi/declutr/workflows/build/badge.svg?branch=master)
 
-# Contrastive Self-supervision for Textual Representations
+# DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
 A contrastive, self-supervised method for learning textual representations. This is still a work in progress, but early results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
@@ -27,13 +27,13 @@ Before installing, you should create and activate a Python virtual environment. 
 First, clone the repository locally
 
 ```bash
-git clone https://github.com/JohnGiorgi/t2t.git
+git clone https://github.com/JohnGiorgi/DeCLUTR.git
 ```
 
 Then, install
 
 ```bash
-cd t2t
+cd declutr
 pip install --editable .
 ```
 
@@ -69,7 +69,7 @@ To train the model, run the following command
 allennlp train configs/contrastive_simple.jsonnet \
     -s output \
     -o "{'train_data_path': 'path/to/input.txt'}" \
-    --include-package t2t
+    --include-package declutr
 ```
 
 During training, models, vocabulary, configuration and log files will be saved to `output`. This can be changed to any path you like.
@@ -84,7 +84,7 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 allennlp train configs/contrastive_simple.jsonnet \
     -s output \
     -o "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
-    --include-package t2t
+    --include-package declutr
 ```
 
 > You can also add this to a [config](configs), if you prefer.
@@ -99,7 +99,7 @@ allennlp train configs/contrastive_simple.jsonnet \
 To use the model as a library, import `Encoder` and pass it some text (it accepts both strings and lists of strings)
 
 ```python
-from t2t import Encoder
+from declutr import Encoder
 
 encoder = Encoder("path/to/serialized/model")
 embeddings = encoder([
@@ -128,7 +128,7 @@ allennlp predict output path/to/input.txt \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
- --include-package t2t
+ --include-package declutr
 ```
 
 This will:
@@ -162,7 +162,7 @@ Then you can run our [script](scripts/run_senteval.py) to evaluate a trained mod
 python scripts/run_senteval.py allennlp SentEval output 
  --output-filepath output/senteval_results.json \
  --cuda-device 0  \
- --include-package t2t
+ --include-package declutr
 ```
 
 The results will be saved to `output/senteval_results.json`. This can be changed to any path you like.

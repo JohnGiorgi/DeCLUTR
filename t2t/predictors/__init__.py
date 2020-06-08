@@ -1,1 +1,0 @@
-from t2t.predictors.contrastive_predictor import ContrastivePredictor

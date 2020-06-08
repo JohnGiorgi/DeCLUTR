@@ -1,1 +1,0 @@
-from t2t.models.contrastive_text_encoder import ContrastiveTextEncoder

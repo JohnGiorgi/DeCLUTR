@@ -29,7 +29,6 @@ class ContrastiveDatasetReader(DatasetReader):
     if `num_spans > 0`, else:
         tokens : `TextField`
 
-
     Registered as a `DatasetReader` with name "contrastive".
 
     # Parameters
@@ -40,8 +39,11 @@ class ContrastiveDatasetReader(DatasetReader):
         See :class:`TokenIndexer`.
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
+    num_anchors : `int`, optional
+        The number of spans to sample from each instance to serve as anchors.
     num_spans : `int`, optional
-        The number of spans to sample from each instance to serve as positive examples.
+        The number of spans to sample from each instance to serve as positive examples (per anchor).
+        Has no effect if `num_anchors` is not provided.
     max_span_len : `int`, optional
         The maximum length of spans (after tokenization) which should be sampled. Has no effect if
         `num_spans` is not provided.
@@ -59,7 +61,8 @@ class ContrastiveDatasetReader(DatasetReader):
         self,
         token_indexers: Optional[Dict[str, TokenIndexer]] = None,
         tokenizer: Optional[Tokenizer] = None,
-        num_spans: Optional[int] = None,
+        num_anchors: Optional[int] = None,
+        num_positives: Optional[int] = None,
         max_span_len: Optional[int] = None,
         min_span_len: Optional[int] = None,
         sampling_strategy: Optional[str] = None,
@@ -69,20 +72,23 @@ class ContrastiveDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or SpacyTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
 
-        self._num_spans = num_spans
-        if self._num_spans is not None:
+        self._num_anchors = num_anchors
+        if self._num_anchors is not None:
+            if num_positives is None:
+                raise ValueError("num_positives must be provided if num_anchors is not None.")
             if max_span_len is None:
-                raise ValueError("max_span_len must be provided if num_spans is not None.")
+                raise ValueError("max_span_len must be provided if num_anchors is not None.")
             if min_span_len is None:
-                raise ValueError("min_span_len must be provided if num_spans is not None.")
+                raise ValueError("min_span_len must be provided if num_anchors is not None.")
+        self._num_positives = num_positives
         self._max_span_len = max_span_len
         self._min_span_len = min_span_len
-        self.sample_spans = bool(self._num_spans)
+        self.sample_spans = bool(self._num_anchors)
         self._sampling_strategy = (
             sampling_strategy.lower() if sampling_strategy is not None else sampling_strategy
         )
         if (
-            self._num_spans
+            self.sample_spans
             and self._sampling_strategy is not None
             and self._sampling_strategy not in ["subsuming", "adjacent"]
         ):
@@ -166,19 +172,23 @@ class ContrastiveDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self.sample_spans:
             # Choose the anchor/positives at random (spans are not contigous)
-            anchor_text, positives_text = contrastive_utils.sample_anchor_positives(
+            anchor_text, positive_text = contrastive_utils.sample_anchor_positives(
                 text=text,
+                num_anchors=self._num_anchors,
+                num_positives=self._num_positives,
                 max_span_len=self._max_span_len,
                 min_span_len=self._min_span_len,
-                num_spans=self._num_spans,
                 sampling_strategy=self._sampling_strategy,
             )
-            anchor_tokens = self._tokenizer.tokenize(anchor_text)
-            fields["anchors"] = TextField(anchor_tokens, self._token_indexers)
+            anchors: List[Field] = []
+            for text in anchor_text:
+                tokens = self._tokenizer.tokenize(text)
+                anchors.append(TextField(tokens, self._token_indexers))
+            fields["anchors"] = ListField(anchors)
             positives: List[Field] = []
-            for positive_text in positives_text:
-                positive_tokens = self._tokenizer.tokenize(positive_text)
-                positives.append(TextField(positive_tokens, self._token_indexers))
+            for text in positive_text:
+                tokens = self._tokenizer.tokenize(text)
+                positives.append(TextField(tokens, self._token_indexers))
             fields["positives"] = ListField(positives)
         else:
             tokens = self._tokenizer.tokenize(text)

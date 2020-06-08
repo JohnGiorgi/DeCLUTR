@@ -1,5 +1,5 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
-// OR a path on disk to a serialized transformer model. 
+// OR a path on disk to a serialized transformer model.
 local transformer_model = "distilroberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
@@ -14,7 +14,6 @@ local max_length = 512;
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
-            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -38,7 +37,7 @@ local max_length = 512;
         },
     },
     "data_loader": {
-        "batch_size": 8,
+        "batch_size": 16,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
         // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading

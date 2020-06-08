@@ -1,6 +1,5 @@
 from typing import Dict, Optional
 
-import numpy as np
 import torch
 
 from allennlp.data import TextFieldTensors, Vocabulary
@@ -12,10 +11,7 @@ from allennlp.nn.util import get_text_field_mask
 from t2t.data.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
 from t2t.losses import PyTorchMetricLearningLoss
 from t2t.miners import PyTorchMetricLearningMiner
-from t2t.models.contrastive_text_encoder_util import (
-    all_gather_anchor_positive_pairs,
-    chunk_positives,
-)
+from t2t.models.contrastive_text_encoder_util import all_gather_anchor_positive_pairs, unpack_batch
 
 
 @Model.register("constrastive")
@@ -121,30 +117,30 @@ class ContrastiveTextEncoder(Model):
         """
         output_dict: Dict[str, torch.Tensor] = {}
 
+        # If multiple anchors were sampled, we need to unpack them.
+        anchors = unpack_batch(anchors)
         # Mask anchor input ids and get labels required for MLM.
         if self.training and self._masked_language_modeling:
             anchors = mask_tokens(anchors, self._tokenizer)
-        # embedded_anchors is the textual representation learned by a trained model that will
-        # be used for downstream tasks.
+        # This is the textual representation learned by a model and used for downstream tasks.
         masked_lm_loss, embedded_anchors = self._forward_internal(anchors, output_dict)
 
-        # If positives are supplied by the DataLoader, this is our signal that we are training and
-        # should compute a loss.
-        if self.training and positives:
+        # If positives are supplied by DataLoader and we are training, compute a contrastive loss.
+        if self.training:
             output_dict["loss"] = 0
+            # TODO: We should throw a ValueError if no postives provided by loss is not None.
             if self._loss is not None:
-                # Chunk the positives along the smallest dimension (e.g. batch or positives). This
-                # leads to the smallest for loop and the biggest pseudo-batch size, which
-                # dramatically improves training times.
-                embedded_positives = []
-                chunk_dim = np.argmin(positives["tokens"]["token_ids"].size()[:2]).item()
-                for chunk in chunk_positives(positives, chunk_dim=chunk_dim):
-                    _, embedded_chunk = self._forward_internal(chunk)
-                    embedded_positives.append(embedded_chunk)
+                # Like the anchors, if we sampled multiple positives, we need to unpack them.
+                positives = unpack_batch(positives)
                 # Positives are represented by their mean embedding a la
                 # https://arxiv.org/abs/1902.09229.
-                embedded_positives = torch.stack(embedded_positives, dim=chunk_dim)
-                embedded_positives = torch.mean(embedded_positives, dim=1)
+                _, embedded_positives = self._forward_internal(positives)
+                embedded_positive_chunks = []
+                for i, chunk in enumerate(
+                    torch.chunk(embedded_positives, chunks=embedded_anchors.size(0), dim=0)
+                ):
+                    embedded_positive_chunks.append(torch.mean(chunk, dim=0))
+                embedded_positives = torch.stack(embedded_positive_chunks)
                 # If we are training on multiple GPUs using DistributedDataParallel, then a naive
                 # application would result in 2 * (batch_size/n_gpus - 1) number of negatives per
                 # GPU. To avoid this, we need to gather the anchors/positives from each replica on

@@ -10,23 +10,17 @@ local min_length = 32;
 local num_epochs = 1;
 
 {
-    "vocabulary": {
-        "type": "from_files",
-        // You must set this to the directory that contains the vocabulary.
-        // You can create this by passing the --dry-run flag to allennlp train
-        "directory": null
-    },
     "dataset_reader": {
         "type": "contrastive",
         "lazy": true,
-        "num_spans": 2,
+        "num_anchors": 2,
+        "num_positives": 2,
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
-            "add_special_tokens": false
         },
         "token_indexers": {
             "tokens": {
@@ -50,11 +44,11 @@ local num_epochs = 1;
         },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.0005,
+            "temperature": 0.05,
         },
     },
     "data_loader": {
-        "batch_size": 8,
+        "batch_size": 4,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
         // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -66,7 +60,7 @@ local num_epochs = 1;
     },
     "trainer": {
         // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
-        "opt_level": "O1",
+        "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

@@ -7,8 +7,9 @@ from allennlp.common import util
 from allennlp.data import TextFieldTensors
 
 
-def chunk_positives(tokens: TextFieldTensors, chunk_dim: int) -> List[TextFieldTensors]:
-    """Chunks the tensors in `tokens` along `chunk_dim`, returning a list of tensors.
+def unpack_batch(tokens: TextFieldTensors) -> List[TextFieldTensors]:
+    """If the tensors of `tokens` are three-dimensional, we reshape them to be two-dimensional
+    before returning the `TextFieldTensors` object. Otherwise, this is a no-op.
 
     # Parameters
 
@@ -16,28 +17,12 @@ def chunk_positives(tokens: TextFieldTensors, chunk_dim: int) -> List[TextFieldT
         From a `TextField`
 
     tokens : TextFieldTensors
-        `TextFieldTensors` containing the tensors to chunk.
-    chunk_dim : int
-        The dimension of the tensors in `tokens` to chunk.
+        `TextFieldTensors` containing the tensors to (possibly) reshape.
     """
-    chunk_size = tokens["tokens"]["token_ids"].size(chunk_dim)
-
-    token_ids = torch.chunk(tokens["tokens"]["token_ids"], chunk_size, dim=chunk_dim)
-    masks = torch.chunk(tokens["tokens"]["mask"], chunk_size, dim=chunk_dim)
-    type_ids = torch.chunk(tokens["tokens"]["type_ids"], chunk_size, dim=chunk_dim)
-
-    chunks = []
-    for x, y, z in zip(token_ids, masks, type_ids):
-        chunk: TextFieldTensors = {
-            "tokens": {
-                "token_ids": x.squeeze(chunk_dim),
-                "mask": y.squeeze(chunk_dim),
-                "type_ids": z.squeeze(chunk_dim),
-            }
-        }
-        chunks.append(chunk)
-
-    return chunks
+    for name, tensor in tokens["tokens"].items():
+        if len(tensor.size()) == 3:
+            tokens["tokens"][name] = tensor.reshape(tensor.size(0) * tensor.size(1), tensor.size(2))
+    return tokens
 
 
 def all_gather_anchor_positive_pairs(

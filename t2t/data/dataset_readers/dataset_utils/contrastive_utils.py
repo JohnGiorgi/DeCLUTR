@@ -16,7 +16,7 @@ def sample_anchor_positives(
     min_span_len: int,
     sampling_strategy: Optional[str] = None,
     tokenizer: Optional[Callable[[str], List[str]]] = None,
-) -> Tuple[str, List[str]]:
+) -> Tuple[List[str], List[str]]:
     """Returns a tuple of anchor (`str`) and `num_spans` positive (`List[str]`) spans sampled from
     `text`.
 

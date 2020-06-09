@@ -31,7 +31,7 @@ jobs:
         cd allennlp
         pip install --editable .
         cd ../
-        pip install -e ".[dev]"
+        pip install --editable ".[dev]"
     - name: Format code with black
       run: |
         black -l 100 declutr
@@ -43,4 +43,4 @@ jobs:
         flake8 declutr --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
     - name: Test with pytest
       run: |
-        pytest declutr/tests -v -s
+        pytest tests -v -s

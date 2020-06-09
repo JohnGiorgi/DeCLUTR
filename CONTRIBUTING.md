@@ -34,13 +34,13 @@ To submit a pull request, please do the following:
    consistently. After you make changes, format them with:
 
    ```bash
-   $ black DeCLUTR
+   $ black declutr
    ```
 
    This repository also uses `flake8` to check for coding mistakes. To run the checks locally:
 
    ```bash
-   $ flake8 DeCLUTR
+   $ flake8 declutr
    ```
 
    Once you're happy with your changes, add changed files using `git add` and

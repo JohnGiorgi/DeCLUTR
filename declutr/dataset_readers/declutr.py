@@ -172,7 +172,7 @@ class DeCLUTRDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self.sample_spans:
             # Choose the anchor/positives at random (spans are not contigous)
-            anchor_text, positive_text = contrastive_utils.sample_anchor_positives(
+            anchor_text, positive_text = contrastive_utils.sample_anchor_positive_pairs(
                 text=text,
                 num_anchors=self._num_anchors,
                 num_positives=self._num_positives,

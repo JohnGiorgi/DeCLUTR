@@ -11,7 +11,7 @@ local num_epochs = 1;
 
 {
     "dataset_reader": {
-        "type": "contrastive",
+        "type": "declutr",
         "lazy": true,
         // Technically, we don't need to sample anchors or positives when training with MLM only.
         // However, to make this experiment as comparable as possible to the "Contrastive only"
@@ -32,7 +32,7 @@ local num_epochs = 1;
     }, 
     "train_data_path": null,
     "model": {
-        "type": "constrastive",
+        "type": "declutr",
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

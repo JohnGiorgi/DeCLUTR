@@ -13,13 +13,13 @@ from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
-from declutr.data.dataset_readers.dataset_utils import contrastive_utils
+from declutr.dataset_readers.dataset_utils import contrastive_utils
 
 logger = logging.getLogger(__name__)
 
 
-@DatasetReader.register("contrastive")
-class ContrastiveDatasetReader(DatasetReader):
+@DatasetReader.register("declutr")
+class DeCLUTRDatasetReader(DatasetReader):
     """
     Read a text file containing one instance per line, and create a dataset suitable for a
     `DeCLUTR` model.
@@ -29,7 +29,7 @@ class ContrastiveDatasetReader(DatasetReader):
     if `num_spans > 0`, else:
         tokens : `TextField`
 
-    Registered as a `DatasetReader` with name "contrastive".
+    Registered as a `DatasetReader` with name "declutr".
 
     # Parameters
 
@@ -41,7 +41,7 @@ class ContrastiveDatasetReader(DatasetReader):
         Tokenizer to use to split the input text into words or other kinds of tokens.
     num_anchors : `int`, optional
         The number of spans to sample from each instance to serve as anchors.
-    num_spans : `int`, optional
+    num_positives : `int`, optional
         The number of spans to sample from each instance to serve as positive examples (per anchor).
         Has no effect if `num_anchors` is not provided.
     max_span_len : `int`, optional

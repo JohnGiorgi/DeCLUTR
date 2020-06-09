@@ -20,7 +20,7 @@ local transformer_model = "distilroberta-base";
         },
         "loss": {
             "type": "declutr.losses.pytorch_metric_learning.NTXentLoss",
-            "temperature": 0.001,
+            "temperature": 0.05,
         },
     },
     "data_loader": COMMON['data_loader'],

@@ -9,7 +9,7 @@ local min_length = 32;
 
 {
     "dataset_reader": {
-        "type": "declutr.data.dataset_readers.contrastive.ContrastiveDatasetReader",
+        "type": "declutr.dataset_readers.declutr.DeCLUTRDatasetReader",
         "lazy": true,
         "num_anchors": 2,
         "num_positives": 2,

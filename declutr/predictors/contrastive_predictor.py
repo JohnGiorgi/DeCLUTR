@@ -5,11 +5,11 @@ from allennlp.data import Instance
 from allennlp.predictors.predictor import Predictor
 
 
-@Predictor.register("contrastive")
-class ContrastivePredictor(Predictor):
+@Predictor.register("declutr")
+class DeCLUTRPredictor(Predictor):
     """Predictor wrapper for `DeCLUTR` model.
 
-    Registered as a `Predictor` with name "contrastive".
+    Registered as a `Predictor` with name "declutr".
     """
 
     @overrides

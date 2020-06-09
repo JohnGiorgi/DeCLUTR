@@ -84,8 +84,8 @@ def sample_anchor_positives(
         # Sample positives from around the anchor. The intuition being that text that appears close
         # together is the same document is likely to be semantically similar.
         for _ in range(num_positives):
-            # Their length is sampled from a beta distribution skewed towards shorter spans. The idea
-            # is to promote diversity and minimize the amount of overlapping text.
+            # Their length is sampled from a beta distribution skewed towards shorter spans. The
+            # idea is to promote diversity and minimize the amount of overlapping text.
             positive_length = int(
                 np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len
             )
@@ -106,22 +106,22 @@ def sample_anchor_positives(
             elif sampling_strategy == "adjacent":
                 # We have to restrict positives to a length that will allow them to be adjacent to
                 # the anchor without running off the edge of the document. If documents are sufficiently
-                # long, this won't be a problem and the max_positive_length will equal max_span_len.
+                # long, this won't be a problem and max_positive_length will equal max_span_len.
                 max_positive_len = min(max_span_len, max(anchor_start, num_tokens - anchor_end))
                 if positive_length > max_positive_len:
                     logger.warning_once(
                         (
                             f"There is no room to sample an adjacent positive span. Temporarily"
-                            f" reducing the maximum span length of positives. This message will not be"
-                            f" displayed again."
+                            f" reducing the maximum span length of positives. This message will not"
+                            f" be displayed again."
                         )
                     )
                 positive_length = int(
                     np.random.beta(2, 4) * (max_positive_len - min_span_len) + min_span_len
                 )
                 # There are two types of adjacent positives, those that border the beginning of the
-                # anchor and those that border the end. The checks above guarantee at least one of these
-                # is valid.
+                # anchor and those that border the end. The checks above guarantee at least one of
+                # these is valid.
                 valid_starts = []
                 if anchor_start - positive_length > 0:
                     valid_starts.append(anchor_start - positive_length)
@@ -130,7 +130,7 @@ def sample_anchor_positives(
                 positive_start = choice(valid_starts)
             else:
                 # By default, spans may be adjacent or overlap with each other and the anchor.
-                # Be careful not to run off the edges of the document, as this error will pass silently.
+                # Careful not to run off the edges of the document (this error may pass silently).
                 positive_start = randint(
                     max(0, anchor_start - positive_length),
                     min(anchor_end, num_tokens - positive_length),

@@ -2,10 +2,10 @@ import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import integers, text
 
-from declutr.data.dataset_readers import ContrastiveDatasetReader
+from declutr.dataset_readers import DeCLUTRDatasetReader
 
 
-class TestContrastiveDatasetReader:
+class TestDeCLUTRDatasetReader:
     # Not clear why turning off the deadline is neccesary? Errors out otherwise.
     @settings(deadline=None)
     @given(
@@ -17,7 +17,7 @@ class TestContrastiveDatasetReader:
     def test_no_sample_context_manager(
         self, num_anchors: int, num_positives: int, max_span_len: int, min_span_len: int
     ):
-        dataset_reader = ContrastiveDatasetReader(
+        dataset_reader = DeCLUTRDatasetReader(
             num_anchors=num_anchors,
             num_positives=num_positives,
             max_span_len=max_span_len,
@@ -43,28 +43,28 @@ class TestContrastiveDatasetReader:
     ):
         if num_anchors:  # should only raise the error when num_anchors is truthy
             with pytest.raises(ValueError):
-                _ = ContrastiveDatasetReader(
+                _ = DeCLUTRDatasetReader(
                     num_anchors=num_anchors,
                     num_positives=num_positives,
                     max_span_len=None,
                     min_span_len=min_span_len,
                 )
             with pytest.raises(ValueError):
-                _ = ContrastiveDatasetReader(
+                _ = DeCLUTRDatasetReader(
                     num_anchors=num_anchors,
                     num_positives=num_positives,
                     max_span_len=max_span_len,
                     min_span_len=None,
                 )
             with pytest.raises(ValueError):
-                _ = ContrastiveDatasetReader(
+                _ = DeCLUTRDatasetReader(
                     num_anchors=num_anchors,
                     num_positives=num_positives,
                     max_span_len=None,
                     min_span_len=None,
                 )
             with pytest.raises(ValueError):
-                _ = ContrastiveDatasetReader(
+                _ = DeCLUTRDatasetReader(
                     num_anchors=num_anchors,
                     num_positives=None,
                     max_span_len=max_span_len,
@@ -88,7 +88,7 @@ class TestContrastiveDatasetReader:
     ):
         if num_anchors:  # should only raise the error when num_spans is truthy
             with pytest.raises(ValueError):
-                _ = ContrastiveDatasetReader(
+                _ = DeCLUTRDatasetReader(
                     num_anchors=num_anchors,
                     num_positives=num_positives,
                     max_span_len=max_span_len,

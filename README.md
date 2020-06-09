@@ -2,17 +2,17 @@
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
-A contrastive, self-supervised method for learning textual representations. Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
+A contrastive, self-supervised method for learning universal sentence embeddings. Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
-| Model                                                                                                      | Parameters | Embed. Dim. | Downstream |  Probing  |    Avg.   |   Δ   |
-|------------------------------------------------------------------------------------------------------------|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
-| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |     38M    |     4096    |    76.46   |   72.58   |   74.52   | -1.40 |
-| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |    147M    |     512     |  __79.13__ |   66.70   |   72.91   | -3.00 |
-| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |    125M    |     768     |    77.59   |   63.22   |   70.40   | -5.52 |
-| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |     82M    |     768     |    72.69   | __74.27__ |   73.48   | -2.44 |
-| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |    125M    |     768     |    72.22   |   73.38   |   72.80   | -3.12 |
-| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |     82M    |     768     |    76.43   |   73.82   |   75.13   | -0.79 |
-| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |    125M    |     768     |    78.17   |   73.67   | __75.92__ |   --  |
+| Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream |  Probing  |    Avg.   |   Δ   |
+|------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |    76.46   |   72.58   |   74.52   | -1.40 |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |  __79.13__ |   66.70   |   72.91   | -3.00 |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |    77.59   |   63.22   |   70.40   | -5.52 |
+| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |    72.69   | __74.27__ |   73.48   | -2.44 |
+| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |    72.22   |   73.38   |   72.80   | -3.12 |
+| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |    76.43   |   73.82   |   75.13   | -0.79 |
+| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |    78.17   |   73.67   | __75.92__ |   --  |
 
 > Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued training with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation.
 
@@ -39,17 +39,7 @@ cd declutr
 pip install --editable .
 ```
 
-For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). You should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
-
-#### Enabling mixed-precision training
-
-If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs), or, equivalently, pass the following flag to `allennlp train`
-
-```bash
---overrides "{'trainer.opt_level': 'O1'}"
-```
-
-> You can also add this to a [config](configs) if you prefer.
+For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
 
 ## Usage
 
@@ -91,10 +81,22 @@ allennlp train configs/contrastive_simple.jsonnet \
 
 > You can also add this to a [config](configs) if you prefer.
 
+#### Training with mixed-precision
+
+If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs), or, equivalently, pass the following flag to `allennlp train`
+
+```bash
+--overrides "{'trainer.opt_level': 'O1'}"
+```
+
+> You can also add this to a [config](configs) if you prefer.
+
 ### Embedding
 
-1. As a library (e.g. import and initialize an object which can be used to embed sentences/paragraphs).
-2. Bulk embed all text in a given text file with a simple command-line interface.
+You can embed text with a trained model in one of two ways:
+
+1. [As a library](#as-a-library) (e.g. import and initialize an object which can be used to embed sentences/paragraphs).
+2. [Bulk embed](#bulk-embed-a-file) all text in a given text file with a simple command-line interface.
 
 #### As a library
 
@@ -140,8 +142,6 @@ This will:
 3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`output/embeddings.jsonl`)
 
 The text embeddings are stored in the field `"embeddings"` in `output/embeddings.jsonl`.
-
-> If your model was trained with a `FeedForward` module, it would also contain a field named `"projections"`. A `FeedForward` module with a non-linear transformation [may improve the quality of representations learned by the encoder network](https://arxiv.org/abs/2002.05709).
 
 ### Evaluating with SentEval
 

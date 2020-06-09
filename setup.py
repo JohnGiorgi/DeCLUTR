@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.1.0",
     author="John Giorgi",
     author_email="johnmgiorgi@gmail.com",
-    description=("DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations."),
+    description=("DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations"),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/JohnGiorgi/DeCLUTR",

@@ -14,14 +14,14 @@ setuptools.setup(
     url="https://github.com/JohnGiorgi/DeCLUTR",
     packages=setuptools.find_packages(),
     keywords=[
-        "universal sentence embeddings",
-        "contrastive learning",
-        "representation learning",
         "textual representations",
+        "universal sentence embeddings",
+        "representation learning",
+        "contrastive learning",
         "natural language processing",
-        "allennlp",
         "transformers",
         "pytorch",
+        "allennlp",
     ],
     classifiers=[
         "Development Status :: 1 - Planning",

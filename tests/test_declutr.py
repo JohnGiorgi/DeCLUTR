@@ -10,9 +10,8 @@ from allennlp.models import Model
 class TestDeCLUTR(ModelTestCase):
     def setup_method(self):
         super().setup_method()
-        self.FIXTURES_ROOT = Path(
-            "declutr/test_fixtures"  # We need to override the path set by AllenNLP
-        )
+        # We need to override the path set by AllenNLP
+        self.FIXTURES_ROOT = Path("test_fixtures")
         self.set_up_model(
             self.FIXTURES_ROOT / "experiment.jsonnet",
             self.FIXTURES_ROOT / "data" / "openwebtext" / "train.txt",

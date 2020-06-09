@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from, text
 
-from declutr.dataset_readers.dataset_utils.contrastive_utils import sample_anchor_positives
+from declutr.dataset_readers.dataset_utils.contrastive_utils import sample_anchor_positive_pairs
 
 
 class TestContrastiveUtils:
@@ -31,7 +31,7 @@ class TestContrastiveUtils:
         # a strict lower bound.
         if num_tokens < 10:
             with pytest.raises(ValueError):
-                _, _ = sample_anchor_positives(
+                _, _ = sample_anchor_positive_pairs(
                     text,
                     num_anchors=num_anchors,
                     num_positives=num_positives,
@@ -40,7 +40,7 @@ class TestContrastiveUtils:
                     sampling_strategy=sampling_strategy,
                 )
         else:
-            anchors, positives = sample_anchor_positives(
+            anchors, positives = sample_anchor_positive_pairs(
                 text,
                 num_anchors=num_anchors,
                 num_positives=num_positives,
@@ -88,7 +88,7 @@ class TestContrastiveUtils:
         min_span_len = max_span_len + 1  # This is guaranteed to be invalid.
 
         with pytest.raises(ValueError):
-            _, _ = sample_anchor_positives(
+            _, _ = sample_anchor_positive_pairs(
                 text,
                 num_anchors=num_anchors,
                 num_positives=num_positives,
@@ -110,7 +110,7 @@ class TestContrastiveUtils:
         min_span_len = max_span_len - 1  # This is guaranteed to be valid.
 
         with pytest.raises(ValueError):
-            _, _ = sample_anchor_positives(
+            _, _ = sample_anchor_positive_pairs(
                 text,
                 num_anchors=num_anchors,
                 num_positives=num_positives,

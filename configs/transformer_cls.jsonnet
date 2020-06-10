@@ -11,7 +11,7 @@ local cls_is_last_token = false;
 
 {
     "dataset_reader": {
-        "type": "contrastive",
+        "type": "declutr",
         "lazy": true,
         "tokenizer": {
             "type": "pretrained_transformer",
@@ -27,7 +27,7 @@ local cls_is_last_token = false;
     }, 
     "train_data_path": null,
     "model": {
-        "type": "constrastive",
+        "type": "declutr",
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

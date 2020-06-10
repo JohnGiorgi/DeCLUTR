@@ -8,7 +8,7 @@ local max_length = 512;
 
 {
     "dataset_reader": {
-        "type": "contrastive",
+        "type": "declutr",
         "lazy": true,
         "tokenizer": {
             "type": "pretrained_transformer",
@@ -24,7 +24,7 @@ local max_length = 512;
     }, 
     "train_data_path": null,
     "model": {
-        "type": "constrastive",
+        "type": "declutr",
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

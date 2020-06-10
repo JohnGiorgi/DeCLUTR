@@ -1,0 +1,1 @@
+from declutr.dataset_readers.declutr import DeCLUTRDatasetReader

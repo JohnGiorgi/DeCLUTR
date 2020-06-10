@@ -9,7 +9,7 @@ local min_length = 32;
 
 {
     "dataset_reader": {
-        "type": "contrastive",
+        "type": "declutr",
         "lazy": true,
         "num_anchors": 2,
         "num_positives": 2,
@@ -29,7 +29,7 @@ local min_length = 32;
     }, 
     "train_data_path": null,
     "model": {
-        "type": "constrastive",
+        "type": "declutr",
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {

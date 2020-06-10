@@ -2,14 +2,14 @@
 
 To submit a pull request, please do the following:
 
-1. Fork the [repository](https://github.com/JohnGiorgi/t2t) by clicking on the 'Fork' button on the repository's page. This creates a copy of the code under your GitHub user account.
+1. Fork the [repository](https://github.com/JohnGiorgi/DeCLUTR) by clicking on the 'Fork' button on the repository's page. This creates a copy of the code under your GitHub user account.
 
 2. Clone your fork to your local disk, and add the base repository as a remote:
 
    ```bash
-   $ git clone git@github.com:<your Github handle>/t2t.git
-   $ cd t2t
-   $ git remote add upstream https://github.com/JohnGiorgi/t2t.git
+   $ git clone git@github.com:<your Github handle>/DeCLUTR.git
+   $ cd DeCLUTR
+   $ git remote add upstream https://github.com/JohnGiorgi/DeCLUTR.git
    ```
 
 3. Create a new branch to hold your development changes:
@@ -34,13 +34,13 @@ To submit a pull request, please do the following:
    consistently. After you make changes, format them with:
 
    ```bash
-   $ black t2t
+   $ black declutr
    ```
 
    This repository also uses `flake8` to check for coding mistakes. To run the checks locally:
 
    ```bash
-   $ flake8 t2t
+   $ flake8 declutr
    ```
 
    Once you're happy with your changes, add changed files using `git add` and

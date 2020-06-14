@@ -1,0 +1,1 @@
+from declutr.modules.seq2vec_encoders.dissecting_encoder import DissectingEncoder

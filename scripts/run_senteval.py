@@ -654,8 +654,9 @@ def allennlp(
     path_to_senteval: str,
     path_to_allennlp_archive: str,
     output_filepath: str = None,
-    weights_file: str = None,
     cuda_device: int = -1,
+    overrides: str = "",
+    weights_file: str = None,
     output_dict_field: str = "embeddings",
     predictor_name: str = None,
     include_package: List[str] = None,
@@ -684,7 +685,7 @@ def allennlp(
         embeddings = np.vstack(embeddings)
         return embeddings
 
-    # Allows us to import custom dataset readers and models that may exist in the AllenNLP archive.
+    # Allows us to import custom objects that may exist in the AllenNLP archive.
     # See: https://tinyurl.com/whkmoqh
     include_package = include_package or []
     for package_name in include_package:
@@ -695,6 +696,7 @@ def allennlp(
         path_to_allennlp_archive,
         cuda_device=cuda_device,
         opt_level="O0",
+        overrides=overrides,
         weights_file=weights_file,
     )
     predictor = Predictor.from_archive(archive, predictor_name)

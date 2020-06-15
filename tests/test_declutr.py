@@ -37,6 +37,18 @@ class TestDeCLUTR(ModelTestCase):
         # Embeddings are not added to the output dict when training
         assert "embeddings" not in output_dict.keys()
 
+    def test_forward_pass_with_dissecting_runs_correctly(self):
+        self.set_up_model(
+            self.FIXTURES_ROOT / "experiment_dissecting.jsonnet",
+            self.FIXTURES_ROOT / "data" / "openwebtext" / "train.txt",
+        )
+        training_tensors = self.dataset.as_tensor_dict()
+        output_dict = self.model(**training_tensors)
+        output_dict = self.model.make_output_human_readable(output_dict)
+        assert "loss" in output_dict.keys()
+        # Embeddings are not added to the output dict when training
+        assert "embeddings" not in output_dict.keys()
+
     def test_forward_pass_contrastive_only_runs_correctly(self):
         self.set_up_model(
             self.FIXTURES_ROOT / "experiment_contrastive_only.jsonnet",

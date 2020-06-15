@@ -4,8 +4,8 @@ local transformer_model = "distilroberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
 // This will be used to set the max/min # of tokens in the positive and negative examples.
-local max_length = 32;
-local min_length = 16;
+local max_length = 16;
+local min_length = 8;
 
 {
     "dataset_reader": {

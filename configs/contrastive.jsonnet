@@ -1,6 +1,6 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
 // OR a path on disk to a serialized transformer model.
-local transformer_model = "distilroberta-base";
+local transformer_model = "roberta-base";
 // The hidden size of the model, which can be found in its config as "hidden_size".
 local transformer_dim = 768;
 // This will be used to set the max/min # of tokens in the positive and negative examples.
@@ -10,8 +10,17 @@ local min_length = 32;
 local num_epochs = 1;
 
 {
+    "random_seed": 100,
+    "numpy_seed": 200,
+    "pytorch_seed": 300,
+    "vocabulary": {
+        "type": "from_files",
+        // You must set this to the directory that contains the vocabulary.
+        // You can create this by passing the --dry-run flag to allennlp train
+        "directory": "/home/onitski/scratch/t2t/datasets/openwebtext-570K-2048/vocabulary",
+    },
     "dataset_reader": {
-        "type": "declutr",
+        "type": "contrastive",
         "lazy": true,
         "num_anchors": 2,
         "num_positives": 2,
@@ -29,9 +38,9 @@ local num_epochs = 1;
             },
         },
     }, 
-    "train_data_path": null,
+    "train_data_path":"/home/onitski/scratch/t2t/datasets/openwebtext-570K-2048/train.txt",
     "model": {
-        "type": "declutr",
+        "type": "constrastive",
         "text_field_embedder": {
             "type": "mlm",
             "token_embedders": {
@@ -44,11 +53,11 @@ local num_epochs = 1;
         },
         "loss": {
             "type": "nt_xent",
-            "temperature": 0.05,
+            "temperature": 0.0005,
         },
     },
     "data_loader": {
-        "batch_size": 4,
+        "batch_size": 8,
         // TODO (John): Currently, num_workers must be < 1 or we will end up loading the same data
         // more than once. I need to modify the dataloader according to:
         // https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -60,7 +69,7 @@ local num_epochs = 1;
     },
     "trainer": {
         // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
-        "opt_level": null,
+        "opt_level": "O1",
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

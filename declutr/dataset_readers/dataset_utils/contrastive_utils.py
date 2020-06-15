@@ -1,6 +1,8 @@
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
+import itertools
+import more_itertools as mit
 
 from allennlp.common.logging import AllenNlpLogger
 
@@ -67,7 +69,7 @@ def sample_anchor_positive_pairs(
 
     # Valid anchor starts are token indices which begin a token span of at least max_span_len.
     anchors, positives = [], []
-    valid_anchor_starts = list(range(0, num_tokens - max_span_len + 1, max_span_len))
+    valid_anchor_starts = list(range(0, num_tokens - max_span_len + 1))
     for _ in range(num_anchors):
         # Sample the anchor length from a beta distribution skewed towards longer spans, the
         # intuition being that longer spans have the best chance of being representative of the
@@ -77,7 +79,13 @@ def sample_anchor_positive_pairs(
         # (and its immediate neighbours) from consideration.
         anchor_start_idx = np.random.randint(len(valid_anchor_starts))
         anchor_start = valid_anchor_starts[anchor_start_idx]
-        del valid_anchor_starts[max(0, anchor_start_idx - 1) : anchor_start_idx + 2]
+        # Remove anchor and surrounding buffer from available starts
+        anchor_buffer = range(max(0, anchor_start - max_span_len + 1), anchor_start + anchor_len + max_span_len + 1)
+        valid_anchor_starts = [x for x in valid_anchor_starts if x not in anchor_buffer]
+        # Group consecutive start point and remove those that are too small for future anchors
+        valid_anchor_starts = [list(group) for group in mit.consecutive_groups(valid_anchor_starts)]
+        valid_anchor_starts = [x for x in valid_anchor_starts if (len(x) >= max_span_len or (num_tokens - max_span_len) in x)]
+        valid_anchor_starts = list(itertools.chain.from_iterable(valid_anchor_starts))
         # Grab the anchor with its sampled start and length.
         anchor_end = anchor_start + anchor_len
         anchors.append(" ".join(tokens[anchor_start:anchor_end]))

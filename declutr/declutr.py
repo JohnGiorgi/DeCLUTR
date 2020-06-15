@@ -64,8 +64,8 @@ class DeCLUTR(Model):
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
-        # (HACK): Prevents the user from having to specify the tokenizer / masked language modeling
-        # objective. In the future it would be great to come up with something more elegant.
+        # Prevents user from specifying whether or not we are going train with the masked language
+        # modelling objective again (they already declared this with the text_field_embedder).
         token_embedder = self._text_field_embedder._token_embedders["tokens"]
         self._masked_language_modeling = token_embedder.masked_language_modeling
         if self._masked_language_modeling:

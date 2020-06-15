@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import torch
 import torch.distributed as dist
@@ -67,3 +67,34 @@ def all_gather_anchor_positive_pairs(
     positives = torch.cat(positives_list)
 
     return anchors, positives
+
+
+def cosine_similarity(
+    x1: torch.Tensor, x2: Optional[torch.Tensor] = None, eps: float = 1e-8
+) -> torch.FloatTensor:
+    """Compute cosine similarity between samples in `x1` and `x2`. Code adapted from:
+    https://discuss.pytorch.org/t/pairwise-cosine-distance/30961/5. Functionally similar to:
+    https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.cosine_similarity.html.
+
+    # Parameters
+
+    x1: `torch.Tensor`
+        Shape: `[batch_size, embedding_dim]`.
+    x2: `Optional[torch.Tensor]`
+        Shape: `[batch_size, embedding_dim]`. If None, the output will be the pairwise
+        similarities between all samples in `x1`.
+
+    # Returns
+
+    A cosine similarity matrix with shape `[batch_size, batch_size]`.
+    """
+    x2 = x1 if x2 is None else x2
+    w1 = x1.norm(p=2, dim=1, keepdim=True)
+    w2 = w1 if x2 is x1 else x2.norm(p=2, dim=1, keepdim=True)
+    cos_sim_mat = torch.mm(x1, x2.t()) / (w1 * w2.t()).clamp(min=eps)
+
+    return cos_sim_mat
+
+
+def normalize(x: torch.Tensor, **kwargs) -> torch.Tensor:
+    return x / torch.norm(x, **kwargs)

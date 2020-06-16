@@ -1,8 +1,9 @@
 ![build](https://github.com/JohnGiorgi/declutr/workflows/build/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/JohnGiorgi/DeCLUTR/branch/master/graph/badge.svg)](https://codecov.io/gh/JohnGiorgi/DeCLUTR)
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
-A contrastive, self-supervised method for learning universal sentence embeddings. Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
+The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659v2). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
 
 | Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream |  Probing  |    Avg.   |   Δ   |
 |------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
@@ -35,11 +36,14 @@ git clone https://github.com/JohnGiorgi/DeCLUTR.git
 Then, install
 
 ```bash
-cd declutr
+cd DeCLUTR
 pip install --editable .
 ```
 
-For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
+#### Gotchas
+
+- For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). Specifically, please install [this commit](https://github.com/allenai/allennlp/commit/**9766eb407e7d83a0bf2150ad054a7c8e2da4ae2b).
+- If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
 
 ## Usage
 
@@ -53,14 +57,18 @@ We provide scripts to download some popular datasets and prepare them for traini
 python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt --min-length 1024
 ```
 
+#### Gotchas
+
+- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_readers/declutr.py) for more details on these hyperparameters.
+
 ### Training
 
 To train the model, run the following command
 
 ```bash
 allennlp train configs/contrastive_simple.jsonnet \
-    -s output \
-    -o "{'train_data_path': 'path/to/input.txt'}" \
+    --serialization-dir output \
+    --overrides "{'train_data_path': 'path/to/input.txt'}" \
     --include-package declutr
 ```
 
@@ -74,8 +82,8 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 
 ```bash
 allennlp train configs/contrastive_simple.jsonnet \
-    -s output \
-    -o "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
+    --serialization-dir output \
+    --overrides "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
     --include-package declutr
 ```
 
@@ -90,6 +98,10 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 ```
 
 > You can also add this to a [config](configs) if you prefer.
+
+#### Gotchas
+
+- Mixed-precision training will cause an error with the [PyTorch Metric Learning](https://github.com/KevinMusgrave/pytorch-metric-learning) library. See [here](https://github.com/JohnGiorgi/DeCLUTR/issues/60) for a discussion on the issue, along with the suggested fix.
 
 ### Embedding
 
@@ -182,3 +194,7 @@ For help with a specific command, e.g. `allennlp`, run
 ```
 python scripts/run_senteval.py allennlp --help
 ```
+
+#### Gotchas
+
+- Evaluating the `"SNLI"` task of SentEval will fail without [this fix](https://github.com/facebookresearch/SentEval/pull/52).

@@ -26,7 +26,7 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     The output of `read` is a list of `Instance` s with the field:
         tokens : `ListField[TextField]`
-    if `num_spans > 0`, else:
+    if `num_anchors > 0`, else:
         tokens : `TextField`
 
     Registered as a `DatasetReader` with name "declutr".
@@ -46,15 +46,15 @@ class DeCLUTRDatasetReader(DatasetReader):
         Has no effect if `num_anchors` is not provided.
     max_span_len : `int`, optional
         The maximum length of spans (after tokenization) which should be sampled. Has no effect if
-        `num_spans` is not provided.
+        `num_anchors` is not provided.
     min_span_len : `int`, optional
         The minimum length of spans (after tokenization) which should be sampled. Has no effect if
-        `num_spans` is not provided.
+        `num_anchors` is not provided.
     sampling_strategy : `str`, optional (default = None)
         One of "subsuming" or "adjacent". If "subsuming," positive spans are always subsumed by the
         anchor. If "adjacent", positive spans are always adjacent to the anchor. If not provided,
         positives may be subsumed, adjacent to, or overlapping with the anchor. Has no effect if
-        `num_spans` is not provided.
+        `num_anchors` is not provided.
     """
 
     def __init__(
@@ -126,8 +126,8 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     @contextmanager
     def no_sample(self) -> None:
-        """Context manager that disables sampling of spans. Useful at test time when we want to
-        embed unseen text.
+        """A context manager that temporarily disables sampling of spans. Useful at test time when
+        we want to embed unseen text.
         """
         prev = self.sample_spans
         self.sample_spans = False
@@ -165,13 +165,18 @@ class DeCLUTRDatasetReader(DatasetReader):
         # Returns
 
         An `Instance` containing the following fields:
-            tokens : `Union[TextField, ListField[TextField]]`
-                If `self.sample_spans`, returns a `ListField` containing two random, tokenized
-                spans from `text`. Else, returns a `TextField` containing tokenized `text`.
+            - anchors (`Union[TextField, ListField[TextField]]`) :
+                If `self.sample_spans`, this will be a `ListField[TextField]` object, containing
+                each anchor span sampled from `text`. Otherwise, this will be a `TextField` object
+                containing the tokenized `text`.
+            - positives (`ListField[TextField]`) :
+                If `self.sample_spans`, this will be a `ListField[TextField]` object, containing
+                each positive span sampled from `text`. Otherwise this field will not be included
+                in the returned `Instance`.
         """
         fields: Dict[str, Field] = {}
         if self.sample_spans:
-            # Choose the anchor/positives at random (spans are not contigous)
+            # Choose the anchor/positives at random.
             anchor_text, positive_text = contrastive_utils.sample_anchor_positive_pairs(
                 text=text,
                 num_anchors=self._num_anchors,

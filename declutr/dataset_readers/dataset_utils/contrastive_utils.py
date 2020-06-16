@@ -75,7 +75,7 @@ def sample_anchor_positive_pairs(
         # Sample an anchor start position from the list of valid positions. Once sampled, remove it
         # (and its immediate neighbours) from consideration.
         anchor_start_idx = np.random.randint(len(valid_anchor_starts))
-        # When num_anchors = 1, this is equivalent to unfiformly sampling that starting position.
+        # When num_anchors = 1, this is equivalent to uniformly sampling that starting position.
         anchor_start = np.random.randint(
             valid_anchor_starts[anchor_start_idx],
             # randint is high-exclusive

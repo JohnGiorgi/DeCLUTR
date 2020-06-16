@@ -43,10 +43,10 @@ jobs:
         flake8 declutr --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
     - name: Test with pytest
       run: |
-        pytest tests/ -rf --cov=tests/ --cov-report=xml --cov-config=.coveragerc 
+        pytest tests -rf --cov ./declutr --cov-report=xml --cov-config=./.coveragerc 
     - name: Upload coverage to Codecov
-      # if: matrix.python == '3.7' && github.repository == 'JohnGiorgi/DeCLUTR' && github.event_name == 'push'
+      if: matrix.python == '3.7' && github.repository == 'JohnGiorgi/DeCLUTR'
       uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
-        fail_ci_if_error: true
+        fail_ci_if_error: false

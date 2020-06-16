@@ -1,2 +1,3 @@
 [run]
+source = declutr
 omit = tests/*

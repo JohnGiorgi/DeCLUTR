@@ -45,8 +45,8 @@ jobs:
       run: |
         pytest tests/ -rf --cov=tests/ --cov-report=xml --cov-config=.coveragerc 
     - name: Upload coverage to Codecov
-      if: matrix.python == '3.7' && github.repository == 'JohnGiorgi/DeCLUTR' && github.event_name == 'push'
+      # if: matrix.python == '3.7' && github.repository == 'JohnGiorgi/DeCLUTR' && github.event_name == 'push'
       uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: true
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true

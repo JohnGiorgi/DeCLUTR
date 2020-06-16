@@ -75,7 +75,12 @@ def sample_anchor_positive_pairs(
         # Sample an anchor start position from the list of valid positions. Once sampled, remove it
         # (and its immediate neighbours) from consideration.
         anchor_start_idx = np.random.randint(len(valid_anchor_starts))
-        anchor_start = valid_anchor_starts[anchor_start_idx]
+        # When num_anchors = 1, this is equivalent to uniformly sampling that starting position.
+        anchor_start = np.random.randint(
+            valid_anchor_starts[anchor_start_idx],
+            # randint is high-exclusive
+            valid_anchor_starts[anchor_start_idx] + max_span_len - anchor_len + 1,
+        )
         del valid_anchor_starts[max(0, anchor_start_idx - 1) : anchor_start_idx + 2]
         # Grab the anchor with its sampled start and length.
         anchor_end = anchor_start + anchor_len
@@ -100,9 +105,9 @@ def sample_anchor_positive_pairs(
                 if max_positive_len < max_span_len:
                     logger.warning_once(
                         (
-                            f"There is no room to sample an adjacent positive span. Temporarily"
-                            f" reducing the maximum span length of positives. This message will not"
-                            f" be displayed again."
+                            "There is no room to sample an adjacent positive span. Temporarily"
+                            " reducing the maximum span length of positives. This message will not"
+                            " be displayed again."
                         )
                     )
                 positive_len = int(

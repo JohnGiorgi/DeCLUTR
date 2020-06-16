@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -43,4 +43,10 @@ jobs:
         flake8 declutr --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
     - name: Test with pytest
       run: |
-        pytest tests -v -s
+        pytest tests/ -rf --cov=tests/ --cov-report=xml --cov-config=.coveragerc 
+    - name: Upload coverage to Codecov
+      if: matrix.python == '3.7' && github.repository == 'JohnGiorgi/DeCLUTR' && github.event_name == 'push'
+      uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true

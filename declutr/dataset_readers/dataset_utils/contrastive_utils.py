@@ -99,8 +99,8 @@ def sample_anchor_positive_pairs(
                 if positive_len > anchor_len:
                     logger.warning_once(
                         (
-                            f"Positive length was longer than anchor length. Temporarily reducing"
-                            f" max length of positives. This message will not be displayed again."
+                            "Positive length was longer than anchor length. Temporarily reducing"
+                            " max length of positives. This message will not be displayed again."
                         )
                     )
                     positive_len = int(
@@ -117,9 +117,9 @@ def sample_anchor_positive_pairs(
                 if positive_len > max_positive_len:
                     logger.warning_once(
                         (
-                            f"There is no room to sample an adjacent positive span. Temporarily"
-                            f" reducing the maximum span length of positives. This message will not"
-                            f" be displayed again."
+                            "There is no room to sample an adjacent positive span. Temporarily"
+                            " reducing the maximum span length of positives. This message will not"
+                            " be displayed again."
                         )
                     )
                 positive_len = int(

@@ -130,7 +130,7 @@ def sample_anchor_positive_pairs(
                 )
                 # By default, spans may be adjacent or overlap with each other and the anchor.
                 # Careful not to run off the edges of the document (this error may pass silently).
-                positive_start = np.random.random_integers(
+                positive_start = np.random.randint(
                     max(0, anchor_start - positive_len),
                     min(anchor_end, num_tokens - positive_len) + 1,  # randint is high-exclusive
                 )

@@ -16,8 +16,8 @@ def sample_anchor_positive_pairs(
     sampling_strategy: Optional[str] = None,
     tokenizer: Optional[Callable[[str], List[str]]] = None,
 ) -> Tuple[List[str], List[str]]:
-    """Returns a tuple of `num_anchors` anchor spans and `num_positives` positive spans sampled from
-    `text`.
+    """Returns a `Tuple` of `List`s, containing `num_anchors` anchor spans and `num_positives`
+    positive spans sampled from `text`.
 
     # Parameters
 
@@ -31,22 +31,21 @@ def sample_anchor_positive_pairs(
         The maximum length of spans, after tokenization, to sample.
     min_span_len : `int`, required
         The minimum length of spans, after tokenization, to sample.
-    sampling_strategy : `str`, optional (default = None)
-        One of "subsuming" or "adjacent". If "subsuming," positive spans are always subsumed by the
-        anchor. If "adjacent", positive spans are always adjacent to the anchor. If not provided,
-        positives may be subsumed, adjacent to, or overlapping with the anchor. Has no effect if
-        `num_spans` is not provided.
-    tokenizer : `Callable`, optional (default = None)
+    sampling_strategy : `str`, optional (default = `None`)
+        One of `"subsuming"` or `"adjacent"`. If `"subsuming"`, positive spans are always subsumed
+        by the anchor. If `"adjacent"`, positive spans are always adjacent to the anchor. If not
+        provided, positives may be subsumed, adjacent to, or overlapping with the anchor.
+    tokenizer : `Callable`, optional (default = `None`)
         Optional tokenizer to use before sampling spans. If `None`, `text.split()` is used.
     """
     # Tokenize the incoming text. Whitespace tokenization is much more straightforward
-    # (we don't need to worry about chopping up subword tokens), but a user can also provide their
-    # own tokenization scheme if they want.
+    # (we don't need to worry about chopping up subword tokens), but a user can also provide
+    # their own tokenization scheme if they want.
     tokens = tokenizer(text) if tokenizer is not None else text.split()
     tok_method = "tokenizer(text)" if tokenizer else "text.split()"
     num_tokens = len(tokens)
 
-    # Several checks on the parameters based to this function. The first check on length is mostly
+    # Several checks on the parameters passed to this function. The first check on length is mostly
     # arbitrary, but it prevents the Hypothesis tests from breaking. And it makes little sense to
     # sample from extremely short documents.
     if num_tokens < 10:
@@ -87,34 +86,23 @@ def sample_anchor_positive_pairs(
         anchor_end = anchor_start + anchor_len
         anchors.append(" ".join(tokens[anchor_start:anchor_end]))
 
-        # Sample positives from around the anchor. The intuition being that text that appears close
-        # together is the same document is likely to be semantically similar.
+        # Sample positives from around the anchor. The intuition being that text that appears
+        # close together is the same document is likely to be semantically similar.
         for _ in range(num_positives):
-            # Sample positive length from a beta distribution skewed towards shorter spans. The
-            # idea is to promote diversity and minimize the amount of overlapping text.
-            positive_len = int(np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len)
             # A user can specify a subsuming or adjacent only sampling strategy.
             if sampling_strategy == "subsuming":
                 # To be strictly subsuming, we cannot allow the positive_len > anchor_len.
-                if positive_len > anchor_len:
-                    logger.warning_once(
-                        (
-                            "Positive length was longer than anchor length. Temporarily reducing"
-                            " max length of positives. This message will not be displayed again."
-                        )
-                    )
-                    positive_len = int(
-                        np.random.beta(2, 4) * (anchor_len - min_span_len) + min_span_len
-                    )
-                positive_start = np.random.randint(
-                    anchor_start, anchor_end - positive_len + 1  # randint is high-exclusive
+                positive_len = int(
+                    np.random.beta(2, 4) * (anchor_len - min_span_len) + min_span_len
                 )
+                # randint is high-exclusive
+                positive_start = np.random.randint(anchor_start, anchor_end - positive_len + 1)
             elif sampling_strategy == "adjacent":
                 # Restrict positives to a length that will allow them to be adjacent to the anchor
-                # without running off the edge of the document. If documents are sufficiently
-                # long, this won't be a problem and max_positive_len will equal max_span_len.
+                # without running off the edge of the document. If the anchor has sufficent room on
+                # either side, this won't be a problem and max_positive_len will equal max_span_len.
                 max_positive_len = min(max_span_len, max(anchor_start, num_tokens - anchor_end))
-                if positive_len > max_positive_len:
+                if max_positive_len < max_span_len:
                     logger.warning_once(
                         (
                             "There is no room to sample an adjacent positive span. Temporarily"
@@ -135,6 +123,11 @@ def sample_anchor_positive_pairs(
                     valid_starts.append(anchor_end)
                 positive_start = np.random.choice(valid_starts)
             else:
+                # Sample positive length from a beta distribution skewed towards shorter spans. The
+                # idea is to promote diversity and minimize the amount of overlapping text.
+                positive_len = int(
+                    np.random.beta(2, 4) * (max_span_len - min_span_len) + min_span_len
+                )
                 # By default, spans may be adjacent or overlap with each other and the anchor.
                 # Careful not to run off the edges of the document (this error may pass silently).
                 positive_start = np.random.random_integers(

@@ -17,6 +17,13 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
 
 > Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued training with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation.
 
+## Notebooks
+
+The easiest way to get started is to follow along with one of our [notebooks](notebooks):
+
+- Training your own model [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
+- Embedding text with a pretrained model (:soon:)
+
 ## Installation
 
 This repository requires Python 3.6 or later.

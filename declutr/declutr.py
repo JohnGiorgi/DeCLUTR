@@ -42,6 +42,10 @@ class DeCLUTR(Model):
         provided if `text_field_embedder.token_embedders["tokens"].masked_language_modeling` is
         False. See https://kevinmusgrave.github.io/pytorch-metric-learning/losses/ for a list of
         available loss functions.
+    loss_weight: float, option (default = 1.0).
+        An optional weight coefficient for the contrastive objective
+    mlm_weight: float, option (default = 1.0).
+        An optional weight coefficient for the Masked Language Modelling objective
     miner: `PyTorchMetricLearningMiner`, option (default = None).
         An optional mining function which will mine hard negatives from each batch before computing
         the loss. See https://kevinmusgrave.github.io/pytorch-metric-learning/miners/ for a list
@@ -58,6 +62,8 @@ class DeCLUTR(Model):
         feedforward: Optional[FeedForward] = None,
         miner: Optional[PyTorchMetricLearningMiner] = None,
         loss: Optional[PyTorchMetricLearningLoss] = None,
+        loss_weight: Optional[float] = 1.0,
+        mlm_weight: Optional[float] = 1.0,
         initializer: InitializerApplicator = InitializerApplicator(),
         **kwargs,
     ) -> None:
@@ -86,6 +92,8 @@ class DeCLUTR(Model):
                     " and/or specify `masked_language_modeling=True` in the config when training."
                 )
             )
+        self.loss_weight = loss_weight
+        self.mlm_weight = mlm_weight
         initializer(self)
 
     def forward(  # type: ignore
@@ -154,10 +162,10 @@ class DeCLUTR(Model):
                     embedded_anchors, embedded_positives
                 )
                 indices_tuple = self._miner(embeddings, labels) if self._miner is not None else None
-                output_dict["loss"] += self._loss(embeddings, labels, indices_tuple)
+                output_dict["loss"] += self.loss_weight * self._loss(embeddings, labels, indices_tuple)
             # Loss may be derived from contrastive objective, MLM objective or both.
             if masked_lm_loss is not None:
-                output_dict["loss"] += masked_lm_loss
+                output_dict["loss"] += self.mlm_weight * masked_lm_loss
 
         return output_dict
 

@@ -49,7 +49,7 @@ pip install --editable .
 
 #### Gotchas
 
-- For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). Specifically, please install [this commit](https://github.com/allenai/allennlp/commit/**9766eb407e7d83a0bf2150ad054a7c8e2da4ae2b).
+- For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). Specifically, please install [this commit](https://github.com/allenai/allennlp/commit/9766eb407e7d83a0bf2150ad054a7c8e2da4ae2b).
 - If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
 
 ## Usage

@@ -16,13 +16,9 @@ DOWNLOAD = "\U00002B07"
 
 
 def _sanitize(text: str) -> str:
-    """Cleans text by dropping non-ASCII characters and removing whitespace, newlines and tabs.
+    """Cleans text by removing whitespace, newlines and tabs.
     """
-    # Convert to ASCII, dropping anything that can't be converted
-    text = text.encode("ascii", "ignore").decode("utf-8")
-    # Remove whitespace, newlines and tabs
-    text = " ".join(text.strip().split())
-    return text
+    return " ".join(text.strip().split())
 
 
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:

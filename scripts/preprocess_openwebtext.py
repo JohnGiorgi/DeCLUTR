@@ -13,13 +13,9 @@ MINING = "\U000026CF"
 
 
 def _sanitize(text: str) -> str:
-    """Cleans text by dropping non-ASCII characters and removing whitespace, newlines and tabs.
+    """Cleans text by removing whitespace, newlines and tabs.
     """
-    # Convert to ASCII, dropping anything that can't be converted
-    text = text.encode("ascii", "ignore").decode("utf-8")
-    # Remove whitespace, newlines and tabs
-    text = " ".join(text.strip().split())
-    return text
+    return " ".join(text.strip().split())
 
 
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
@@ -91,8 +87,8 @@ def main(
     ) as progress:
         for i, tar_filepath in enumerate(openwebtext_path.iterdir()):
             # HACK (John): I didn't bother trying to debug these as it only happens for a tiny
-            # number (1-2) of tar archives. Instead, I catch the error and report to the user at the
-            # end how many we skipped.
+            # number (1-2) of tar archives. Instead, I catch the error and report to the user at
+            # the end how many we skipped.
             untared_filepath = Path(tar_filepath.stem)
             try:
                 with tarfile.open(tar_filepath) as f:
@@ -107,8 +103,7 @@ def main(
                 if not text:
                     continue
 
-                # Retain documents if the length of their shortest document is
-                # equal to or greater than the minimum specified length
+                # Retain documents if # of tokens is greater than the minimum specified length
                 if tokenizer is not None:
                     num_tokens = len(tokenizer(text))
                     if num_tokens < min_length:

@@ -21,7 +21,7 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
 
 The easiest way to get started is to follow along with one of our [notebooks](notebooks):
 
-- Training your own model [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb)
+- Training your own model [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/training.ipynb)
 - Embedding text with a pretrained model (:soon:)
 
 ## Installation

@@ -19,7 +19,7 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
 
 ## Installation
 
-This repository requires Python 3.7 or later.
+This repository requires Python 3.6 or later.
 
 ### Setting up a virtual environment
 

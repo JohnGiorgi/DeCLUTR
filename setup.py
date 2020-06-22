@@ -37,7 +37,7 @@ setuptools.setup(
         "Typing :: Typed",
     ],
     python_requires=">=3.6",
-    install_requires=["torch>=1.5.0", "pytorch-metric-learning>=0.9.86", "typer>=0.2.1"],
+    install_requires=["torch>=1.5.0", "pytorch-metric-learning>=0.9.88", "typer>=0.2.1"],
     extras_require={
         "dev": ["black", "flake8", "hypothesis", "pytest", "pytest-cov", "coverage", "codecov"]
     },

@@ -154,25 +154,25 @@ def _compute_aggregate_scores(
         else:
             raise ValueError(f'Found an unexpected field in results, "{task}".')
 
-    # Aggregate scores for "downstream" tasks
     num_downstream_tasks = len(
         [task for task in results if task in DOWNSTREAM_TASKS and task not in ignore_tasks]
     )
-    aggregate_scores["downstream"]["dev"] /= num_downstream_tasks
-    aggregate_scores["downstream"]["test"] /= num_downstream_tasks
-    # Aggregate scores for "probing" tasks
     num_probing_tasks = len(
         [task for task in results if task in PROBING_TASKS and task not in ignore_tasks]
     )
+    # Aggregate score across all of SentEval
+    aggregate_scores["all"]["dev"] = (
+        aggregate_scores["downstream"]["dev"] + aggregate_scores["probing"]["dev"]
+    ) / (num_downstream_tasks + num_probing_tasks)
+    aggregate_scores["all"]["test"] = (
+        aggregate_scores["downstream"]["dev"] + aggregate_scores["probing"]["dev"]
+    ) / (num_downstream_tasks + num_probing_tasks)
+    # Aggregate scores for "downstream" tasks
+    aggregate_scores["downstream"]["dev"] /= num_downstream_tasks
+    aggregate_scores["downstream"]["test"] /= num_downstream_tasks
+    # Aggregate scores for "probing" tasks
     aggregate_scores["probing"]["dev"] /= num_probing_tasks
     aggregate_scores["probing"]["test"] /= num_probing_tasks
-    # Aggregate score across all of SentEval
-    aggregate_scores["all"]["dev"] = mean(
-        [aggregate_scores["downstream"]["dev"], aggregate_scores["probing"]["dev"]]
-    )
-    aggregate_scores["all"]["test"] = mean(
-        [aggregate_scores["downstream"]["test"], aggregate_scores["probing"]["test"]]
-    )
 
     return aggregate_scores
 

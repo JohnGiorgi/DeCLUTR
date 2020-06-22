@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import torch
 from pytorch_metric_learning import losses
@@ -54,21 +54,10 @@ class CircleLoss(PyTorchMetricLearningLoss, losses.CircleLoss):
     Registered as a `PyTorchMetricLearningLoss` with name "circle_loss".
     """
 
-    def __init__(
-        self,
-        m: float = 0.4,
-        gamma: int = 80,
-        triplets_per_anchor: str = "all",
-        num_class_per_param: int = None,
-        learnable_param_names: List[str] = None,
-    ) -> None:
+    def __init__(self, m: float = 0.4, gamma: int = 80, triplets_per_anchor: str = "all",) -> None:
 
         super().__init__(
-            m=m,
-            gamma=gamma,
-            triplets_per_anchor=triplets_per_anchor,
-            num_class_per_param=num_class_per_param,
-            learnable_param_names=learnable_param_names,
+            m=m, gamma=gamma, triplets_per_anchor=triplets_per_anchor,
         )
 
 
@@ -88,8 +77,6 @@ class ContrastiveLoss(PyTorchMetricLearningLoss, losses.ContrastiveLoss):
         power: float = 1,
         avg_non_zero_only: bool = True,
         normalize_embeddings: bool = True,
-        num_class_per_param: int = None,
-        learnable_param_names: List[str] = None,
     ) -> None:
 
         super().__init__(
@@ -99,8 +86,6 @@ class ContrastiveLoss(PyTorchMetricLearningLoss, losses.ContrastiveLoss):
             power=power,
             avg_non_zero_only=avg_non_zero_only,
             normalize_embeddings=normalize_embeddings,
-            num_class_per_param=num_class_per_param,
-            learnable_param_names=learnable_param_names,
         )
 
 
@@ -134,22 +119,11 @@ class MultiSimilarityLoss(PyTorchMetricLearningLoss, losses.MultiSimilarityLoss)
     """
 
     def __init__(
-        self,
-        alpha: float,
-        beta: float,
-        base: float = 0.5,
-        normalize_embeddings: bool = True,
-        num_class_per_param: int = None,
-        learnable_param_names: List[str] = None,
+        self, alpha: float, beta: float, base: float = 0.5, normalize_embeddings: bool = True,
     ) -> None:
 
         super().__init__(
-            alpha=alpha,
-            beta=beta,
-            base=base,
-            normalize_embeddings=normalize_embeddings,
-            num_class_per_param=num_class_per_param,
-            learnable_param_names=learnable_param_names,
+            alpha=alpha, beta=beta, base=base, normalize_embeddings=normalize_embeddings,
         )
 
 
@@ -161,17 +135,8 @@ class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
     Registered as a `PyTorchMetricLearningLoss` with name "nt_xent".
     """
 
-    def __init__(
-        self,
-        temperature: float,
-        normalize_embeddings: bool = True,
-        num_class_per_param: int = None,
-        learnable_param_names: List[str] = None,
-    ) -> None:
+    def __init__(self, temperature: float, normalize_embeddings: bool = True,) -> None:
 
         super().__init__(
-            temperature=temperature,
-            normalize_embeddings=normalize_embeddings,
-            num_class_per_param=num_class_per_param,
-            learnable_param_names=learnable_param_names,
+            temperature=temperature, normalize_embeddings=normalize_embeddings,
         )

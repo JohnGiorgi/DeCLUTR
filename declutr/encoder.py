@@ -22,7 +22,7 @@ class Encoder:
     def __init__(self, path_to_allennlp_archive: str, sphereize: bool = False, **kwargs) -> None:
         common_util.import_module_and_submodules("declutr")
         archive = load_archive(path_to_allennlp_archive, **kwargs)
-        self._predictor = Predictor.from_archive(archive, predictor_name="contrastive")
+        self._predictor = Predictor.from_archive(archive, predictor_name="declutr")
         self._output_dict_field = "embeddings"
         self._sphereize = sphereize
 

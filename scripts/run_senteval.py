@@ -165,7 +165,7 @@ def _compute_aggregate_scores(
         aggregate_scores["downstream"]["dev"] + aggregate_scores["probing"]["dev"]
     ) / (num_downstream_tasks + num_probing_tasks)
     aggregate_scores["all"]["test"] = (
-        aggregate_scores["downstream"]["dev"] + aggregate_scores["probing"]["dev"]
+        aggregate_scores["downstream"]["test"] + aggregate_scores["probing"]["test"]
     ) / (num_downstream_tasks + num_probing_tasks)
     # Aggregate scores for "downstream" tasks
     aggregate_scores["downstream"]["dev"] /= num_downstream_tasks

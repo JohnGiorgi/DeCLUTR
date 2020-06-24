@@ -61,7 +61,7 @@ Datasets should be text files where each line contains a raw text sequence. You 
 We provide scripts to download some popular datasets and prepare them for training with our model. For example, to download [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) (and match our minimal preprocessing), you can call
 
 ```bash
-python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt --min-length 1024
+python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt --min-length 2048
 ```
 
 #### Gotchas
@@ -112,10 +112,11 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 
 ### Embedding
 
-You can embed text with a trained model in one of two ways:
+You can embed text with a trained model in one of three ways:
 
-1. [As a library](#as-a-library) (e.g. import and initialize an object which can be used to embed sentences/paragraphs).
-2. [Bulk embed](#bulk-embed-a-file) all text in a given text file with a simple command-line interface.
+1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
+2. [HuggingFace Transformers](#huggingface-transformers): load our pretrained model with the [HuggingFace transformers library](https://github.com/huggingface/transformers).
+3. [Bulk embed](#bulk-embed-a-file): emded all text in a given text file with a simple command-line interface.
 
 #### As a library
 
@@ -139,7 +140,47 @@ from scipy.spatial.distance import cosine
 semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
 
-> In the future, we will host pre-trained weights online, so that a model name can be passed to `Encoder` and the model will be automatically downloaded. 
+> In the future, we will host pre-trained weights online, so that a model name can be passed to `Encoder` and the model will be automatically downloaded.
+
+#### HuggingFace Transformers
+
+Our pretrained models are also hosted with HuggingFace Transformers, so they can be used like any other model in that library. Here is a simple example:
+
+```python
+import torch
+from scipy.spatial.distance import cosine
+
+from transformers import AutoModelWithLMHead, AutoTokenizer
+
+# Load the model
+tokenizer = AutoTokenizer.from_pretrained("johngiorgi/declutr-small")
+model = AutoModelWithLMHead.from_pretrained("johngiorgi/declutr-small")
+
+# Prepare some text to embed
+text = [
+    "A smiling costumed woman is holding an umbrella.",
+    "A happy woman in a fairy costume holds an umbrella.",
+]
+inputs = tokenizer.batch_encode_plus(
+    text, pad_to_max_length=True, max_length=512, return_tensors="pt"
+)
+
+# Embed the text
+with torch.no_grad():
+    _, hidden_states = model(**inputs)
+# Mean pool the token-level embeddings to get sentence-level embeddings
+embeddings = torch.sum(
+    hidden_states[-1] * inputs["attention_mask"].unsqueeze(-1), dim=1
+) / torch.clamp(torch.sum(inputs["attention_mask"], dim=1, keepdims=True), min=1e-9)
+
+# Compute a semantic similarity
+semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
+```
+
+Currently available models:
+
+- [johngiorgi/declutr-small](https://huggingface.co/johngiorgi/declutr-small)
+- johngiorgi/declutr-base (:soon:)
 
 #### Bulk embed a file
 

@@ -205,3 +205,17 @@ python scripts/run_senteval.py allennlp --help
 #### Gotchas
 
 - Evaluating the `"SNLI"` task of SentEval will fail without [this fix](https://github.com/facebookresearch/SentEval/pull/52).
+
+## Citation
+
+If you use DeCLUTR in your work, please consider citing our preprint
+
+```
+@article{Giorgi2020DeCLUTRDC,
+  title={DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations},
+  author={John M Giorgi and Osvald Nitski and Gary D. Bader and Bo Wang},
+  journal={ArXiv},
+  year={2020},
+  volume={abs/2006.03659}
+}
+```

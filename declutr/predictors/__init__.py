@@ -1,1 +1,0 @@
-from declutr.predictors.contrastive_predictor import DeCLUTRPredictor

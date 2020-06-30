@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import io
 import re
 import zipfile
@@ -15,10 +16,14 @@ SAVING = "\U0001F4BE"
 DOWNLOAD = "\U00002B07"
 
 
-def _sanitize(text: str) -> str:
-    """Cleans text by removing whitespace, newlines and tabs.
+def _sanitize(text: str, lowercase: bool) -> str:
+    """Cleans text by removing whitespace, newlines and tabs and (optionally) lowercasing.
     """
-    return " ".join(text.strip().split())
+    sanitized_text = " ".join(text.strip().split())
+    if lowercase:
+        return sanitized_text.lower()
+    else:
+        return sanitized_text
 
 
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
@@ -27,25 +32,32 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
     output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
+
     with open(output_filepath, "w") as f:
-        f.write("\n".join(text))
+        # TODO (John): In the future, it might make sense to both batch and shard:
+        # 1) Batch, meaning write batches of documents to a file as opposed to 1 at a time
+        # 2) Shard, meaning break a file up into shard_size // len(text) files, and return a
+        #    directory instead. Loading a dataset like this is supported in AllenNLP (see:
+        #    https://docs.allennlp.org/master/api/data/dataset_readers/sharded_dataset_reader/)
+        with typer.progressbar(text, label="Writing to disk") as progress:
+            for doc in progress:
+                f.write(doc.strip() + "\n")
     typer.secho(
-        f"{SAVING} Preprocessed WikiText-103 saved to: {output_filepath}",
-        fg=typer.colors.WHITE,
-        bold=True,
+        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}", bold=True,
     )
 
 
 def main(
     output_filepath: str,
     min_length: Optional[int] = None,
+    lowercase: bool = True,
     pretrained_model_name_or_path: Optional[str] = None,
 ) -> None:
-    """Downloads and lightly preprocesses WikiText-103. If `min_length` is not None, only documents
+    """Downloads and lightly preprocesses WikiText-103. If `min_length is not None`, only documents
     with at least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the
     tokenizer will be loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)`
     using the HuggingFace Transformers library. Otherwise `str.split()` is used. This argument has
-    no effect if `min_length is None`.
+    no effect if `min-length is None`.
     """
     # Setup the pre-trained tokenizer, if specified
     if min_length is not None:
@@ -64,7 +76,7 @@ def main(
     r = requests.get(WIKITEXT_103_URL, stream=True)
     z = zipfile.ZipFile(io.BytesIO(r.content))
     partition_filenames = z.namelist()[1:]
-    typer.secho(f"{DOWNLOAD} Downloaded WikiText-103", fg=typer.colors.WHITE, bold=True)
+    typer.secho(f"{DOWNLOAD} Downloaded WikiText-103", bold=True)
 
     preprocessed_documents = []
     for filename in partition_filenames:
@@ -75,10 +87,10 @@ def main(
         documents = re.split(r"=\s.*\s=", no_subtitles)
 
         with typer.progressbar(
-            documents, label=typer.style(f"Preprocessing text", bold=True)
+            documents, label=typer.style("Preprocessing text", bold=True)
         ) as progress:
             for doc in progress:
-                doc = _sanitize(doc)
+                doc = _sanitize(doc, lowercase=lowercase)
                 if not doc:
                     continue
 

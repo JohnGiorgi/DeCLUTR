@@ -4,7 +4,6 @@ import torch
 from transformers import PreTrainedTokenizer
 
 from allennlp.data import TextFieldTensors
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 
 
 def _mask_tokens(
@@ -53,14 +52,12 @@ def _mask_tokens(
 
 
 def mask_tokens(
-    tokens: TextFieldTensors,
-    tokenizer: PretrainedTransformerTokenizer,
-    mlm_probability: float = 0.15,
+    tokens: TextFieldTensors, tokenizer: PreTrainedTokenizer, mlm_probability: float = 0.15,
 ) -> TextFieldTensors:
     device = tokens["tokens"]["token_ids"].device
     inputs, labels = _mask_tokens(
         inputs=tokens["tokens"]["token_ids"].to("cpu"),
-        tokenizer=tokenizer.tokenizer,
+        tokenizer=tokenizer,
         mlm_probability=mlm_probability,
     )
     tokens["tokens"]["token_ids"] = inputs.to(device)

@@ -3,17 +3,15 @@ import random
 from contextlib import contextmanager
 from typing import Dict, Iterable, List, Optional
 
-import torch
-from overrides import overrides
-
-from allennlp.common import util
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
-from declutr.dataset_readers.dataset_utils import contrastive_utils
+from overrides import overrides
+
+from declutr.common.contrastive_utils import sample_anchor_positive_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -99,23 +97,6 @@ class DeCLUTRDatasetReader(DatasetReader):
                 )
             )
 
-        # In the v1.0 AllenNLP pre-release, theres a small catch that dataset readers used in the
-        # distributed setting need to shard instances to separate processes internally such that one
-        # epoch strictly corresponds to one pass over the data. This may get fixed in the v1.0
-        # release. See here: https://github.com/allenai/allennlp/releases.
-        if util.is_distributed():
-            self._rank = torch.distributed.get_rank()
-            self._world_size = torch.distributed.get_world_size()
-        else:
-            self._rank = 0
-            self._world_size = 1
-
-        # HACK (John): I need to temporarily disable user warnings because this objects __len__
-        # function returns 1, which confuses PyTorch.
-        import warnings
-
-        warnings.filterwarnings("ignore")
-
     @property
     def sample_spans(self) -> None:
         return self._sample_spans
@@ -150,9 +131,8 @@ class DeCLUTRDatasetReader(DatasetReader):
             else:
                 data_file = enumerate(data_file)
 
-            for i, text in data_file:
-                if i % self._world_size == self._rank:
-                    yield self.text_to_instance(text)
+            for _, text in data_file:
+                yield self.text_to_instance(text)
 
     @overrides
     def text_to_instance(self, text: str) -> Instance:  # type: ignore
@@ -177,7 +157,7 @@ class DeCLUTRDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self.sample_spans:
             # Choose the anchor/positives at random.
-            anchor_text, positive_text = contrastive_utils.sample_anchor_positive_pairs(
+            anchor_text, positive_text = sample_anchor_positive_pairs(
                 text=text,
                 num_anchors=self._num_anchors,
                 num_positives=self._num_positives,

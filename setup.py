@@ -14,14 +14,17 @@ setuptools.setup(
     url="https://github.com/JohnGiorgi/DeCLUTR",
     packages=setuptools.find_packages(),
     keywords=[
-        "textual representations",
         "universal sentence embeddings",
-        "representation learning",
         "contrastive learning",
         "natural language processing",
-        "transformers",
-        "pytorch",
         "allennlp",
+        "pytorch",
+        "transformers",
+        "representation learning",
+        "deep metric learning",
+        "sentence embeddings",
+        "sentence similarity",
+        "semantic similarity",
     ],
     classifiers=[
         "Development Status :: 1 - Planning",
@@ -37,7 +40,7 @@ setuptools.setup(
         "Typing :: Typed",
     ],
     python_requires=">=3.6",
-    install_requires=["torch>=1.5.0", "pytorch-metric-learning>=0.9.88", "typer>=0.2.1"],
+    install_requires=["allennlp>=1.0.0", "pytorch-metric-learning>=0.9.88", "typer>=0.3.0"],
     extras_require={
         "dev": ["black", "flake8", "hypothesis", "pytest", "pytest-cov", "coverage", "codecov"]
     },

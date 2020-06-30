@@ -1,17 +1,17 @@
 from typing import Dict, Optional
 
 import torch
-
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-from declutr.dataset_readers.dataset_utils.masked_lm_utils import mask_tokens
+
+from declutr.common.masked_lm_utils import mask_tokens
+from declutr.common.model_utils import all_gather_anchor_positive_pairs, unpack_batch
 from declutr.losses import PyTorchMetricLearningLoss
 from declutr.miners import PyTorchMetricLearningMiner
-from declutr.common import all_gather_anchor_positive_pairs, unpack_batch
 
 
 @Model.register("declutr")
@@ -186,4 +186,4 @@ class DeCLUTR(Model):
 
         return masked_lm_loss, embedded_text
 
-    default_predictor = "contrastive"
+    default_predictor = "declutr"

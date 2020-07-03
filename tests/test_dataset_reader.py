@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import integers, text
 
-from declutr.dataset_readers import DeCLUTRDatasetReader
+from declutr.dataset_reader import DeCLUTRDatasetReader
 
 
 class TestDeCLUTRDatasetReader:

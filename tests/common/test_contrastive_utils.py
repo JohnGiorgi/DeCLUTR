@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from, text
 
-from declutr.dataset_readers.dataset_utils.contrastive_utils import sample_anchor_positive_pairs
+from declutr.common.contrastive_utils import sample_anchor_positive_pairs
 
 
 class TestContrastiveUtils:

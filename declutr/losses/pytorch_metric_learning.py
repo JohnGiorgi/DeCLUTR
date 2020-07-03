@@ -14,7 +14,7 @@ class PyTorchMetricLearningLoss(Registrable):
     to the constructor the same arguments that the loss function does. See `NTXentLoss` below for an example.
     """
 
-    default_implementation = "contrastive"
+    default_implementation = "nt_xent"
 
     @classmethod
     def get_embeddings_and_labels(
@@ -46,49 +46,6 @@ class PyTorchMetricLearningLoss(Registrable):
         return embeddings, labels
 
 
-@PyTorchMetricLearningLoss.register("circle_loss")
-class CircleLoss(PyTorchMetricLearningLoss, losses.CircleLoss):
-    """Wraps the `CircleLoss` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#circleloss).
-
-    Registered as a `PyTorchMetricLearningLoss` with name "circle_loss".
-    """
-
-    def __init__(self, m: float = 0.4, gamma: int = 80, triplets_per_anchor: str = "all",) -> None:
-
-        super().__init__(
-            m=m, gamma=gamma, triplets_per_anchor=triplets_per_anchor,
-        )
-
-
-@PyTorchMetricLearningLoss.register("contrastive")
-class ContrastiveLoss(PyTorchMetricLearningLoss, losses.ContrastiveLoss):
-    """Wraps the `ContrastiveLoss` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#contrastiveloss).
-
-    Registered as a `PyTorchMetricLearningLoss` with name "contrastive".
-    """
-
-    def __init__(
-        self,
-        pos_margin: float = 1,
-        neg_margin: float = 0,
-        use_similarity: bool = True,
-        power: float = 1,
-        avg_non_zero_only: bool = True,
-        normalize_embeddings: bool = True,
-    ) -> None:
-
-        super().__init__(
-            pos_margin=pos_margin,
-            neg_margin=neg_margin,
-            use_similarity=use_similarity,
-            power=power,
-            avg_non_zero_only=avg_non_zero_only,
-            normalize_embeddings=normalize_embeddings,
-        )
-
-
 @PyTorchMetricLearningLoss.register("cross_batch_memory")
 class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
     """Wraps the `CrossBatchMemory` implementation from Pytorch Metric Learning:
@@ -107,23 +64,6 @@ class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
 
         super().__init__(
             loss=loss, embedding_size=embedding_size, memory_size=memory_size, miner=miner,
-        )
-
-
-@PyTorchMetricLearningLoss.register("multi_sim")
-class MultiSimilarityLoss(PyTorchMetricLearningLoss, losses.MultiSimilarityLoss):
-    """Wraps the `MultiSimilarityLoss` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/losses/#multisimilarityloss).
-
-    Registered as a `PyTorchMetricLearningLoss` with name "multi_sim_loss".
-    """
-
-    def __init__(
-        self, alpha: float, beta: float, base: float = 0.5, normalize_embeddings: bool = True,
-    ) -> None:
-
-        super().__init__(
-            alpha=alpha, beta=beta, base=base, normalize_embeddings=normalize_embeddings,
         )
 
 

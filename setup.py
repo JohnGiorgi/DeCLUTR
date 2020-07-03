@@ -39,7 +39,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Typing :: Typed",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.6.1",
     install_requires=["allennlp>=1.0.0", "pytorch-metric-learning>=0.9.88", "typer>=0.3.0"],
     extras_require={
         "dev": ["black", "flake8", "hypothesis", "pytest", "pytest-cov", "coverage", "codecov"]

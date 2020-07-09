@@ -3,7 +3,7 @@
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
-The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659v2). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
+The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
 
 | Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream |  Probing  |    Avg.   |   Δ   |
 |------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
@@ -58,6 +58,7 @@ pip install --editable .
 
 #### Gotchas
 
+- For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source).
 - If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
 
 ## Usage
@@ -76,14 +77,14 @@ You can specify the train set path in the [configs](configs) under `"train_data_
 
 #### Gotchas
 
-- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_reader.py) for more details on these hyperparameters.
+- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_reader.py) and/or [our paper]((https://arxiv.org/abs/2006.03659)) for more details on these hyperparameters.
 
 ### Training
 
 To train the model, use the [`allennlp train`](https://docs.allennlp.org/master/api/commands/train/) command with our [`declutr.jsonnet`](configs/declutr.jsonnet) config. For example, to train DeCLUTR-small, run the following
 
 ```bash
-# This can be (almost) any model from https://huggingface.co/
+# This can be (almost) any model from https://huggingface.co/ that supports masked language modelling.
 TRANSFORMER_MODEL="distilroberta-base"
 
 allennlp train "configs/declutr.jsonnet" \

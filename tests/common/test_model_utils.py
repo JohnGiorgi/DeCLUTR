@@ -5,10 +5,10 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from allennlp.data import TextFieldTensors
-from declutr.common import unpack_batch
+from declutr.common.model_utils import unpack_batch
 
 
-class TestDeCLUTRUtil:
+class TestModelUtils:
     @given(
         batch_size=integers(min_value=1, max_value=4),
         num_anchors=integers(min_value=1, max_value=4),

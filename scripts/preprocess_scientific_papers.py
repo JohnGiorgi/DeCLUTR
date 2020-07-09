@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
-import io
-import re
-import zipfile
 from pathlib import Path
+import nlp
 from typing import List, Optional
+import itertools
 
-import requests
 import typer
-
-WIKITEXT_103_URL = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-raw-v1.zip"
 
 # Emoji's used in typer.secho calls
 # See: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py"
+WARNING = "\U000026A0"
 SAVING = "\U0001F4BE"
-DOWNLOAD = "\U00002B07"
+MINING = "\U000026CF"
 
 
-def _sanitize(text: str, lowercase: bool) -> str:
-    """Cleans text by removing whitespace, newlines and tabs and (optionally) lowercasing.
+def _sanitize(text: str) -> str:
+    """Cleans text by removing whitespace, newlines and tabs.
     """
-    sanitized_text = " ".join(text.strip().split())
-    if lowercase:
-        return sanitized_text.lower()
-    else:
-        return sanitized_text
+    return " ".join(text.strip().split())
 
 
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
@@ -43,23 +36,34 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
             for doc in progress:
                 f.write(doc.strip() + "\n")
     typer.secho(
-        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}", bold=True,
+        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}",
+        fg=typer.colors.WHITE,
+        bold=True,
     )
 
 
 def main(
     output_filepath: str,
     min_length: Optional[int] = None,
-    lowercase: bool = True,
+    max_documents: Optional[int] = None,
     pretrained_model_name_or_path: Optional[str] = None,
 ) -> None:
-    """Downloads and lightly preprocesses WikiText-103. If `min_length is not None`, only documents
+    """Lightly pre-processes an OpenWebText dump obtained from
+    https://skylion007.github.io/OpenWebTextCorpus/. If `min_length` is not None, only documents
     with at least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the
     tokenizer will be loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)`
     using the HuggingFace Transformers library. Otherwise `str.split()` is used. This argument has
     no effect if `min-length is None`.
     """
-    # Setup the pre-trained tokenizer, if specified
+    # Collect the raw text from the "scientific_papers" dataset.
+    pubmed = nlp.load_dataset("scientific_papers", "pubmed")
+    arxiv = nlp.load_dataset("scientific_papers", "arxiv")
+    # Create a genrator over both datasets to avoid storing things in memory.
+    pubmed_text = (article["article"] for partition in pubmed.values() for article in partition)
+    arxiv_text = (article["article"] for partition in arxiv.values() for article in partition)
+    scientific_text = itertools.chain(pubmed_text, arxiv_text)
+
+    # Setup the pre-trained tokenizer, if specified.
     if min_length is not None:
         if pretrained_model_name_or_path is not None:
             # Import transformers here to prevent ImportError errors if the
@@ -72,38 +76,30 @@ def main(
     else:
         tokenizer = None
 
-    # Download WikiText-103
-    r = requests.get(WIKITEXT_103_URL, stream=True)
-    z = zipfile.ZipFile(io.BytesIO(r.content))
-    partition_filenames = z.namelist()[1:]
-    typer.secho(f"{DOWNLOAD} Downloaded WikiText-103", bold=True)
+    documents = []
+    typer.secho(
+        (
+            f' {MINING} Scraping {max_documents or "all"} documents'
+            f' {f"with a minimum token length of {min_length}" if min_length else ""}'
+        ),
+        fg=typer.colors.WHITE,
+        bold=True,
+    )
 
-    preprocessed_documents = []
-    for filename in partition_filenames:
-        text = z.open(filename).read().decode("utf-8")
+    with typer.progressbar(scientific_text, label="Preprocessing text") as progress:
+        for doc in progress:
+            doc = _sanitize(doc)
+            if not doc:
+                continue
 
-        # Strip out subtitles and split the text into documents
-        no_subtitles = re.sub(r"(=\s){2,5}.*(=\s){2,5}", "", text)
-        documents = re.split(r"=\s.*\s=", no_subtitles)
-
-        with typer.progressbar(
-            documents, label=typer.style("Preprocessing text", bold=True)
-        ) as progress:
-            for doc in progress:
-                doc = _sanitize(doc, lowercase=lowercase)
-                if not doc:
+            # Retain documents if the length of their shortest document is
+            # equal to or greater than the minimum specified length
+            if tokenizer is not None:
+                num_tokens = len(tokenizer(doc))
+                if num_tokens < min_length:
                     continue
-
-                # Retain documents if the length of their shortest document is
-                # equal to or greater than the minimum specified length
-                if tokenizer is not None:
-                    num_tokens = len(tokenizer(doc))
-                    if num_tokens < min_length:
-                        continue
-
-                preprocessed_documents.append(doc)
-
-    _write_output_to_disk(preprocessed_documents, output_filepath)
+            documents.append(doc)
+    _write_output_to_disk(documents, output_filepath)
 
 
 if __name__ == "__main__":

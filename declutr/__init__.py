@@ -1,2 +1,2 @@
-from declutr.declutr import DeCLUTR
+from declutr.model import DeCLUTR
 from declutr.encoder import Encoder

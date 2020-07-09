@@ -14,67 +14,6 @@ class PyTorchMetricLearningMiner(Registrable):
     default_implementation = "pair_margin"
 
 
-@PyTorchMetricLearningMiner.register("batch_hard")
-class BatchHardMiner(PyTorchMetricLearningMiner, miners.BatchHardMiner):
-    """Wraps the `BatchHardMinder` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#batchhardminer).
-
-    Registered as a `PyTorchMetricLearningMiner` with name "batch_hard".
-    """
-
-    def __init__(
-        self,
-        use_similarity: bool = True,
-        squared_distances: bool = False,
-        normalize_embeddings: bool = True,
-    ) -> None:
-
-        super().__init__(
-            use_similarity=use_similarity,
-            squared_distances=squared_distances,
-            normalize_embeddings=normalize_embeddings,
-        )
-
-
-@PyTorchMetricLearningMiner.register("hard_aware")
-class HDCMiner(PyTorchMetricLearningMiner, miners.HDCMiner):
-    """Wraps the `HDCMiner` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#hdcminer).
-
-    Registered as a `PyTorchMetricLearningMiner` with name "hard_aware".
-    """
-
-    def __init__(
-        self,
-        filter_percentage: float,
-        use_similarity: bool = True,
-        squared_distances: bool = False,
-        normalize_embeddings: bool = True,
-    ) -> None:
-
-        super().__init__(
-            filter_percentage=filter_percentage,
-            use_similarity=use_similarity,
-            squared_distances=squared_distances,
-            normalize_embeddings=normalize_embeddings,
-        )
-
-
-@PyTorchMetricLearningMiner.register("multi_sim")
-class MultiSimilarityMiner(PyTorchMetricLearningMiner, miners.MultiSimilarityMiner):
-    """Wraps the `MultiSimilarityMiner` implementation from Pytorch Metric Learning:
-    (https://kevinmusgrave.github.io/pytorch-metric-learning/miners/#multisimilarityminer).
-
-    Registered as a `PyTorchMetricLearningMiner` with name "multi_sim_miner".
-    """
-
-    def __init__(self, epsilon: float, normalize_embeddings: bool = True,) -> None:
-
-        super().__init__(
-            epsilon=epsilon, normalize_embeddings=normalize_embeddings,
-        )
-
-
 @PyTorchMetricLearningMiner.register("pair_margin")
 class PairMarginMiner(PyTorchMetricLearningMiner, miners.PairMarginMiner):
     """Wraps the `PairMarginMiner` implementation from Pytorch Metric Learning:

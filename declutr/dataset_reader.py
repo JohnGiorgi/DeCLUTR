@@ -31,12 +31,10 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     # Parameters
 
-   token_indexers : `Dict[str, TokenIndexer]`, optional
-        optional (default=`{"tokens": SingleIdTokenIndexer()}`)
-        We use this to define the input representation for the text.
-        See :class:`TokenIndexer`.
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
+   token_indexers : `Dict[str, TokenIndexer]`, optional
+        We use this to define the input representation for the text. See :class:`TokenIndexer`.
     num_anchors : `int`, optional
         The number of spans to sample from each instance to serve as anchors.
     num_positives : `int`, optional
@@ -57,8 +55,8 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     def __init__(
         self,
-        token_indexers: Optional[Dict[str, TokenIndexer]] = None,
         tokenizer: Optional[Tokenizer] = None,
+        token_indexers: Optional[Dict[str, TokenIndexer]] = None,
         num_anchors: Optional[int] = None,
         num_positives: Optional[int] = None,
         max_span_len: Optional[int] = None,
@@ -117,7 +115,10 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        with open(cached_path(file_path), "r") as data_file:
+        # if `file_path` is a URL, redirect to the cache
+        file_path = cached_path(file_path)
+
+        with open(file_path, "r") as data_file:
             logger.info("Reading instances from lines in file at: %s", file_path)
 
             # If we are sampling spans (i.e. we are training) we need to shuffle the data so that

@@ -18,10 +18,14 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
     our custom PretrainedTransformerEmbedderMLM returns a tuple containing the loss for the masked
     language modelling objective as well as some embedded text.
 
-    I don't like that we had to modify this class and hope in the future that we can replace it
-    with a model from the https://github.com/allenai/allennlp-models repo.
-
     Registered as a `TextFieldEmbedder` with name "mlm".
+
+    # Parameters
+
+    token_embedders : `Dict[str, TokenEmbedder]`, required.
+        A dictionary mapping token embedder names to implementations.
+        These names should match the corresponding indexer used to generate
+        the tensor passed to the TokenEmbedder.
     """
 
     def __init__(self, token_embedders: Dict[str, TokenEmbedder]) -> None:

@@ -3,19 +3,28 @@
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
-The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659v2). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task dev sets), along with existing state-of-the-art methods.
+The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659v2). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
 
 | Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream |  Probing  |    Avg.   |   Δ   |
 |------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
-| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |    76.46   |   72.58   |   74.52   | -1.40 |
-| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |  __79.13__ |   66.70   |   72.91   | -3.00 |
-| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |    77.59   |   63.22   |   70.40   | -5.52 |
-| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |    72.69   | __74.27__ |   73.48   | -2.44 |
-| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |    72.22   |   73.38   |   72.80   | -3.12 |
-| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |    76.43   |   73.82   |   75.13   | -0.79 |
-| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |    78.17   |   73.67   | __75.92__ |   --  |
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |    76.46   |   72.58   |   75.07   | -1.55 |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |  79.13 |   66.70   |   74.69   | -1.94 |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |    77.59   |   63.22   |   72.46   | -4.17 |
+| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |    72.69   | 74.27 |   73.25   | -3.38 |
+| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |    72.22   |   73.38   |   72.63   | -4.00 |
+| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |    77.52   |   73.90   |   76.23   | -0.40 |
+| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |    78.15   |   73.89   | __76.63__ |   --  |
 
 > Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued training with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation.
+
+## Table of contents
+
+- [Notebooks](#notebooks)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Training](#training)
+  - [Embedding](#embedding)
+  - [Evaluating with SentEval](#evaluating-with-senteval)
 
 ## Notebooks
 
@@ -26,7 +35,7 @@ The easiest way to get started is to follow along with one of our [notebooks](no
 
 ## Installation
 
-This repository requires Python 3.6 or later.
+This repository requires Python 3.6.1 or later.
 
 ### Setting up a virtual environment
 
@@ -49,52 +58,64 @@ pip install --editable .
 
 #### Gotchas
 
-- For the time being, please install [AllenNLP](https://github.com/allenai/allennlp) [from source](https://github.com/allenai/allennlp#installing-from-source). Specifically, please install [this commit](https://github.com/allenai/allennlp/commit/9766eb407e7d83a0bf2150ad054a7c8e2da4ae2b).
 - If you plan on training your own model, you should also install [PyTorch](https://pytorch.org/) with [CUDA](https://developer.nvidia.com/cuda-zone) support by following the instructions for your system [here](https://pytorch.org/get-started/locally/).
 
 ## Usage
 
 ### Preparing a dataset
 
-Datasets should be text files where each line contains a raw text sequence. You can specify different partitions in the [configs](configs) under `"train_data_path"`, `"validation_data_path"` and `"test_data_path"`.
-
-We provide scripts to download some popular datasets and prepare them for training with our model. For example, to download [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) (and match our minimal preprocessing), you can call
+A dataset is simply a file containing one item of text (a document, a scientific paper, etc.) per line. For demonstration purposes, we have provided a script that will download the [WikiText-103](https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/) dataset and match our minimal preprocessing
 
 ```bash
 python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt --min-length 2048
 ```
 
+> See [scripts/preprocess_openwebtext.py](scripts/preprocess_openwebtext.py) for a script that can be used to recreate the (much larger) dataset used in our paper.
+
+You can specify the train set path in the [configs](configs) under `"train_data_path"`.
+
 #### Gotchas
 
-- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_readers/declutr.py) for more details on these hyperparameters.
+- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_reader.py) for more details on these hyperparameters.
 
 ### Training
 
-To train the model, run the following command
+To train the model, use the [`allennlp train`](https://docs.allennlp.org/master/api/commands/train/) command with our [`declutr.jsonnet`](configs/declutr.jsonnet) config. For example, to train DeCLUTR-small, run the following
 
 ```bash
-allennlp train configs/contrastive_simple.jsonnet \
-    --serialization-dir output \
-    --overrides "{'train_data_path': 'path/to/input.txt'}" \
-    --include-package declutr
+# This can be (almost) any model from https://huggingface.co/
+TRANSFORMER_MODEL="distilroberta-base"
+
+allennlp train "configs/declutr.jsonnet" \
+    --serialization-dir "output" \
+    --overrides "{'train_data_path': 'path/to/your/dataset/train.txt'}" \
+    --include-package "declutr"
 ```
 
-During training, models, vocabulary, configuration, and log files will be saved to `output`. This can be changed to any path you like.
+The `--overrides` flag allows you to override any field in the config with a JSON-formatted string, but you can equivalently update the config itself if you prefer. During training, models, vocabulary, configuration, and log files will be saved to the directory provided by `--serialization-dir`. This can be changed to any directory you like. 
 
-> Note, we provide a second config, [`contrastive.jsonnet`](configs/contrastive.jsonnet) that requires slightly more configuration but leads to slightly better scores.
+#### Gotchas
+
+By default, `allennlp train` will create a vocabulary from our dataset (which can be slow depending on dataset size). Because our model comes with a pretrained vocabulary, we can skip this step by creating a new `"vocabulary"` directory which contains a single file `"non_padded_namespaces.txt"`
+
+```bash
+mkdir -p "path/to/your/dataset/vocabulary"
+echo -e "*tags\n*labels" > "path/to/your/dataset/vocabulary/non_padded_namespaces.txt"
+```
+
+and then specify this vocabulary in the call to `allennlp train`
+
+```bash
+--overrides "{'vocabulary': {'type': 'from_files', 'directory': 'path/to/your/dataset/vocabulary'}}"
+```
 
 #### Multi-GPU training
 
 To train on more than one GPU, provide a list of CUDA devices in your call to `allennlp train`. For example, to train with four CUDA devices with IDs `0, 1, 2, 3`
 
 ```bash
-allennlp train configs/contrastive_simple.jsonnet \
-    --serialization-dir output \
-    --overrides "{'train_data_path': 'path/to/input.txt', 'distributed.cuda_devices': [0, 1, 2, 3]}" \
-    --include-package declutr
+--overrides "{'distributed.cuda_devices': [0, 1, 2, 3]}"
 ```
-
-> You can also add this to a [config](configs) if you prefer.
 
 #### Training with mixed-precision
 
@@ -103,8 +124,6 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 ```bash
 --overrides "{'trainer.opt_level': 'O1'}"
 ```
-
-> You can also add this to a [config](configs) if you prefer.
 
 #### Gotchas
 
@@ -116,7 +135,7 @@ You can embed text with a trained model in one of three ways:
 
 1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
 2. [HuggingFace Transformers](#huggingface-transformers): load our pretrained model with the [HuggingFace transformers library](https://github.com/huggingface/transformers).
-3. [Bulk embed](#bulk-embed-a-file): emded all text in a given text file with a simple command-line interface.
+3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
 #### As a library
 
@@ -125,7 +144,11 @@ To use the model as a library, import `Encoder` and pass it some text (it accept
 ```python
 from declutr import Encoder
 
-encoder = Encoder("path/to/serialized/model")
+# This can be a path on disk to a model you have trained yourself OR
+# the name of one of our pretrained models.
+pretrained_model_or_path = "declutr-small"
+
+encoder = Encoder(pretrained_model_or_path)
 embeddings = encoder([
     "A smiling costumed woman is holding an umbrella.",
     "A happy woman in a fairy costume holds an umbrella."
@@ -140,7 +163,11 @@ from scipy.spatial.distance import cosine
 semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
 
-> In the future, we will host pre-trained weights online, so that a model name can be passed to `Encoder` and the model will be automatically downloaded.
+See the list of available `PRETRAINED_MODELS` in [declutr/encoder.py](declutr/encoder.py)
+
+```bash
+python -c "from declutr.encoder import PRETRAINED_MODELS ; print(list(PRETRAINED_MODELS.keys()))"
+```
 
 #### HuggingFace Transformers
 
@@ -150,30 +177,29 @@ Our pretrained models are also hosted with HuggingFace Transformers, so they can
 import torch
 from scipy.spatial.distance import cosine
 
-from transformers import AutoModelWithLMHead, AutoTokenizer
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 # Load the model
 tokenizer = AutoTokenizer.from_pretrained("johngiorgi/declutr-small")
-model = AutoModelWithLMHead.from_pretrained("johngiorgi/declutr-small")
+model = AutoModelForMaskedLM.from_pretrained("johngiorgi/declutr-small")
 
 # Prepare some text to embed
 text = [
     "A smiling costumed woman is holding an umbrella.",
     "A happy woman in a fairy costume holds an umbrella.",
 ]
-inputs = tokenizer.batch_encode_plus(
-    text, pad_to_max_length=True, max_length=512, return_tensors="pt"
-)
+inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt")
 
 # Embed the text
 with torch.no_grad():
     _, hidden_states = model(**inputs)
+
 # Mean pool the token-level embeddings to get sentence-level embeddings
 embeddings = torch.sum(
     hidden_states[-1] * inputs["attention_mask"].unsqueeze(-1), dim=1
 ) / torch.clamp(torch.sum(inputs["attention_mask"], dim=1, keepdims=True), min=1e-9)
 
-# Compute a semantic similarity
+# Compute a semantic similarity via the cosine distance
 semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
 
@@ -187,21 +213,21 @@ Currently available models:
 To embed all text in a given file with a trained model, run the following command
 
 ```bash
-allennlp predict output path/to/input.txt \
- --output-file output/embeddings.jsonl \
+allennlp predict "output" "path/to/input.txt" \
+ --output-file "output/embeddings.jsonl" \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
- --include-package declutr
+ --include-package "declutr"
 ```
 
 This will:
 
-1. Load the model serialized to `output` with the "best" weights (i.e. the ones that achieved the lowest loss during training).
-2. Use that model to embed the text in the provided input file (`path/to/input.txt`).
-3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`output/embeddings.jsonl`)
+1. Load the model serialized to `"output"` with the "best" weights (i.e. the ones that achieved the lowest loss during training).
+2. Use that model to embed the text in the provided input file (`"path/to/input.txt"`).
+3. Save the embeddings to disk as a [JSON lines](http://jsonlines.org/) file (`"output/embeddings.jsonl"`)
 
-The text embeddings are stored in the field `"embeddings"` in `output/embeddings.jsonl`.
+The text embeddings are stored in the field `"embeddings"` in `"output/embeddings.jsonl"`.
 
 ### Evaluating with SentEval
 
@@ -221,13 +247,13 @@ cd ../../../
 Then you can run our [script](scripts/run_senteval.py) to evaluate a trained model against SentEval
 
 ```bash
-python scripts/run_senteval.py allennlp SentEval output 
- --output-filepath output/senteval_results.json \
+python scripts/run_senteval.py allennlp "SentEval" "output"
+ --output-filepath "output/senteval_results.json" \
  --cuda-device 0  \
- --include-package declutr
+ --include-package "declutr"
 ```
 
-The results will be saved to `output/senteval_results.json`. This can be changed to any path you like.
+The results will be saved to `"output/senteval_results.json"`. This can be changed to any path you like.
 
 > Pass the flag `--prototyping-config` to get a proxy of the results while dramatically reducing computation time.
 

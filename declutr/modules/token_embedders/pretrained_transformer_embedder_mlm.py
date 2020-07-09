@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import torch
 from overrides import overrides
-from transformers import AutoConfig, AutoModelWithLMHead
+from transformers import AutoConfig, AutoModelForMaskedLM
 
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.modules.token_embedders import PretrainedTransformerEmbedder
@@ -13,23 +13,82 @@ from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
 class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     """
     This is a wrapper around `PretrainedTransformerEmbedder` that allows us to train against a
-    masked language modelling objective while we are embedding text. I don't like that we had to
-    modify this class and hope in the future that we can replace it with a model from the
-    https://github.com/allenai/allennlp-models repo.
+    masked language modelling objective while we are embedding text.
 
     Registered as a `TokenEmbedder` with name "pretrained_transformer_mlm".
+
+    # Parameters
+
+    model_name : `str`
+        The name of the `transformers` model to use. Should be the same as the corresponding
+        `PretrainedTransformerIndexer`.
+    max_length : `int`, optional (default = `None`)
+        If positive, folds input token IDs into multiple segments of this length, pass them
+        through the transformer model independently, and concatenate the final representations.
+        Should be set to the same value as the `max_length` option on the
+        `PretrainedTransformerIndexer`.
+    sub_module: `str`, optional (default = `None`)
+        The name of a submodule of the transformer to be used as the embedder. Some transformers naturally act
+        as embedders such as BERT. However, other models consist of encoder and decoder, in which case we just
+        want to use the encoder.
+    train_parameters: `bool`, optional (default = `True`)
+        If this is `True`, the transformer weights get updated during training.
+    masked_language_modeling: `bool`, optional (default = `True`)
+        If this is `True` and `masked_lm_labels is not None` in the call to `forward`, the model
+        will be trained against a masked language modelling objective and the resulting loss will
+        be returned along with the output tensor.
     """
 
     def __init__(
-        self, model_name: str, max_length: int = None, masked_language_modeling: bool = True
+        self,
+        model_name: str,
+        *,
+        max_length: int = None,
+        sub_module: str = None,
+        train_parameters: bool = True,
+        override_weights_file: Optional[str] = None,
+        override_weights_strip_prefix: Optional[str] = None,
+        masked_language_modeling: bool = True,
     ) -> None:
-        super().__init__(model_name, max_length)
+        TokenEmbedder.__init__(self)  # Call the base class constructor
+        tokenizer = PretrainedTransformerTokenizer(model_name)
         self.masked_language_modeling = masked_language_modeling
+
         if self.masked_language_modeling:
-            self.tokenizer = PretrainedTransformerTokenizer(model_name)
-            # Models with LM heads may not include hidden states in their outputs by default.
-            config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
-            self.transformer_model = AutoModelWithLMHead.from_pretrained(model_name, config=config)
+            self.config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
+            # We only need access to the HF tokenizer if we are masked language modeling
+            self.tokenizer = tokenizer.tokenizer
+            # The only differences when masked language modeling are:
+            # 1) `output_hidden_states` must be True to get access to token embeddings.
+            # 2) We need to use `AutoModelForMaskedLM` to get the correct model
+            self.transformer_model = AutoModelForMaskedLM.from_pretrained(
+                model_name, config=self.config
+            )
+        # Eveything after the if statement (including the else) is copied directly from:
+        # https://github.com/allenai/allennlp/blob/master/allennlp/modules/token_embedders/pretrained_transformer_embedder.py
+        else:
+            from allennlp.common import cached_transformers
+
+            self.transformer_model = cached_transformers.get(
+                model_name, True, override_weights_file, override_weights_strip_prefix
+            )
+            self.config = self.transformer_model.config
+
+        if sub_module:
+            assert hasattr(self.transformer_model, sub_module)
+            self.transformer_model = getattr(self.transformer_model, sub_module)
+        self._max_length = max_length
+        # I'm not sure if this works for all models; open an issue on github if you find a case
+        # where it doesn't work.
+        self.output_dim = self.config.hidden_size
+
+        self._num_added_start_tokens = len(tokenizer.single_sequence_start_tokens)
+        self._num_added_end_tokens = len(tokenizer.single_sequence_end_tokens)
+        self._num_added_tokens = self._num_added_start_tokens + self._num_added_end_tokens
+
+        if not train_parameters:
+            for param in self.transformer_model.parameters():
+                param.requires_grad = False
 
     @overrides
     def forward(
@@ -39,38 +98,33 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         type_ids: Optional[torch.LongTensor] = None,
         segment_concat_mask: Optional[torch.BoolTensor] = None,
         masked_lm_labels: Optional[torch.LongTensor] = None,
-    ) -> torch.Tensor:  # type: ignore
+    ) -> Union[Tuple[torch.FloatTensor, torch.Tensor], torch.Tensor]:  # type: ignore
         """
         # Parameters
 
-        token_ids: torch.LongTensor
-            Shape: [
-                batch_size, num_wordpieces if max_length is None else num_segment_concat_wordpieces
-            ].
+        token_ids: `torch.LongTensor`
+            Shape: `[batch_size, num_wordpieces if max_length is None else num_segment_concat_wordpieces]`.
             num_segment_concat_wordpieces is num_wordpieces plus special tokens inserted in the
             middle, e.g. the length of: "[CLS] A B C [SEP] [CLS] D E F [SEP]" (see indexer logic).
-        mask: torch.BoolTensor
+        mask: `torch.BoolTensor`
             Shape: [batch_size, num_wordpieces].
-        type_ids: Optional[torch.LongTensor]
-            Shape: [
-                batch_size, num_wordpieces if max_length is None else num_segment_concat_wordpieces
-            ].
-        segment_concat_mask: Optional[torch.BoolTensor]
-            Shape: [batch_size, num_segment_concat_wordpieces].
-        masked_lm_labels: torch.LongTensor
-            Shape: [
-                batch_size, num_wordpieces
-            ].
+        type_ids: `Optional[torch.LongTensor]`
+            Shape: `[batch_size, num_wordpieces if max_length is None else num_segment_concat_wordpieces]`.
+        segment_concat_mask: `Optional[torch.BoolTensor]`
+            Shape: `[batch_size, num_segment_concat_wordpieces]`.
+        masked_lm_labels: `Optional[torch.LongTensor]`
+            Shape: `[batch_size, num_wordpieces]`.
 
         # Returns:
 
-        Shape: [batch_size, num_wordpieces, embedding_size].
+        If `self.masked_language_modeling`, returns a `Tuple` of the masked language modeling loss
+        and a `torch.Tensor` of shape: `[batch_size, num_wordpieces, embedding_size]`. Otherwise,
+        returns only the `torch.Tensor` of shape: `[batch_size, num_wordpieces, embedding_size]`.
         """
-
-        # Some of the huggingface transformers don't support type ids at all and crash when you
-        # supply them. For others, you can supply a tensor of zeros, and if you don't, they act as
-        # if you did. There is no practical difference to the caller, so here we pretend that one
-        # case is the same as another case.
+        # Some of the huggingface transformers don't support type ids at all and crash when you supply
+        # them. For others, you can supply a tensor of zeros, and if you don't, they act as if you did.
+        # There is no practical difference to the caller, so here we pretend that one case is the same
+        # as another case.
         if type_ids is not None:
             max_type_id = type_ids.max()
             if max_type_id == 0:
@@ -100,9 +154,9 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
         if self.masked_language_modeling:
-            # Even if masked_language_modeling is True, we may not be masked language modeling on
-            # the current batch. We still need to check if masked language modeling labels are
-            # present in the input.
+            # Even if masked_language_modeling is True, we may not be masked language modeling
+            # on the current batch. We still need to check if masked language modeling labels
+            # are present in the input.
             if masked_lm_labels is not None:
                 parameters["masked_lm_labels"] = masked_lm_labels
                 masked_lm_loss, _, hidden_states = self.transformer_model(**parameters)

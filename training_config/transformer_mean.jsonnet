@@ -12,7 +12,8 @@ local max_length = 512;
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model,
-            "max_length": max_length,
+            // Account for special tokens (e.g. CLS and SEP), otherwise a cryptic error is thrown.
+            "max_length": max_length - 2,
         },
         "token_indexers": {
             "tokens": {

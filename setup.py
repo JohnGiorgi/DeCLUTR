@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="declutr",
-    version="0.1.0",
+    version="0.1.0rc1",
     author="John Giorgi",
     author_email="johnmgiorgi@gmail.com",
     description=("DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations"),

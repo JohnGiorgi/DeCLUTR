@@ -38,6 +38,7 @@ local max_length = 512;
     },
     "data_loader": {
         "batch_size": 16,
+        "num_workers": 1,
         "drop_last": true,
     },
     "trainer": {

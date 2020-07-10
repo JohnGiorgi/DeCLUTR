@@ -48,6 +48,7 @@ local cls_is_last_token = false;
     },
     "data_loader": {
         "batch_size": 16,
+        "num_workers": 1,
         "drop_last": true,
     },
     "trainer": {

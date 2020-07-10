@@ -47,6 +47,7 @@ local min_length = 32;
     },
     "data_loader": {
         "batch_size": 4,
+        "num_workers": 1,
         "drop_last": true,
     },
     "trainer": {

@@ -1,6 +1,6 @@
 // This should be a registered name in the Transformers library (see https://huggingface.co/models) 
 // OR a path on disk to a serialized transformer model.
-local transformer_model = std.extVar("TRANSFORMER_MODEL");
+local transformer_model = "roberta-base";
 
 // This will be used to set the max/min # of tokens in the positive and negative examples.
 local max_length = 512;

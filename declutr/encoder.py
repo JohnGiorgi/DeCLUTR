@@ -7,7 +7,10 @@ from allennlp.common.file_utils import cached_path
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
-PRETRAINED_MODELS = {"declutr-small": "", "declutr-base": ""}
+PRETRAINED_MODELS = {
+    "declutr-small": "https://github.com/JohnGiorgi/DeCLUTR/releases/download/v0.1.0rc1/declutr_small.tar.gz",
+    "declutr-base": "",
+}
 
 
 class Encoder:

@@ -101,7 +101,7 @@ By default, `allennlp train` will create a vocabulary from our dataset (which ca
 
 ```bash
 mkdir -p "path/to/your/dataset/vocabulary"
-echo -e "*tags\n*labels" > "path/to/your/dataset/vocabulary/non_padded_namespaces.txt"
+echo "*tags\n*labels" > "path/to/your/dataset/vocabulary/non_padded_namespaces.txt"
 ```
 
 and then specify this vocabulary in the call to `allennlp train`
@@ -219,6 +219,7 @@ allennlp predict "output" "path/to/input.txt" \
  --batch-size 32 \
  --cuda-device 0 \
  --use-dataset-reader \
+ --overrides "{'dataset_reader.num_anchors': null}" \
  --include-package "declutr"
 ```
 

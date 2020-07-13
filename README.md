@@ -135,7 +135,7 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 You can embed text with a trained model in one of three ways:
 
 1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
-2. [HuggingFace Transformers](#huggingface-transformers): load our pretrained model with the [HuggingFace transformers library](https://github.com/huggingface/transformers).
+2. [🤗 Transformers](#🤗-transformers): load our pretrained model with the [🤗 transformers library](https://github.com/huggingface/transformers).
 3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
 #### As a library
@@ -170,19 +170,19 @@ See the list of available `PRETRAINED_MODELS` in [declutr/encoder.py](declutr/en
 python -c "from declutr.encoder import PRETRAINED_MODELS ; print(list(PRETRAINED_MODELS.keys()))"
 ```
 
-#### HuggingFace Transformers
+#### 🤗 Transformers
 
-Our pretrained models are also hosted with HuggingFace Transformers, so they can be used like any other model in that library. Here is a simple example:
+Our pretrained models are also hosted with 🤗 Transformers, so they can be used like any other model in that library. Here is a simple example:
 
 ```python
 import torch
 from scipy.spatial.distance import cosine
 
-from transformers import AutoModelForMaskedLM, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer
 
 # Load the model
 tokenizer = AutoTokenizer.from_pretrained("johngiorgi/declutr-small")
-model = AutoModelForMaskedLM.from_pretrained("johngiorgi/declutr-small")
+model = AutoModel.from_pretrained("johngiorgi/declutr-small")
 
 # Prepare some text to embed
 text = [
@@ -193,11 +193,11 @@ inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt")
 
 # Embed the text
 with torch.no_grad():
-    _, hidden_states = model(**inputs)
+    sequence_output, _ = model(**inputs, output_hidden_states=False)
 
 # Mean pool the token-level embeddings to get sentence-level embeddings
 embeddings = torch.sum(
-    hidden_states[-1] * inputs["attention_mask"].unsqueeze(-1), dim=1
+    sequence_output * inputs["attention_mask"].unsqueeze(-1), dim=1
 ) / torch.clamp(torch.sum(inputs["attention_mask"], dim=1, keepdims=True), min=1e-9)
 
 # Compute a semantic similarity via the cosine distance

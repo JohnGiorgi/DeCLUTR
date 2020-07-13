@@ -78,7 +78,8 @@ class Encoder:
             # In the future, it would be better to use the built-in bucket sort of AllenNLP,
             # which would lead to an even larger speedup.
             unsort = True
-            unsorted_indices, inputs = zip(*sorted(enumerate(inputs), key=itemgetter(1)))
+            sorted_indices, inputs = zip(*sorted(enumerate(inputs), key=itemgetter(1)))
+            unsorted_indices, _ = zip(*sorted(enumerate(sorted_indices), key=itemgetter(1)))
 
         json_formatted_inputs = [{"text": input_} for input_ in inputs]
 

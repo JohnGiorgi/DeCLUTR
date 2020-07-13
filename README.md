@@ -135,7 +135,7 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 You can embed text with a trained model in one of three ways:
 
 1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
-2. [🤗 Transformers](#🤗-transformers): load our pretrained model with the [🤗 transformers library](https://github.com/huggingface/transformers).
+2. [🤗 Transformers](#🤗-transformers): load our pretrained model with the [🤗 Transformers library](https://github.com/huggingface/transformers).
 3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
 #### As a library

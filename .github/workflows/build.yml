@@ -46,7 +46,7 @@ jobs:
         pytest tests -rf --cov ./declutr --cov-report=xml --cov-config=./.coveragerc 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.7' && matrix.os == 'ubuntu-latest' && github.event_name == 'push'
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v1.0.10
       with:
         file: ./coverage.xml
         fail_ci_if_error: false

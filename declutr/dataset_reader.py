@@ -12,6 +12,7 @@ from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
 from overrides import overrides
 
 from declutr.common.contrastive_utils import sample_anchor_positive_pairs
+from declutr.common.data_utils import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +156,11 @@ class DeCLUTRDatasetReader(DatasetReader):
                 each positive span sampled from `text`. Otherwise this field will not be included
                 in the returned `Instance`.
         """
+        # Some very minimal preprocessing to remove whitespace, newlines and tabs.
+        # We peform it here as it will cover both training and predicting with the model.
+        # We DON'T lowercase by default, but rather allow `self._tokenizer` to decide.
+        text = sanitize(text, lowercase=False)
+
         fields: Dict[str, Field] = {}
         if self.sample_spans:
             # Choose the anchor/positives at random.

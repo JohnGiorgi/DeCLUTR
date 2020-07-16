@@ -25,6 +25,7 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
   - [Training](#training)
   - [Embedding](#embedding)
   - [Evaluating with SentEval](#evaluating-with-senteval)
+- [Citing](#citing)
 
 ## Notebooks
 
@@ -275,7 +276,7 @@ python scripts/run_senteval.py allennlp --help
 
 - Evaluating the `"SNLI"` task of SentEval will fail without [this fix](https://github.com/facebookresearch/SentEval/pull/52).
 
-## Citation
+## Citing
 
 If you use DeCLUTR in your work, please consider citing our preprint
 

@@ -8,7 +8,7 @@ from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
 PRETRAINED_MODELS = {
-    "declutr-small": "https://github.com/JohnGiorgi/DeCLUTR/releases/download/v0.1.0rc1/declutr_small.tar.gz",
+    "declutr-small": "https://github.com/JohnGiorgi/DeCLUTR/releases/download/v0.1.0rc1/declutr-small.tar.gz",
     "declutr-base": "",
 }
 

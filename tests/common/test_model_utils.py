@@ -1,14 +1,15 @@
 from copy import deepcopy
 
 import torch
-from hypothesis import given
+from allennlp.data import TextFieldTensors
+from hypothesis import given, settings
 from hypothesis.strategies import integers
 
-from allennlp.data import TextFieldTensors
 from declutr.common.model_utils import unpack_batch
 
 
 class TestModelUtils:
+    @settings(deadline=None)
     @given(
         batch_size=integers(min_value=1, max_value=4),
         num_anchors=integers(min_value=1, max_value=4),

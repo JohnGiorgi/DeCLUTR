@@ -56,6 +56,8 @@ local min_length = 32;
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,
+            "eps": 1e-06,
+            "correct_bias": false,
             "weight_decay": 0.0,
             "parameter_groups": [
                 // Apply weight decay to pre-trained params, excluding LayerNorm params and biases

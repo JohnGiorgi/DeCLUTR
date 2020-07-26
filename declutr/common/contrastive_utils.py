@@ -48,9 +48,10 @@ def sample_anchor_positive_pairs(
     # Several checks on the parameters passed to this function. The first check on length is mostly
     # arbitrary, but it prevents the Hypothesis tests from breaking. And it makes little sense to
     # sample from extremely short documents.
-    if num_tokens < 10:
+    if num_tokens < num_anchors * max_span_len * 2:
         raise ValueError(
-            (f"len({tok_method}) should be at least 10 (ideally much longer), got {num_tokens}.")
+            f"len({tok_method}) should be at least {num_anchors * max_span_len * 2}"
+            f" (num_anchors * max_span_len * 2), got {num_tokens}."
         )
     if min_span_len > max_span_len:
         raise ValueError(

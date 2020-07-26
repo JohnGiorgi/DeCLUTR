@@ -15,7 +15,7 @@ class TestModelUtils:
         num_anchors=integers(min_value=1, max_value=4),
         max_length=integers(min_value=1, max_value=16),
     )
-    def test_unpack_batch(self, batch_size: int, num_anchors: int, max_length: int):
+    def test_unpack_batch(self, batch_size: int, num_anchors: int, max_length: int) -> None:
         # Create some dummy data.
         two_dim_tensor = torch.randn(batch_size, max_length)
         two_dim_input: TextFieldTensors = {

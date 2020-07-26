@@ -1,12 +1,12 @@
 from typing import Optional, Tuple, Union
 
 import torch
-from overrides import overrides
-from transformers import AutoConfig, AutoModelForMaskedLM
-
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
+from allennlp.modules.scalar_mix import ScalarMix
 from allennlp.modules.token_embedders import PretrainedTransformerEmbedder
 from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
+from overrides import overrides
+from transformers import AutoConfig, AutoModelForMaskedLM
 
 
 @TokenEmbedder.register("pretrained_transformer_mlm")
@@ -37,6 +37,10 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         If this is `True` and `masked_lm_labels is not None` in the call to `forward`, the model
         will be trained against a masked language modelling objective and the resulting loss will
         be returned along with the output tensor.
+    last_layer_only: `bool`, optional (default = `True`)
+        When `True` (the default), only the final layer of the pretrained transformer is taken
+        for the embeddings. But if set to `False`, a scalar mix of all of the layers
+        is used.
     """
 
     def __init__(
@@ -46,6 +50,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         max_length: int = None,
         sub_module: str = None,
         train_parameters: bool = True,
+        last_layer_only: bool = True,
         override_weights_file: Optional[str] = None,
         override_weights_strip_prefix: Optional[str] = None,
         masked_language_modeling: bool = True,
@@ -78,9 +83,15 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
             assert hasattr(self.transformer_model, sub_module)
             self.transformer_model = getattr(self.transformer_model, sub_module)
         self._max_length = max_length
+
         # I'm not sure if this works for all models; open an issue on github if you find a case
         # where it doesn't work.
         self.output_dim = self.config.hidden_size
+
+        self._scalar_mix: Optional[ScalarMix] = None
+        if not last_layer_only:
+            self._scalar_mix = ScalarMix(self.config.num_hidden_layers)
+            self.config.output_hidden_states = True
 
         self._num_added_start_tokens = len(tokenizer.single_sequence_start_tokens)
         self._num_added_end_tokens = len(tokenizer.single_sequence_end_tokens)
@@ -150,21 +161,26 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         # token_type_ids parameter and fail even when it's given as None.
         # Also, as of transformers v2.5.1, they are taking FloatTensor masks.
         parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}
-        masked_lm_loss = None
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
-        if self.masked_language_modeling:
-            # Even if masked_language_modeling is True, we may not be masked language modeling
-            # on the current batch. We still need to check if masked language modeling labels
-            # are present in the input.
-            if masked_lm_labels is not None:
-                parameters["masked_lm_labels"] = masked_lm_labels
-                masked_lm_loss, _, hidden_states = self.transformer_model(**parameters)
+        if masked_lm_labels is not None and self.masked_language_modeling:
+            parameters["masked_lm_labels"] = masked_lm_labels
+
+        masked_lm_loss = None
+        transformer_output = self.transformer_model(**parameters)
+
+        if self.config.output_hidden_states:
+            # Even if masked_language_modeling is True, we may not be masked language modeling on
+            # the current batch. Check if masked language modeling labels are present in the input.
+            if "masked_lm_labels" in parameters:
+                masked_lm_loss = transformer_output[0]
+
+            if self._scalar_mix:
+                embeddings = self._scalar_mix(transformer_output[-1][1:])
             else:
-                _, hidden_states = self.transformer_model(**parameters)
-            embeddings = hidden_states[-1]
+                embeddings = transformer_output[-1][-1]
         else:
-            embeddings = self.transformer_model(**parameters)[0]
+            embeddings = transformer_output[0]
 
         if fold_long_sequences:
             embeddings = self._unfold_long_sequences(

@@ -25,8 +25,8 @@ local min_length = 8;
             },
         },
     }, 
-    "train_data_path": "declutr/tests/fixtures/data/openwebtext/train.txt",
-    "validation_data_path": "declutr/tests/fixtures/data/openwebtext/valid.txt",
+    "train_data_path": "tests/fixtures/data/openwebtext/train.txt",
+    "validation_data_path": "tests/fixtures/data/openwebtext/valid.txt",
     "model": {
         "type": "declutr.DeCLUTR",
     },
@@ -42,9 +42,9 @@ local min_length = 8;
             "lr": 5e-5,
             "weight_decay": 0.0,
             "parameter_groups": [
-                # Apply weight decay to pre-trained parameters, exlcuding LayerNorm parameters and biases
-                # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
-                # Regex: https://regex101.com/r/ZUyDgR/3/tests
+                // Apply weight decay to pre-trained params, excluding LayerNorm params and biases
+                // See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
+                // Regex: https://regex101.com/r/ZUyDgR/3/tests
                 [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
             ],
         },
@@ -52,7 +52,6 @@ local min_length = 8;
         "checkpointer": {
             "num_serialized_models_to_keep": -1,
         },
-        "cuda_device": -1,
         "grad_norm": 1.0,
         "learning_rate_scheduler": {
             "type": "slanted_triangular",

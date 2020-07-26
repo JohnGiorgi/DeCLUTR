@@ -34,7 +34,7 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     tokenizer : `Tokenizer`, optional (default = `{"tokens": SpacyTokenizer()}`)
         Tokenizer to use to split the input text into words or other kinds of tokens.
-   token_indexers : `Dict[str, TokenIndexer]`, optional
+    token_indexers : `Dict[str, TokenIndexer]`, optional
         We use this to define the input representation for the text. See :class:`TokenIndexer`.
     num_anchors : `int`, optional
         The number of spans to sample from each instance to serve as anchors.

@@ -74,7 +74,7 @@ python scripts/preprocess_wikitext_103.py path/to/output/wikitext-103/train.txt 
 
 > See [scripts/preprocess_openwebtext.py](scripts/preprocess_openwebtext.py) for a script that can be used to recreate the (much larger) dataset used in our paper.
 
-You can specify the train set path in the [configs](configs) under `"train_data_path"`.
+You can specify the train set path in the [configs](training_config) under `"train_data_path"`.
 
 #### Gotchas
 
@@ -82,13 +82,13 @@ You can specify the train set path in the [configs](configs) under `"train_data_
 
 ### Training
 
-To train the model, use the [`allennlp train`](https://docs.allennlp.org/master/api/commands/train/) command with our [`declutr.jsonnet`](configs/declutr.jsonnet) config. For example, to train DeCLUTR-small, run the following
+To train the model, use the [`allennlp train`](https://docs.allennlp.org/master/api/commands/train/) command with our [`declutr.jsonnet`](training_config/declutr.jsonnet) config. For example, to train DeCLUTR-small, run the following
 
 ```bash
 # This can be (almost) any model from https://huggingface.co/ that supports masked language modelling.
 TRANSFORMER_MODEL="distilroberta-base"
 
-allennlp train "configs/declutr.jsonnet" \
+allennlp train "training_config/declutr.jsonnet" \
     --serialization-dir "output" \
     --overrides "{'train_data_path': 'path/to/your/dataset/train.txt'}" \
     --include-package "declutr"
@@ -121,7 +121,7 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 
 #### Training with mixed-precision
 
-If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](configs), or, equivalently, pass the following flag to `allennlp train`
+If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](training_config), or, equivalently, pass the following flag to `allennlp train`
 
 ```bash
 --overrides "{'trainer.opt_level': 'O1'}"
@@ -208,7 +208,7 @@ semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 Currently available models:
 
 - [johngiorgi/declutr-small](https://huggingface.co/johngiorgi/declutr-small)
-- johngiorgi/declutr-base (:soon:)
+- [johngiorgi/declutr-base](https://huggingface.co/johngiorgi/declutr-base)
 
 #### Bulk embed a file
 

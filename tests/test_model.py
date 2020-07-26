@@ -61,6 +61,18 @@ class TestDeCLUTR(ModelTestCase):
         # Embeddings are not added to the output dict when training
         assert "embeddings" not in output_dict.keys()
 
+    def test_forward_pass_scalar_mix_runs_correctly(self):
+        self.set_up_model(
+            self.FIXTURES_ROOT / "experiment_scalar_mix.jsonnet",
+            self.FIXTURES_ROOT / "data" / "openwebtext" / "train.txt",
+        )
+        training_tensors = self.dataset.as_tensor_dict()
+        output_dict = self.model(**training_tensors)
+        output_dict = self.model.make_output_human_readable(output_dict)
+        assert "loss" in output_dict.keys()
+        # Embeddings are not added to the output dict when training
+        assert "embeddings" not in output_dict.keys()
+
     def test_no_loss_throws_configuration_error(self):
         params = Params.from_file(self.param_file)
         params["model"]["loss"] = None

@@ -1,3 +1,4 @@
+import warnings
 from operator import itemgetter
 from typing import List, Optional, Union
 
@@ -96,8 +97,14 @@ class Encoder:
             )
             embeddings = torch.index_select(embeddings, dim=0, index=unsorted_indices)
         if self._sphereize:
-            centroid = torch.mean(embeddings, dim=0)
-            embeddings -= centroid
-            embeddings /= torch.norm(embeddings, dim=1, keepdim=True)
+            if embeddings.size(0) > 1:
+                centroid = torch.mean(embeddings, dim=0)
+                embeddings -= centroid
+                embeddings /= torch.norm(embeddings, dim=1, keepdim=True)
+            else:
+                warnings.warn(
+                    "sphereize==True but only a single input sentence was passed."
+                    " Inputs will not be sphereized."
+                )
 
         return embeddings.numpy()

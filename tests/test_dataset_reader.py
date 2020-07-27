@@ -16,7 +16,7 @@ class TestDeCLUTRDatasetReader:
     )
     def test_no_sample_context_manager(
         self, num_anchors: int, num_positives: int, max_span_len: int, min_span_len: int
-    ):
+    ) -> None:
         dataset_reader = DeCLUTRDatasetReader(
             num_anchors=num_anchors,
             num_positives=num_positives,
@@ -40,7 +40,7 @@ class TestDeCLUTRDatasetReader:
     )
     def test_init_raises_value_error_sampling_missing_arguments(
         self, num_anchors: int, num_positives: int, max_span_len: int, min_span_len: int
-    ):
+    ) -> None:
         if num_anchors:  # should only raise the error when num_anchors is truthy
             with pytest.raises(ValueError):
                 _ = DeCLUTRDatasetReader(
@@ -85,7 +85,7 @@ class TestDeCLUTRDatasetReader:
         max_span_len: int,
         min_span_len: int,
         sampling_strategy: str,
-    ):
+    ) -> None:
         if num_anchors:  # should only raise the error when num_spans is truthy
             with pytest.raises(ValueError):
                 _ = DeCLUTRDatasetReader(

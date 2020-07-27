@@ -45,12 +45,10 @@ def sample_anchor_positive_pairs(
     tok_method = "tokenizer(text)" if tokenizer else "text.split()"
     num_tokens = len(tokens)
 
-    # Several checks on the parameters passed to this function. The first check on length is mostly
-    # arbitrary, but it prevents the Hypothesis tests from breaking. And it makes little sense to
-    # sample from extremely short documents.
-    if num_tokens < 10:
+    if num_tokens < num_anchors * max_span_len * 2:
         raise ValueError(
-            (f"len({tok_method}) should be at least 10 (ideally much longer), got {num_tokens}.")
+            f"len({tok_method}) should be at least {num_anchors * max_span_len * 2}"
+            f" (num_anchors * max_span_len * 2), got {num_tokens}."
         )
     if min_span_len > max_span_len:
         raise ValueError(
@@ -67,22 +65,24 @@ def sample_anchor_positive_pairs(
     # Valid anchor starts are token indices which begin a token span of at least max_span_len.
     anchors, positives = [], []
     valid_anchor_starts = list(range(0, num_tokens - max_span_len + 1, max_span_len))
-    for _ in range(num_anchors):
+    for i in range(num_anchors):
         # Sample the anchor length from a beta distribution skewed towards longer spans, the
         # intuition being that longer spans have the best chance of being representative of the
         # document they are sampled from.
         anchor_len = int(np.random.beta(4, 2) * (max_span_len - min_span_len) + min_span_len)
-        # Sample an anchor start position from the list of valid positions. Once sampled, remove it
-        # (and its immediate neighbours) from consideration.
-        anchor_start_idx = np.random.randint(len(valid_anchor_starts))
+        # This check prevents an edge case were we run out of valid_anchor_starts.
+        if len(valid_anchor_starts) // (num_anchors - i) < num_anchors - i:
+            anchor_start_idx = np.random.choice([0, len(valid_anchor_starts) - 1])
+        else:
+            anchor_start_idx = np.random.randint(len(valid_anchor_starts))
         # When num_anchors = 1, this is equivalent to uniformly sampling that starting position.
         anchor_start = np.random.randint(
             valid_anchor_starts[anchor_start_idx],
             # randint is high-exclusive
             valid_anchor_starts[anchor_start_idx] + max_span_len - anchor_len + 1,
         )
+        # Once sampled, remove an anchor (and its immediate neighbours) from consideration.
         del valid_anchor_starts[max(0, anchor_start_idx - 1) : anchor_start_idx + 2]
-        # Grab the anchor with its sampled start and length.
         anchor_end = anchor_start + anchor_len
         anchors.append(" ".join(tokens[anchor_start:anchor_end]))
 

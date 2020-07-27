@@ -8,7 +8,7 @@ from declutr.common.data_utils import sanitize
 
 class TestDataUtils:
     @given(text=text(), lowercase=booleans())
-    def test_sanitize(self, text: str, lowercase: bool):
+    def test_sanitize(self, text: str, lowercase: bool) -> None:
         sanitized_text = sanitize(text, lowercase=lowercase)
 
         # There should be no cases of multiple spaces or tabs

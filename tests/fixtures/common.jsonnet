@@ -6,6 +6,9 @@ local max_length = 16;
 local min_length = 8;
 
 {
+    "vocabulary": {
+        "type": "empty"
+    },
     "dataset_reader": {
         "type": "declutr.dataset_reader.DeCLUTRDatasetReader",
         "lazy": true,

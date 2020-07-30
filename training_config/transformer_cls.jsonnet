@@ -11,6 +11,9 @@ local max_length = 512;
 local cls_is_last_token = false;
 
 {
+    "vocabulary": {
+        "type": "empty"
+    },
     "dataset_reader": {
         "type": "declutr",
         "lazy": true,

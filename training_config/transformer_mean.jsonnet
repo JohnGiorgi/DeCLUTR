@@ -6,6 +6,9 @@ local transformer_model = std.extVar("TRANSFORMER_MODEL");
 local max_length = 512;
 
 {
+    "vocabulary": {
+        "type": "empty"
+    },
     "dataset_reader": {
         "type": "declutr",
         "lazy": true,

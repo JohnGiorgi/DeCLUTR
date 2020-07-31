@@ -2,6 +2,7 @@ local COMMON = import 'common.jsonnet';
 local transformer_model = "distilroberta-base";
 
 {
+    "vocabulary": COMMON['vocabulary'],
     "dataset_reader": COMMON['dataset_reader'],
     "datasets_for_vocab_creation": ["train"],
     "train_data_path": COMMON['train_data_path'],

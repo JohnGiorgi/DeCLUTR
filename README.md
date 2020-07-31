@@ -97,21 +97,6 @@ allennlp train "training_config/declutr.jsonnet" \
 
 The `--overrides` flag allows you to override any field in the config with a JSON-formatted string, but you can equivalently update the config itself if you prefer. During training, models, vocabulary, configuration, and log files will be saved to the directory provided by `--serialization-dir`. This can be changed to any directory you like. 
 
-#### Gotchas
-
-By default, `allennlp train` will create a vocabulary from our dataset (which can be slow depending on dataset size). Because our model comes with a pretrained vocabulary, we can skip this step by creating a new `"vocabulary"` directory which contains a single file `"non_padded_namespaces.txt"`
-
-```bash
-mkdir -p "path/to/your/dataset/vocabulary"
-echo "*tags\n*labels" > "path/to/your/dataset/vocabulary/non_padded_namespaces.txt"
-```
-
-and then specify this vocabulary in the call to `allennlp train`
-
-```bash
---overrides "{'vocabulary': {'type': 'from_files', 'directory': 'path/to/your/dataset/vocabulary'}}"
-```
-
 #### Multi-GPU training
 
 To train on more than one GPU, provide a list of CUDA devices in your call to `allennlp train`. For example, to train with four CUDA devices with IDs `0, 1, 2, 3`

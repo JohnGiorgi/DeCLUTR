@@ -45,15 +45,16 @@ Before installing, you should create and activate a Python virtual environment. 
 
 ### Installing the library and dependencies
 
-First, clone the repository locally
+If you _don't_ plan on modifying the source code, install from `git` using `pip`
+
+```
+pip install git+https://github.com/JohnGiorgi/DeCLUTR.git
+```
+
+Otherwise, clone the repository locally and then install
 
 ```bash
 git clone https://github.com/JohnGiorgi/DeCLUTR.git
-```
-
-Then, install
-
-```bash
 cd DeCLUTR
 pip install --editable .
 ```

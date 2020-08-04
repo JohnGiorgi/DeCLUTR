@@ -4,7 +4,6 @@ from typing import List, Optional, Union
 
 import torch
 from allennlp.common import util as common_util
-from allennlp.common.file_utils import cached_path
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
@@ -51,7 +50,6 @@ class Encoder:
     ) -> None:
         if pretrained_model_name_or_path in PRETRAINED_MODELS:
             pretrained_model_name_or_path = PRETRAINED_MODELS[pretrained_model_name_or_path]
-        pretrained_model_name_or_path = cached_path(pretrained_model_name_or_path)
         common_util.import_module_and_submodules("declutr")
         # Prevents a WARNING, which could confuse a user. Besides, performance is negatively
         # impacted when using mixed-precision during inference (in our case). Better to explicitly

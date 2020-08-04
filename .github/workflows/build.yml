@@ -27,26 +27,29 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        git clone https://github.com/allenai/allennlp.git
-        cd allennlp
-        pip install --editable .
-        cd ../
+        pip install git+https://github.com/allenai/allennlp.git
         pip install --editable ".[dev]"
     - name: Format code with black
       run: |
-        black -l 100 declutr
+        black .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 declutr --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings.
-        flake8 declutr --count --exit-zero --max-complexity=10 --max-line-length=115 --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --statistics
     - name: Test with pytest
       run: |
-        pytest tests -rf --cov ./declutr --cov-report=xml --cov-config=./.coveragerc 
+        pytest -q tests --cov-report=xml --cov-config=./.coveragerc 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.7' && matrix.os == 'ubuntu-latest' && github.event_name == 'push'
+      # We don't want to push coverge for every job in the matrix.
+      # Rather arbitrarily, choose to push on Ubuntu with Python 3.8.
+      if: matrix.python-version == '3.8' && matrix.os == 'ubuntu-latest' && github.event_name == 'push'
       uses: codecov/codecov-action@v1.0.12
       with:
         file: ./coverage.xml
+        # Ignore codecov failures as the codecov server is not
+        # very reliable but we don't want to report a failure
+        # in the github UI just because the coverage report failed to
+        # be published.
         fail_ci_if_error: false

@@ -114,10 +114,6 @@ If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-pr
 --overrides "{'trainer.opt_level': 'O1'}"
 ```
 
-#### Gotchas
-
-- Mixed-precision training will cause an error with the [PyTorch Metric Learning](https://github.com/KevinMusgrave/pytorch-metric-learning) library. See [here](https://github.com/JohnGiorgi/DeCLUTR/issues/60) for a discussion on the issue, along with the suggested fix.
-
 ### Embedding
 
 You can embed text with a trained model in one of three ways:

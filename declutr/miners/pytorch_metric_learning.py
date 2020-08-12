@@ -28,7 +28,6 @@ class PairMarginMiner(PyTorchMetricLearningMiner, miners.PairMarginMiner):
         neg_margin: float,
         use_similarity: bool = True,
         squared_distances: bool = False,
-        normalize_embeddings: bool = True,
     ) -> None:
 
         super().__init__(
@@ -36,5 +35,4 @@ class PairMarginMiner(PyTorchMetricLearningMiner, miners.PairMarginMiner):
             neg_margin=neg_margin,
             use_similarity=use_similarity,
             squared_distances=squared_distances,
-            normalize_embeddings=normalize_embeddings,
         )

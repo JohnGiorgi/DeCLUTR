@@ -83,6 +83,6 @@ class NTXentLoss(PyTorchMetricLearningLoss, losses.NTXentLoss):
     Registered as a `PyTorchMetricLearningLoss` with name "nt_xent".
     """
 
-    def __init__(self, temperature: float, normalize_embeddings: bool = True) -> None:
+    def __init__(self, temperature: float) -> None:
 
-        super().__init__(temperature=temperature, normalize_embeddings=normalize_embeddings)
+        super().__init__(temperature=temperature)

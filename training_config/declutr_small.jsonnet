@@ -54,8 +54,8 @@ local min_length = 32;
         "drop_last": true,
     },
     "trainer": {
-        // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
-        "opt_level": null,
+        // Set use_amp to true to use automatic mixed-precision during training (if your GPU supports it)
+        "use_amp": false,
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

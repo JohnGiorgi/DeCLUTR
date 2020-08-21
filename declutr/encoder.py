@@ -54,7 +54,7 @@ class Encoder:
         # Prevents a WARNING, which could confuse a user. Besides, performance is negatively
         # impacted when using mixed-precision during inference (in our case). Better to explicitly
         # prevent this scenario from happening.
-        overrides = "{'trainer.opt_level': null}"
+        overrides = "{'trainer.use_amp': false}"
         archive = load_archive(pretrained_model_name_or_path, overrides=overrides, **kwargs)
         self._predictor = Predictor.from_archive(archive, predictor_name="declutr")
         self._output_dict_field = "embeddings"

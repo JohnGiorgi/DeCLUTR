@@ -108,10 +108,10 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 
 #### Training with mixed-precision
 
-If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you will need to [install Apex with CUDA and C++ extensions](https://github.com/NVIDIA/apex#quick-start). Once installed, you need only to set `"opt_level"` to `"O1"` in your training [config](training_config), or, equivalently, pass the following flag to `allennlp train`
+If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you need only to set `"use_amp"` to `true` in your training [config](training_config), or, equivalently, pass the following flag to `allennlp train`
 
 ```bash
---overrides "{'trainer.opt_level': 'O1'}"
+--overrides "{'trainer.use_amp: true}"
 ```
 
 ### Embedding

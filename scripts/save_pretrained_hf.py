@@ -18,10 +18,10 @@ def main(archive_file: str, save_directory: str) -> None:
     save_directory.parents[0].mkdir(parents=True, exist_ok=True)
 
     common_util.import_module_and_submodules("declutr")
-    # opt_level null prevents a WARNING, which could confuse a user.
+    # use_amp=false prevents a WARNING, which could confuse a user.
     # cuda_device -1 places the model onto the CPU before saving. This avoids issues with
     # distributed models.
-    overrides = "{'trainer.opt_level': null, 'trainer.cuda_device': -1}"
+    overrides = "{'trainer.use_amp': false, 'trainer.cuda_device': -1}"
     archive = load_archive(archive_file, overrides=overrides)
     predictor = Predictor.from_archive(archive, predictor_name="declutr")
 

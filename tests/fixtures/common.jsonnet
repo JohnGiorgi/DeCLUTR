@@ -38,8 +38,6 @@ local min_length = 8;
         "drop_last": true
     },
     "trainer": {
-        // If Apex is installed, chose one of its opt_levels here to use mixed-precision training.
-        "opt_level": null,
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

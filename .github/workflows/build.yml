@@ -40,7 +40,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --statistics
     - name: Test with pytest
       run: |
-        pytest -q tests --cov-report=xml --cov-config=./.coveragerc 
+        pytest tests --cov ./declutr --cov-report=xml --cov-config=./.coveragerc
     - name: Upload coverage to Codecov
       # We don't want to push coverge for every job in the matrix.
       # Rather arbitrarily, choose to push on Ubuntu with Python 3.8.

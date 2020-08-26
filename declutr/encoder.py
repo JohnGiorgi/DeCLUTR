@@ -51,11 +51,7 @@ class Encoder:
         if pretrained_model_name_or_path in PRETRAINED_MODELS:
             pretrained_model_name_or_path = PRETRAINED_MODELS[pretrained_model_name_or_path]
         common_util.import_module_and_submodules("declutr")
-        # Prevents a WARNING, which could confuse a user. Besides, performance is negatively
-        # impacted when using mixed-precision during inference (in our case). Better to explicitly
-        # prevent this scenario from happening.
-        overrides = "{'trainer.use_amp': false}"
-        archive = load_archive(pretrained_model_name_or_path, overrides=overrides, **kwargs)
+        archive = load_archive(pretrained_model_name_or_path, **kwargs)
         self._predictor = Predictor.from_archive(archive, predictor_name="declutr")
         self._output_dict_field = "embeddings"
         self._sphereize = sphereize
@@ -64,6 +60,15 @@ class Encoder:
     def __call__(
         self, inputs: Union[str, List[str]], batch_size: Optional[int] = None
     ) -> torch.Tensor:
+        """Returns a numpy array of embeddings, one for each item in `inputs`.
+
+        # Parameters
+
+        inputs : `Union[str, List[str]]`, required
+            The input text to embed. Can be a string or list of strings.
+        batch_size : `int`, optional
+            If given, the `inputs` will be batched before embedding.
+        """
         if isinstance(inputs, str):
             inputs = [inputs]
         if batch_size is None:

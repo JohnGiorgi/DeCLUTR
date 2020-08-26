@@ -108,11 +108,7 @@ To train on more than one GPU, provide a list of CUDA devices in your call to `a
 
 #### Training with mixed-precision
 
-If you want to train with [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) (strongly recommended if your GPU supports it), you need only to set `"use_amp"` to `true` in your training [config](training_config), or, equivalently, pass the following flag to `allennlp train`
-
-```bash
---overrides "{'trainer.use_amp: true}"
-```
+If your GPU supports it, [mixed-precision](https://devblogs.nvidia.com/mixed-precision-training-deep-neural-networks/) will be used automatically during training and inference.
 
 ### Embedding
 

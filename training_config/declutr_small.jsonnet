@@ -55,7 +55,7 @@ local min_length = 32;
     },
     "trainer": {
         // Set use_amp to true to use automatic mixed-precision during training (if your GPU supports it)
-        "use_amp": false,
+        "use_amp": true,
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

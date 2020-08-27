@@ -90,14 +90,16 @@ class Encoder:
         embeddings = []
         for i in range(0, len(json_formatted_inputs), batch_size):
             outputs = self._predictor.predict_batch_json(json_formatted_inputs[i : i + batch_size])
-            outputs = [output[self._output_dict_field] for output in outputs]
-            embeddings.extend(outputs)
-        embeddings = torch.as_tensor(embeddings)
+            outputs = torch.as_tensor(
+                # Accumulating the tensors on the GPU would quickly lead to OOM.
+                [output[self._output_dict_field] for output in outputs],
+                device="cpu",
+            )
+            embeddings.append(outputs)
+        embeddings = torch.cat(embeddings)
         # Make sure to unsort the embeddings if they were sorted.
         if unsort:
-            unsorted_indices = torch.as_tensor(
-                unsorted_indices, dtype=torch.long, device=embeddings.device
-            )
+            unsorted_indices = torch.as_tensor(unsorted_indices, dtype=torch.long)
             embeddings = torch.index_select(embeddings, dim=0, index=unsorted_indices)
         if self._sphereize:
             if embeddings.size(0) > 1:

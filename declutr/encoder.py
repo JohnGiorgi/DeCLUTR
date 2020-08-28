@@ -96,11 +96,11 @@ class Encoder:
             sorted_indices, inputs = zip(*sorted(enumerate(inputs), key=itemgetter(1)))
             unsorted_indices, _ = zip(*sorted(enumerate(sorted_indices), key=itemgetter(1)))
 
-        json_formatted_inputs = [{"text": sanitize(input_)} for input_ in inputs]
+        inputs = [{"text": sanitize(input_)} for input_ in inputs]
 
         embeddings = []
-        for i in range(0, len(json_formatted_inputs), batch_size):
-            outputs = self._predictor.predict_batch_json(json_formatted_inputs[i : i + batch_size])
+        for i in range(0, len(inputs), batch_size):
+            outputs = self._predictor.predict_batch_json(inputs[i : i + batch_size])
             outputs = torch.as_tensor(
                 # Accumulating the tensors on the GPU would quickly lead to OOM.
                 [output[self._output_dict_field] for output in outputs],

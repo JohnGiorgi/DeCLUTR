@@ -1,11 +1,16 @@
 import warnings
 from operator import itemgetter
+from pathlib import Path
 from typing import List, Optional, Union
 
 import torch
 from allennlp.common import util as common_util
+from allennlp.common.file_utils import cached_path
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
+from validators.url import url
+
+from declutr.common.data_utils import sanitize
 
 PRETRAINED_MODELS = {
     "declutr-small": "https://github.com/JohnGiorgi/DeCLUTR/releases/download/v0.1.0rc1/declutr-small.tar.gz",
@@ -45,6 +50,8 @@ class Encoder:
         https://docs.allennlp.org/master/api/models/archival/#load_archive for more details.
     """
 
+    _output_dict_field = "embeddings"
+
     def __init__(
         self, pretrained_model_name_or_path: str, sphereize: bool = False, **kwargs
     ) -> None:
@@ -53,7 +60,6 @@ class Encoder:
         common_util.import_module_and_submodules("declutr")
         archive = load_archive(pretrained_model_name_or_path, **kwargs)
         self._predictor = Predictor.from_archive(archive, predictor_name="declutr")
-        self._output_dict_field = "embeddings"
         self._sphereize = sphereize
 
     @torch.no_grad()
@@ -65,12 +71,17 @@ class Encoder:
         # Parameters
 
         inputs : `Union[str, List[str]]`, required
-            The input text to embed. Can be a string or list of strings.
+            The input text to embed. Can be a string, list of strings, or a filepath/URL to a text
+            file with one input per line.
         batch_size : `int`, optional
             If given, the `inputs` will be batched before embedding.
         """
         if isinstance(inputs, str):
-            inputs = [inputs]
+            if Path(inputs).is_file() or url(inputs):
+                inputs = Path(cached_path(inputs)).read_text().split("\n")
+            else:
+                inputs = [inputs]
+
         if batch_size is None:
             unsort = False
             batch_size = len(inputs)
@@ -85,7 +96,7 @@ class Encoder:
             sorted_indices, inputs = zip(*sorted(enumerate(inputs), key=itemgetter(1)))
             unsorted_indices, _ = zip(*sorted(enumerate(sorted_indices), key=itemgetter(1)))
 
-        json_formatted_inputs = [{"text": input_} for input_ in inputs]
+        json_formatted_inputs = [{"text": sanitize(input_)} for input_ in inputs]
 
         embeddings = []
         for i in range(0, len(json_formatted_inputs), batch_size):

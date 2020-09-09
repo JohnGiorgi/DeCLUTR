@@ -27,7 +27,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install git+https://github.com/allenai/allennlp.git
         pip install --editable ".[dev]"
     - name: Format code with black
       run: |

@@ -41,6 +41,8 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         When `True` (the default), only the final layer of the pretrained transformer is taken
         for the embeddings. But if set to `False`, a scalar mix of all of the layers
         is used.
+    gradient_checkpointing: `bool`, optional (default = `None`)
+        Enable or disable gradient checkpointing.
     """
 
     def __init__(
@@ -53,6 +55,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         last_layer_only: bool = True,
         override_weights_file: Optional[str] = None,
         override_weights_strip_prefix: Optional[str] = None,
+        gradient_checkpointing: Optional[bool] = None,
         masked_language_modeling: bool = True,
     ) -> None:
         TokenEmbedder.__init__(self)  # Call the base class constructor
@@ -78,6 +81,9 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
                 model_name, True, override_weights_file, override_weights_strip_prefix
             )
             self.config = self.transformer_model.config
+
+        if gradient_checkpointing is not None:
+            self.transformer_model.config.update({"gradient_checkpointing": gradient_checkpointing})
 
         if sub_module:
             assert hasattr(self.transformer_model, sub_module)

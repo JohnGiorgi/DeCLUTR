@@ -692,7 +692,10 @@ def allennlp(
 
     # Load the archived Model
     archive = load_archive(
-        path_to_allennlp_archive, cuda_device=cuda_device, weights_file=weights_file,
+        path_to_allennlp_archive,
+        cuda_device=cuda_device,
+        weights_file=weights_file,
+        overrides="{'trainer.use_amp': true}",
     )
     predictor = Predictor.from_archive(archive, predictor_name)
     typer.secho(

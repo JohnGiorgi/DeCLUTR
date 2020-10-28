@@ -28,6 +28,11 @@ class TestContrastiveUtils:
         for text in inputs:
             tokens = self.tokenize(text)
             num_tokens = len(tokens)
+
+            # Really short examples make the tests unreliable.
+            if num_tokens < 7:
+                continue
+
             # These represent sensible defaults
             max_span_len = num_tokens // 4
             min_span_len = random.randint(1, max_span_len) if max_span_len > 1 else 1

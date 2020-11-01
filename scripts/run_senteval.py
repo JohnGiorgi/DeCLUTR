@@ -283,8 +283,7 @@ def random(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Sanity check that evaluates randomly initialized vectors against the SentEval benchmark.
-    """
+    """Sanity check that evaluates randomly initialized vectors against the SentEval benchmark."""
 
     # SentEval prepare and batcher
     def prepare(params, samples):
@@ -525,8 +524,7 @@ def transformers(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark.
-    """
+    """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark."""
 
     from transformers import AutoModel, AutoTokenizer
 
@@ -662,8 +660,7 @@ def allennlp(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Evaluates a trained AllenNLP model against the SentEval benchmark.
-    """
+    """Evaluates a trained AllenNLP model against the SentEval benchmark."""
 
     from allennlp.models.archival import load_archive
     from allennlp.predictors import Predictor

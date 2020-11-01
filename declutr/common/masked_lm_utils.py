@@ -52,7 +52,9 @@ def _mask_tokens(
 
 
 def mask_tokens(
-    tokens: TextFieldTensors, tokenizer: PreTrainedTokenizer, mlm_probability: float = 0.15,
+    tokens: TextFieldTensors,
+    tokenizer: PreTrainedTokenizer,
+    mlm_probability: float = 0.15,
 ) -> TextFieldTensors:
     device = tokens["tokens"]["token_ids"].device
     inputs, labels = _mask_tokens(

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
@@ -33,17 +33,25 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         want to use the encoder.
     train_parameters: `bool`, optional (default = `True`)
         If this is `True`, the transformer weights get updated during training.
-    masked_language_modeling: `bool`, optional (default = `True`)
-        If this is `True` and `masked_lm_labels is not None` in the call to `forward`, the model
-        will be trained against a masked language modelling objective and the resulting loss will
-        be returned along with the output tensor.
     last_layer_only: `bool`, optional (default = `True`)
         When `True` (the default), only the final layer of the pretrained transformer is taken
         for the embeddings. But if set to `False`, a scalar mix of all of the layers
         is used.
     gradient_checkpointing: `bool`, optional (default = `None`)
         Enable or disable gradient checkpointing.
-    """
+    tokenizer_kwargs: `Dict[str, Any]`, optional (default = `None`)
+        Dictionary with
+        [additional arguments](https://github.com/huggingface/transformers/blob/155c782a2ccd103cf63ad48a2becd7c76a7d2115/transformers/tokenization_utils.py#L691)
+        for `AutoTokenizer.from_pretrained`.
+    transformer_kwargs: `Dict[str, Any]`, optional (default = `None`)
+        Dictionary with
+        [additional arguments](https://github.com/huggingface/transformers/blob/155c782a2ccd103cf63ad48a2becd7c76a7d2115/transformers/modeling_utils.py#L253)
+        for `AutoModel.from_pretrained`.
+    masked_language_modeling: `bool`, optional (default = `True`)
+        If this is `True` and `masked_lm_labels is not None` in the call to `forward`, the model
+        will be trained against a masked language modelling objective and the resulting loss will
+        be returned along with the output tensor.
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -56,10 +64,12 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         override_weights_file: Optional[str] = None,
         override_weights_strip_prefix: Optional[str] = None,
         gradient_checkpointing: Optional[bool] = None,
+        tokenizer_kwargs: Optional[Dict[str, Any]] = None,
+        transformer_kwargs: Optional[Dict[str, Any]] = None,
         masked_language_modeling: bool = True,
     ) -> None:
         TokenEmbedder.__init__(self)  # Call the base class constructor
-        tokenizer = PretrainedTransformerTokenizer(model_name)
+        tokenizer = PretrainedTransformerTokenizer(model_name, tokenizer_kwargs=tokenizer_kwargs)
         self.masked_language_modeling = masked_language_modeling
 
         if self.masked_language_modeling:
@@ -70,7 +80,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
             # 1) `output_hidden_states` must be True to get access to token embeddings.
             # 2) We need to use `AutoModelForMaskedLM` to get the correct model
             self.transformer_model = AutoModelForMaskedLM.from_pretrained(
-                model_name, config=self.config
+                model_name, config=self.config, **(transformer_kwargs or {})
             )
         # Eveything after the if statement (including the else) is copied directly from:
         # https://github.com/allenai/allennlp/blob/master/allennlp/modules/token_embedders/pretrained_transformer_embedder.py

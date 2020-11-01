@@ -170,7 +170,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
         if masked_lm_labels is not None and self.masked_language_modeling:
-            parameters["masked_lm_labels"] = masked_lm_labels
+            parameters["labels"] = masked_lm_labels
 
         masked_lm_loss = None
         transformer_output = self.transformer_model(**parameters)
@@ -178,7 +178,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         if self.config.output_hidden_states:
             # Even if masked_language_modeling is True, we may not be masked language modeling on
             # the current batch. Check if masked language modeling labels are present in the input.
-            if "masked_lm_labels" in parameters:
+            if "labels" in parameters:
                 masked_lm_loss = transformer_output[0]
 
             if self._scalar_mix:

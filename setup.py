@@ -44,7 +44,7 @@ setuptools.setup(
         "allennlp>=1.1.0",
         "pytorch-metric-learning>=0.9.93",
         "typer>=0.3.2",
-        "validators>=0.18.0",
+        "validators>=0.18.1",
     ],
     extras_require={
         "dev": ["black", "coverage", "codecov", "flake8", "hypothesis", "pytest", "pytest-cov"]

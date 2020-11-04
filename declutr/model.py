@@ -162,7 +162,9 @@ class DeCLUTR(Model):
         return output_dict
 
     def _forward_internal(
-        self, tokens: TextFieldTensors, output_dict: Optional[Dict[str, torch.Tensor]] = None,
+        self,
+        tokens: TextFieldTensors,
+        output_dict: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.Tensor:
 
         masked_lm_loss, embedded_text = self._text_field_embedder(tokens)

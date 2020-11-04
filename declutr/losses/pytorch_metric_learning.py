@@ -71,7 +71,10 @@ class CrossBatchMemory(PyTorchMetricLearningLoss, losses.CrossBatchMemory):
     ) -> None:
 
         super().__init__(
-            loss=loss, embedding_size=embedding_size, memory_size=memory_size, miner=miner,
+            loss=loss,
+            embedding_size=embedding_size,
+            memory_size=memory_size,
+            miner=miner,
         )
 
 

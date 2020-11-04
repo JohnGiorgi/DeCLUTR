@@ -1,7 +1,7 @@
 import logging
 import random
 from contextlib import contextmanager
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List
 
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
@@ -56,48 +56,52 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     def __init__(
         self,
-        tokenizer: Optional[Tokenizer] = None,
-        token_indexers: Optional[Dict[str, TokenIndexer]] = None,
-        num_anchors: Optional[int] = None,
-        num_positives: Optional[int] = None,
-        max_span_len: Optional[int] = None,
-        min_span_len: Optional[int] = None,
-        sampling_strategy: Optional[str] = None,
+        tokenizer: Tokenizer = None,
+        token_indexers: Dict[str, TokenIndexer] = None,
+        num_anchors: int = None,
+        num_positives: int = None,
+        max_span_len: int = None,
+        min_span_len: int = None,
+        sampling_strategy: str = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self._tokenizer = tokenizer or SpacyTokenizer()
         self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
 
-        self._num_anchors = num_anchors
-        if self._num_anchors is not None:
+        # If the user provided us with a number of anchors to sample, we automatically
+        # check that the other expected values are provided and valid.
+        if num_anchors is not None:
+            self._num_anchors = num_anchors
+            self.sample_spans = True
             if num_positives is None:
                 raise ValueError("num_positives must be provided if num_anchors is not None.")
             if max_span_len is None:
                 raise ValueError("max_span_len must be provided if num_anchors is not None.")
             if min_span_len is None:
                 raise ValueError("min_span_len must be provided if num_anchors is not None.")
-        self._num_positives = num_positives
-        self._max_span_len = max_span_len
-        self._min_span_len = min_span_len
-        self.sample_spans = bool(self._num_anchors)
-        self._sampling_strategy = (
-            sampling_strategy.lower() if sampling_strategy is not None else sampling_strategy
-        )
-        if (
-            self.sample_spans
-            and self._sampling_strategy is not None
-            and self._sampling_strategy not in ["subsuming", "adjacent"]
-        ):
-            raise ValueError(
-                (
-                    'sampling_strategy must be one of ["subsuming", "adjacent"].'
-                    f" Got {self._sampling_strategy}."
-                )
+            self._num_positives = num_positives
+            self._max_span_len = max_span_len
+            self._min_span_len = min_span_len
+            self._sampling_strategy = (
+                sampling_strategy.lower() if sampling_strategy is not None else sampling_strategy
             )
+            if (
+                self.sample_spans
+                and self._sampling_strategy is not None
+                and self._sampling_strategy not in ["subsuming", "adjacent"]
+            ):
+                raise ValueError(
+                    (
+                        'sampling_strategy must be one of ["subsuming", "adjacent"].'
+                        f" Got {self._sampling_strategy}."
+                    )
+                )
+        else:
+            self.sample_spans = False
 
     @property
-    def sample_spans(self) -> None:
+    def sample_spans(self) -> bool:
         return self._sample_spans
 
     @sample_spans.setter
@@ -105,13 +109,13 @@ class DeCLUTRDatasetReader(DatasetReader):
         self._sample_spans = sample_spans
 
     @contextmanager
-    def no_sample(self) -> None:
+    def no_sample(self) -> Iterator[None]:
         """A context manager that temporarily disables sampling of spans. Useful at test time when
         we want to embed unseen text.
         """
         prev = self.sample_spans
         self.sample_spans = False
-        yield self
+        yield
         self.sample_spans = prev
 
     @overrides
@@ -126,14 +130,15 @@ class DeCLUTRDatasetReader(DatasetReader):
             # we don't yield instances in the same order every epoch. Our current solution is to
             # read the entire file into memory. This is a little expensive (roughly 1G per 1 million
             # docs), so a better solution might be required down the line.
+            data: Iterable[Any] = []
             if self.sample_spans:
-                data_file = list(enumerate(data_file))
-                random.shuffle(data_file)
-                data_file = iter(data_file)
+                data = list(enumerate(data_file))
+                random.shuffle(data)
+                data = iter(data)
             else:
-                data_file = enumerate(data_file)
+                data = enumerate(data_file)
 
-            for _, text in data_file:
+            for _, text in data:
                 yield self.text_to_instance(text)
 
     @overrides

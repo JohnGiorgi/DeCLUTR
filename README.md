@@ -1,5 +1,6 @@
 ![build](https://github.com/JohnGiorgi/declutr/workflows/build/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/JohnGiorgi/DeCLUTR/branch/master/graph/badge.svg)](https://codecov.io/gh/JohnGiorgi/DeCLUTR)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 ![GitHub](https://img.shields.io/github/license/JohnGiorgi/allennlp-multi-label-classification?color=blue)
 
 # DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations

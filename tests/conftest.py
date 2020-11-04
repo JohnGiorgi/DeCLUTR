@@ -41,5 +41,4 @@ def inputs_filepath() -> str:
 
 @pytest.fixture(scope="module")
 def inputs(inputs_filepath) -> List[str]:
-    # Some random examples taken from https://nlp.stanford.edu/projects/snli/
     return Path(inputs_filepath).read_text().split("\n")

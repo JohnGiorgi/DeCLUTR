@@ -47,6 +47,15 @@ setuptools.setup(
         "validators>=0.18.1",
     ],
     extras_require={
-        "dev": ["black", "coverage", "codecov", "flake8", "hypothesis", "pytest", "pytest-cov"]
+        "dev": [
+            "black",
+            "coverage",
+            "codecov",
+            "flake8",
+            "hypothesis",
+            "pytest",
+            "pytest-cov",
+            "mypy",
+        ]
     },
 )

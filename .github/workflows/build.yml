@@ -39,7 +39,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --statistics
     - name: Type check with mypy
       run: |
-        poetry run mypy .
+        run mypy .
     - name: Test with pytest
       run: |
         pytest tests --cov ./declutr --cov-report=xml --cov-config=./.coveragerc

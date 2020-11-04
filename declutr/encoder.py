@@ -1,7 +1,7 @@
 import warnings
 from operator import itemgetter
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union, cast
 
 import torch
 from allennlp.common import util as common_util
@@ -93,14 +93,15 @@ class Encoder:
             # In the future, it would be better to use the built-in bucket sort of AllenNLP,
             # which would lead to an even larger speedup.
             unsort = True
-            sorted_indices, inputs = zip(*sorted(enumerate(inputs), key=itemgetter(1)))
+            sorted_indices, inputs = cast(
+                Tuple[List[int], List[str]], zip(*sorted(enumerate(inputs), key=itemgetter(1)))
+            )  # tell mypy explicitly the types of items in the unpacked tuple
             unsorted_indices, _ = zip(*sorted(enumerate(sorted_indices), key=itemgetter(1)))
 
-        inputs = [{"text": sanitize(input_)} for input_ in inputs]
-
-        embeddings = []
+        embeddings: torch.FloatTensor = []  # promise mypy we will behave
         for i in range(0, len(inputs), batch_size):
-            outputs = self._predictor.predict_batch_json(inputs[i : i + batch_size])
+            batch_json = [{"text": sanitize(input_)} for input_ in inputs[i : i + batch_size]]
+            outputs = self._predictor.predict_batch_json(batch_json)
             outputs = torch.as_tensor(
                 # Accumulating the tensors on the GPU would quickly lead to OOM.
                 [output[self._output_dict_field] for output in outputs],

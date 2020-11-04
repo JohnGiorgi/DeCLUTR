@@ -176,7 +176,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         # We call this with kwargs because some of the huggingface models don't have the
         # token_type_ids parameter and fail even when it's given as None.
         # Also, as of transformers v2.5.1, they are taking FloatTensor masks.
-        parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}
+        parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}  # type: ignore
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
         if masked_lm_labels is not None and self.masked_language_modeling:

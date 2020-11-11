@@ -118,6 +118,12 @@ You can embed text with a trained model in one of three ways:
 2. [🤗 Transformers](#🤗-transformers): load our pretrained model with the [🤗 Transformers library](https://github.com/huggingface/transformers).
 3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
+Available pre-trained models:
+
+- [johngiorgi/declutr-small](https://huggingface.co/johngiorgi/declutr-small)
+- [johngiorgi/declutr-base](https://huggingface.co/johngiorgi/declutr-base)
+- [johngiorgi/declutr-sci-base](https://huggingface.co/johngiorgi/declutr-sci-base)
+
 #### As a library
 
 To use the model as a library, import `Encoder` and pass it some text (it accepts both strings and lists of strings)
@@ -183,11 +189,6 @@ embeddings = torch.sum(
 # Compute a semantic similarity via the cosine distance
 semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
-
-Currently available models:
-
-- [johngiorgi/declutr-small](https://huggingface.co/johngiorgi/declutr-small)
-- [johngiorgi/declutr-base](https://huggingface.co/johngiorgi/declutr-base)
 
 #### Bulk embed a file
 

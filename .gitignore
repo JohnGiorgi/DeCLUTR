@@ -130,7 +130,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Added by us: don't track dataset folder
+# Added by us
 datasets
-output
+pretrained_models
 SentEval

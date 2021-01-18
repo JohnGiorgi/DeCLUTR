@@ -4,6 +4,7 @@ import re
 import zipfile
 from pathlib import Path
 from typing import List, Optional
+from declutr.common.data_utils import sanitize
 
 import requests
 import typer
@@ -16,19 +17,8 @@ SAVING = "\U0001F4BE"
 DOWNLOAD = "\U00002B07"
 
 
-def _sanitize(text: str, lowercase: bool) -> str:
-    """Cleans text by removing whitespace, newlines and tabs and (optionally) lowercasing.
-    """
-    sanitized_text = " ".join(text.strip().split())
-    if lowercase:
-        return sanitized_text.lower()
-    else:
-        return sanitized_text
-
-
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
-    """Writes a list of documents, `text`, to the file `output_filepath`, one document per line.
-    """
+    """Writes a list of documents, `text`, to the file `output_filepath`, one document per line."""
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
     output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
@@ -43,21 +33,26 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
             for doc in progress:
                 f.write(doc.strip() + "\n")
     typer.secho(
-        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}", bold=True,
+        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}",
+        bold=True,
     )
 
 
 def main(
     output_filepath: str,
+    segment_sentences: bool = False,
+    lowercase: bool = False,
     min_length: Optional[int] = None,
-    lowercase: bool = True,
+    max_instances: Optional[int] = None,
     pretrained_model_name_or_path: Optional[str] = None,
 ) -> None:
     """Downloads and lightly preprocesses WikiText-103. If `min_length is not None`, only documents
     with at least this many tokens are retained. If `pretrained_model_name_or_path` is not None, the
     tokenizer will be loaded as `AutoTokenizer.from_pretrained(pretrained_model_name_or_path)`
     using the HuggingFace Transformers library. Otherwise `str.split()` is used. This argument has
-    no effect if `min-length is None`.
+    no effect if `min-length is None`. If `segment_sentences` is provided, individual sentences
+    will be returned instead of documents. You must have the `"en_core_web_sm"` spacy model
+    installed to segment sentences.
     """
     # Setup the pre-trained tokenizer, if specified
     if min_length is not None:
@@ -71,6 +66,12 @@ def main(
             tokenizer = lambda x: x.split()  # noqa
     else:
         tokenizer = None
+
+    # Setup spacy lang object if we are segmenting sentences
+    if segment_sentences:
+        import spacy
+
+        nlp = spacy.load("en_core_web_sm", disable=["ner"])
 
     # Download WikiText-103
     r = requests.get(WIKITEXT_103_URL, stream=True)
@@ -86,11 +87,14 @@ def main(
         no_subtitles = re.sub(r"(=\s){2,5}.*(=\s){2,5}", "", text)
         documents = re.split(r"=\s.*\s=", no_subtitles)
 
+        if segment_sentences:
+            documents = (sent.text for doc in documents for sent in nlp(doc).sents)
+
         with typer.progressbar(
-            documents, label=typer.style("Preprocessing text", bold=True)
+            documents, length=max_instances, label=typer.style("Preprocessing text", bold=True)
         ) as progress:
             for doc in progress:
-                doc = _sanitize(doc, lowercase=lowercase)
+                doc = sanitize(doc, lowercase=lowercase)
                 if not doc:
                     continue
 
@@ -101,7 +105,10 @@ def main(
                     if num_tokens < min_length:
                         continue
 
+                if max_instances and len(preprocessed_documents) >= max_instances:
+                    break
                 preprocessed_documents.append(doc)
+                progress.update(1)
 
     _write_output_to_disk(preprocessed_documents, output_filepath)
 

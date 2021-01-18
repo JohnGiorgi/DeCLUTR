@@ -3,6 +3,7 @@ import shutil
 import tarfile
 from pathlib import Path
 from typing import List, Optional
+from declutr.common.data_utils import sanitize
 
 import typer
 
@@ -13,19 +14,8 @@ SAVING = "\U0001F4BE"
 MINING = "\U000026CF"
 
 
-def _sanitize(text: str, lowercase: bool) -> str:
-    """Cleans text by removing whitespace, newlines and tabs and (optionally) lowercasing.
-    """
-    sanitized_text = " ".join(text.strip().split())
-    if lowercase:
-        return sanitized_text.lower()
-    else:
-        return sanitized_text
-
-
 def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
-    """Writes a list of documents, `text`, to the file `output_filepath`, one document per line.
-    """
+    """Writes a list of documents, `text`, to the file `output_filepath`, one document per line."""
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
     output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
@@ -40,7 +30,8 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
             for doc in progress:
                 f.write(doc.strip() + "\n")
     typer.secho(
-        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}", bold=True,
+        f"{SAVING} {len(text)} preprocessed documents saved to: {output_filepath}",
+        bold=True,
     )
 
 
@@ -101,7 +92,7 @@ def main(
 
             for text_filepath in untared_filepath.iterdir():
                 text = text_filepath.read_text()
-                text = _sanitize(text, lowercase=lowercase)
+                text = sanitize(text, lowercase=lowercase)
                 if not text:
                     continue
 

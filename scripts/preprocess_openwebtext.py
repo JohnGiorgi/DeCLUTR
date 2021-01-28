@@ -2,10 +2,10 @@
 import shutil
 import tarfile
 from pathlib import Path
-from typing import List, Optional
-from declutr.common.data_utils import sanitize
+from typing import List, Optional, Union
 
 import typer
+from declutr.common.data_utils import sanitize
 
 # Emoji's used in typer.secho calls
 # See: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py"
@@ -14,7 +14,7 @@ SAVING = "\U0001F4BE"
 MINING = "\U000026CF"
 
 
-def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
+def _write_output_to_disk(text: List[str], output_filepath: Union[str, Path]) -> None:
     """Writes a list of documents, `text`, to the file `output_filepath`, one document per line."""
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
@@ -36,8 +36,8 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
 
 
 def main(
-    openwebtext_path: str,
-    output_filepath: str,
+    openwebtext_path: Union[str, Path],
+    output_filepath: Union[str, Path],
     min_length: Optional[int] = None,
     lowercase: bool = True,
     max_documents: Optional[int] = None,
@@ -96,10 +96,11 @@ def main(
                 if not text:
                     continue
 
-                # Retain documents if # of tokens is greater than the minimum specified length
+                # Retain documents if the length of their shortest document is
+                # equal to or greater than the minimum specified length
                 if tokenizer is not None:
                     num_tokens = len(tokenizer(text))
-                    if num_tokens < min_length:
+                    if min_length and num_tokens < min_length:
                         continue
 
                 documents.append(text)

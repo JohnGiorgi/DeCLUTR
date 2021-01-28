@@ -3,11 +3,11 @@ import io
 import re
 import zipfile
 from pathlib import Path
-from typing import List, Optional
-from declutr.common.data_utils import sanitize
+from typing import List, Optional, Union
 
 import requests
 import typer
+from declutr.common.data_utils import sanitize
 
 WIKITEXT_103_URL = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-raw-v1.zip"
 
@@ -17,7 +17,7 @@ SAVING = "\U0001F4BE"
 DOWNLOAD = "\U00002B07"
 
 
-def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
+def _write_output_to_disk(text: List[str], output_filepath: Union[str, Path]) -> None:
     """Writes a list of documents, `text`, to the file `output_filepath`, one document per line."""
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
@@ -39,7 +39,7 @@ def _write_output_to_disk(text: List[str], output_filepath: str) -> None:
 
 
 def main(
-    output_filepath: str,
+    output_filepath: Union[str, Path],
     segment_sentences: bool = False,
     lowercase: bool = False,
     min_length: Optional[int] = None,
@@ -79,7 +79,7 @@ def main(
     partition_filenames = z.namelist()[1:]
     typer.secho(f"{DOWNLOAD} Downloaded WikiText-103", bold=True)
 
-    preprocessed_documents = []
+    preprocessed_documents: List[str] = []
     for filename in partition_filenames:
         text = z.open(filename).read().decode("utf-8")
 
@@ -88,7 +88,7 @@ def main(
         documents = re.split(r"=\s.*\s=", no_subtitles)
 
         if segment_sentences:
-            documents = (sent.text for doc in documents for sent in nlp(doc).sents)
+            documents = (sent.text for doc in documents for sent in nlp(doc).sents)  # type: ignore
 
         with typer.progressbar(
             documents, length=max_instances, label=typer.style("Preprocessing text", bold=True)
@@ -102,7 +102,7 @@ def main(
                 # equal to or greater than the minimum specified length
                 if tokenizer is not None:
                     num_tokens = len(tokenizer(doc))
-                    if num_tokens < min_length:
+                    if min_length and num_tokens < min_length:
                         continue
 
                 if max_instances and len(preprocessed_documents) >= max_instances:

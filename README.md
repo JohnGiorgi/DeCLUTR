@@ -35,6 +35,7 @@ The easiest way to get started is to follow along with one of our [notebooks](no
 
 - Training your own model [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/training.ipynb)
 - Embedding text with a pretrained model [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/embedding.ipynb)
+- Evaluating a model with [SentEval](https://github.com/facebookresearch/SentEval) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/evaluating.ipynb)
 
 ## Installation
 
@@ -171,15 +172,15 @@ tokenizer = AutoTokenizer.from_pretrained("johngiorgi/declutr-small")
 model = AutoModel.from_pretrained("johngiorgi/declutr-small")
 
 # Prepare some text to embed
-text = [
+texts = [
     "A smiling costumed woman is holding an umbrella.",
     "A happy woman in a fairy costume holds an umbrella.",
 ]
-inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt")
+inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
 
 # Embed the text
 with torch.no_grad():
-    sequence_output, _ = model(**inputs, output_hidden_states=False)
+    sequence_output = model(**inputs)[0]
 
 # Mean pool the token-level embeddings to get sentence-level embeddings
 embeddings = torch.sum(
@@ -214,7 +215,7 @@ The text embeddings are stored in the field `"embeddings"` in `"output/embedding
 
 ### Evaluating with SentEval
 
-[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to evaluate our model against SentEval.
+[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to evaluate our model against SentEval. The easiest way to evaluate our models or the baselines we compare to is by using the [provided notebook](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/evaluating.ipynb). Broadly, the steps are the following:
 
 First, clone the SentEval repository and download the transfer task datasets (you only need to do this once)
 

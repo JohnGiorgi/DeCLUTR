@@ -228,9 +228,7 @@ def _run_senteval(
         fg=typer.colors.GREEN,
         bold=True,
     )
-    typer.secho(
-        f"{RUNNING} Running evaluation. This may take a while!", bold=True
-    )
+    typer.secho(f"{RUNNING} Running evaluation. This may take a while!", bold=True)
 
     se = senteval.engine.SE(params, batcher, prepare)
     results = se.eval(TRANSFER_TASKS)
@@ -249,9 +247,7 @@ def _run_senteval(
             # Add aggregate scores to results dict
             json_safe_results[AGGREGATE_SCORES_KEY] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
-        typer.secho(
-            f"{SAVING} Results saved to: {output_filepath}", bold=True
-        )
+        typer.secho(f"{SAVING} Results saved to: {output_filepath}", bold=True)
     else:
         typer.secho(
             f"{WARNING} --output-filepath was not provided, printing results to console instead.",
@@ -283,8 +279,7 @@ def random(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Sanity check that evaluates randomly initialized vectors against the SentEval benchmark.
-    """
+    """Sanity check that evaluates randomly initialized vectors against the SentEval benchmark."""
 
     # SentEval prepare and batcher
     def prepare(params, samples):
@@ -525,8 +520,7 @@ def transformers(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark.
-    """
+    """Evaluates a pre-trained model from the Transformers library against the SentEval benchmark."""
 
     from transformers import AutoModel, AutoTokenizer
 
@@ -662,8 +656,7 @@ def allennlp(
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Evaluates a trained AllenNLP model against the SentEval benchmark.
-    """
+    """Evaluates a trained AllenNLP model against the SentEval benchmark."""
 
     from allennlp.models.archival import load_archive
     from allennlp.predictors import Predictor

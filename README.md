@@ -215,7 +215,7 @@ The text embeddings are stored in the field `"embeddings"` in `"output/embedding
 
 ### Evaluating with SentEval
 
-[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to evaluate our model against SentEval. The easiest way to evaluate our models or the baselines we compare to is by using the [provided notebook](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/evaluating.ipynb). Broadly, the steps are the following:
+[SentEval](https://github.com/facebookresearch/SentEval) is a library for evaluating the quality of sentence embeddings. We provide a script to evaluate our model against SentEval. We have provided a [notebook](https://colab.research.google.com/github/JohnGiorgi/DeCLUTR/blob/master/notebooks/evaluating.ipynb) that documents the process of evaluating a trained model on SentEval. Broadly, the steps are the following:
 
 First, clone the SentEval repository and download the transfer task datasets (you only need to do this once)
 

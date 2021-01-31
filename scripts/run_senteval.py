@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 from statistics import mean
-from typing import Callable, Iterable, List, Union, Dict
+from typing import Any, Callable, Dict, Iterable, List, Union
 
 import numpy as np
 import torch
@@ -66,7 +66,7 @@ FAST = "\U0001F3C3"
 SCORE = "\U0001F4CB"
 
 
-def _cleanup_batch(batch: List[Iterable[Union[str, bytes]]]) -> List[Iterable[str]]:
+def _cleanup_batch(batch: List[Iterable[Union[str, bytes]]]) -> List[Iterable[Union[str, bytes]]]:
     batch = [
         [
             token.decode("utf-8", errors="ignore") if isinstance(token, bytes) else token
@@ -93,14 +93,12 @@ def _get_device(cuda_device: int) -> torch.device:
 def _print_aggregate_scores(aggregate_scores: Dict[str, Dict[str, float]]) -> None:
     """Prints out nicely formatted `aggregate_scores`."""
     for partition in ["dev", "test"]:
-        typer.secho(f"{SCORE} Aggregate {partition} scores", fg=typer.colors.WHITE, bold=True)
+        typer.secho(f"{SCORE} Aggregate {partition} scores", bold=True)
         for task_set in ["downstream", "probing", "all"]:
             typer.secho(f"* {task_set.title()}: {aggregate_scores[task_set][partition]:.2f}%")
 
 
-def _compute_aggregate_scores(
-    results: Dict, ignore_tasks: List[str] = None
-) -> Dict[str, Dict[str, float]]:
+def _compute_aggregate_scores(results: Dict, ignore_tasks: List[str] = None) -> Dict[str, Any]:
     """Computes aggregate scores for the dev and test sets for the given SentEval `results`. Tasks
     can be ignored (e.g. their score will not be computed and therefore not contribute to the
     aggregate score) by passing the task name in the list `ignore_tasks`.
@@ -113,7 +111,7 @@ def _compute_aggregate_scores(
         # Unclear why this is cast as tuple, the type hint is List[str]?
         else list(ignore_tasks) + [AGGREGATE_SCORES_KEY]
     )
-    aggregate_scores = {
+    aggregate_scores: Dict[str, Any] = {
         "downstream": {"dev": 0, "test": 0},
         "probing": {"dev": 0, "test": 0},
         "all": {},
@@ -179,7 +177,7 @@ def _compute_aggregate_scores(
 
 def _setup_senteval(
     path_to_senteval: str, prototyping_config: bool = False, verbose: bool = False
-) -> None:
+) -> Dict[str, Any]:
     if verbose:
         logging.basicConfig(format="%(asctime)s : %(message)s", level=logging.DEBUG)
 
@@ -218,7 +216,11 @@ def _setup_senteval(
 
 
 def _run_senteval(
-    params, path_to_senteval: str, batcher: Callable, prepare: Callable, output_filepath: str = None
+    params,
+    path_to_senteval: str,
+    batcher: Callable,
+    prepare: Callable,
+    output_filepath: Union[str, Path] = None,
 ) -> None:
     sys.path.insert(0, path_to_senteval)
     import senteval
@@ -228,9 +230,7 @@ def _run_senteval(
         fg=typer.colors.GREEN,
         bold=True,
     )
-    typer.secho(
-        f"{RUNNING} Running evaluation. This may take a while!", fg=typer.colors.WHITE, bold=True
-    )
+    typer.secho(f"{RUNNING} Running evaluation. This may take a while!", bold=True)
 
     se = senteval.engine.SE(params, batcher, prepare)
     results = se.eval(TRANSFER_TASKS)
@@ -249,9 +249,7 @@ def _run_senteval(
             # Add aggregate scores to results dict
             json_safe_results[AGGREGATE_SCORES_KEY] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
-        typer.secho(
-            f"{SAVING} Results saved to: {output_filepath}", fg=typer.colors.WHITE, bold=True
-        )
+        typer.secho(f"{SAVING} Results saved to: {output_filepath}", bold=True)
     else:
         typer.secho(
             f"{WARNING} --output-filepath was not provided, printing results to console instead.",

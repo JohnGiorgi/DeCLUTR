@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import typer
+import Union
 from allennlp.common import util as common_util
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
@@ -11,7 +12,7 @@ SAVING = "\U0001F4BE"
 HUGGING_FACE = "\U0001F917"
 
 
-def main(archive_file: str, save_directory: str) -> None:
+def main(archive_file: str, save_directory: Union[str, Path]) -> None:
     """Saves the model and tokenizer from an AllenNLP `archive_file` path pointing to a trained
     DeCLUTR model to a format that can be used with HuggingFace Transformers at `save_directory`."""
     save_directory = Path(save_directory)

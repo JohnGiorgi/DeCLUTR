@@ -7,17 +7,17 @@
 
 The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
 
-| Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream |  Probing  |    Overall.   |   Δ   |
-|------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:----------:|:---------:|:---------:|:-----:|
-| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |    76.46   |   72.58   |   75.07   | -2.26 |
-| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |  __79.13__ |   66.70   |   74.69   | -2.64 |
-| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |    77.57   |   63.22   |   72.45   | -4.88 |
-| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |    72.54   |   74.57   |   73.27   | -4.07 |
-| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |    72.67   |   74.19   |   73.21   | -4.12 |
-| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |    77.19   |   74.69   |   76.30   | -1.03 |
-| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |    78.76   | __74.76__ | __77.33__ |   --  |
+| Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream (-SNLI) |  Probing  |   Δ   |
+|------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:------------------:|:---------:|:-----:|
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |        76.00       |   72.58   | -3.06 |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |        78.89       |   66.70   | -0.17 |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |        77.19       |   63.22   | -1.87 |
+| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |        72.58       |   74.57   | -6.48 |
+| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |        72.70       |   74.19   | -6.36 |
+| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |        77.41       | __74.71__ | -1.65 |
+| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |      __79.06__     |   74.65   |   --  |
 
-> Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued training with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation. Δ is difference to DeCLUTR-base.
+> Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued pretraining with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation. Downstream scores are computed without considering perfomance on SNLI (denoted "Downstream (-SNLI)") as InferSent, USE and Sentence Transformers all train on SNLI. Δ: difference to DeCLUTR-base downstream score.
 
 ## Table of contents
 
@@ -193,7 +193,7 @@ semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 
 #### Bulk embed a file
 
-To embed all text in a given file with a trained model, run the following command
+To embed all text in a **given** file with a trained model, run the following command
 
 ```bash
 allennlp predict "output" "path/to/input.txt" \

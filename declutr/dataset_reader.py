@@ -1,7 +1,6 @@
 import logging
-import random
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Iterator, List
+from typing import Dict, Iterable, Iterator, List
 
 from allennlp.common.file_utils import cached_path
 from allennlp.data.dataset_readers import DatasetReader
@@ -120,26 +119,9 @@ class DeCLUTRDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        # if `file_path` is a URL, redirect to the cache
-        file_path = cached_path(file_path)
-
-        with open(file_path, "r") as data_file:
-            logger.info("Reading instances from lines in file at: %s", file_path)
-
-            # If we are sampling spans (i.e. we are training) we need to shuffle the data so that
-            # we don't yield instances in the same order every epoch. Our current solution is to
-            # read the entire file into memory. This is a little expensive (roughly 1G per 1 million
-            # docs), so a better solution might be required down the line.
-            data: Iterable[Any] = []
-            if self.sample_spans:
-                data = list(enumerate(data_file))
-                random.shuffle(data)
-                data = iter(data)
-            else:
-                data = enumerate(data_file)
-
-            for _, text in data:
-                yield self.text_to_instance(text)
+        with open(cached_path(file_path), "r") as f:
+            for line in f:
+                yield self.text_to_instance(line)
 
     @overrides
     def text_to_instance(self, text: str) -> Instance:  # type: ignore
@@ -180,14 +162,25 @@ class DeCLUTRDatasetReader(DatasetReader):
             anchors: List[Field] = []
             for text in anchor_text:
                 tokens = self._tokenizer.tokenize(text)
-                anchors.append(TextField(tokens, self._token_indexers))
+                anchors.append(TextField(tokens))
             fields["anchors"] = ListField(anchors)
             positives: List[Field] = []
             for text in positive_text:
                 tokens = self._tokenizer.tokenize(text)
-                positives.append(TextField(tokens, self._token_indexers))
+                positives.append(TextField(tokens))
             fields["positives"] = ListField(positives)
         else:
             tokens = self._tokenizer.tokenize(text)
-            fields["anchors"] = TextField(tokens, self._token_indexers)
+            fields["anchors"] = TextField(tokens)
         return Instance(fields)
+
+    def apply_token_indexers(self, instance: Instance) -> None:
+        # If this is a ListField, we need to set the token_indexers of each TextField independently.
+        if isinstance(instance["anchors"], ListField):
+            for text_field in instance["anchors"].field_list:
+                text_field.token_indexers = self._token_indexers
+            for text_field in instance["positives"].field_list:
+                text_field.token_indexers = self._token_indexers
+        # Otherwise, spans were not sampled, and instances contain a single TextField at "anchors".
+        else:
+            instance["anchors"].token_indexers = self._token_indexers

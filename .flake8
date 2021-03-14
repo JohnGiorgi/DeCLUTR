@@ -1,3 +1,4 @@
+# Copied from: https://github.com/allenai/allennlp/blob/main/.flake8
 [flake8]
 max-line-length = 115
 

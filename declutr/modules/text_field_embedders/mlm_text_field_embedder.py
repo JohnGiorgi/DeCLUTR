@@ -1,13 +1,13 @@
 import inspect
-from typing import Dict
+from typing import Dict, Tuple, Union
 
 import torch
-
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import TextFieldTensors
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.modules.text_field_embedders.text_field_embedder import TextFieldEmbedder
 from allennlp.modules.time_distributed import TimeDistributed
+from allennlp.modules.token_embedders import EmptyEmbedder
 from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
 
 
@@ -33,19 +33,33 @@ class MLMTextFieldEmbedder(BasicTextFieldEmbedder):
 
     def forward(
         self, text_field_input: TextFieldTensors, num_wrapping_dims: int = 0, **kwargs
-    ) -> torch.Tensor:
-        if self._token_embedders.keys() != text_field_input.keys():
+    ) -> Tuple[Union[None, torch.FloatTensor], torch.Tensor]:
+        if sorted(self._token_embedders.keys()) != sorted(text_field_input.keys()):
             message = "Mismatched token keys: %s and %s" % (
                 str(self._token_embedders.keys()),
                 str(text_field_input.keys()),
             )
-            raise ConfigurationError(message)
+            embedder_keys = set(self._token_embedders.keys())
+            input_keys = set(text_field_input.keys())
+            if embedder_keys > input_keys and all(
+                isinstance(embedder, EmptyEmbedder)
+                for name, embedder in self._token_embedders.items()
+                if name in embedder_keys - input_keys
+            ):
+                # Allow extra embedders that are only in the token embedders (but not input) and are empty to pass
+                # config check
+                pass
+            else:
+                raise ConfigurationError(message)
 
         embedded_representations = []
         for key in self._ordered_embedder_keys:
             # Note: need to use getattr here so that the pytorch voodoo
             # with submodules works with multiple GPUs.
             embedder = getattr(self, "token_embedder_{}".format(key))
+            if isinstance(embedder, EmptyEmbedder):
+                # Skip empty embedders
+                continue
             forward_params = inspect.signature(embedder.forward).parameters
             forward_params_values = {}
             missing_tensor_args = set()

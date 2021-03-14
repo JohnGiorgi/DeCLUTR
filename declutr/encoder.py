@@ -41,7 +41,7 @@ class Encoder:
 
     pretrained_model_name_or_path : `str`, required
         Path to a serialized AllenNLP archive or a model name from:
-        `declutr.encoder.PRETRAINED_MODEL_URLS`
+        `list(declutr.PRETRAINED_MODELS.keys())`
     sphereize : `bool`, optional (default = `False`)
         If `True` embeddings will be l2-normalized and shifted by the centroid. Defaults to `False`.
     **kwargs : `Dict`, optional

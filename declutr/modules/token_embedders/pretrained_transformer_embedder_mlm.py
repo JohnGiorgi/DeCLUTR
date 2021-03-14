@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
@@ -6,47 +7,23 @@ from allennlp.modules.scalar_mix import ScalarMix
 from allennlp.modules.token_embedders import PretrainedTransformerEmbedder
 from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
 from overrides import overrides
-from transformers import AutoConfig, AutoModelForMaskedLM
+from transformers import AutoModelForMaskedLM
+
+logger = logging.getLogger(__name__)
 
 
 @TokenEmbedder.register("pretrained_transformer_mlm")
 class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
     """
     This is a wrapper around `PretrainedTransformerEmbedder` that allows us to train against a
-    masked language modelling objective while we are embedding text.
+    masked language modelling objective while we are embedding text. Besides
+    `masked_language_modeling`, arguments are identical to the parent class (see
+    [here](https://docs.allennlp.org/main/api/modules/token_embedders/pretrained_transformer_embedder/)).
 
     Registered as a `TokenEmbedder` with name "pretrained_transformer_mlm".
 
     # Parameters
 
-    model_name : `str`
-        The name of the `transformers` model to use. Should be the same as the corresponding
-        `PretrainedTransformerIndexer`.
-    max_length : `int`, optional (default = `None`)
-        If positive, folds input token IDs into multiple segments of this length, pass them
-        through the transformer model independently, and concatenate the final representations.
-        Should be set to the same value as the `max_length` option on the
-        `PretrainedTransformerIndexer`.
-    sub_module: `str`, optional (default = `None`)
-        The name of a submodule of the transformer to be used as the embedder. Some transformers naturally act
-        as embedders such as BERT. However, other models consist of encoder and decoder, in which case we just
-        want to use the encoder.
-    train_parameters: `bool`, optional (default = `True`)
-        If this is `True`, the transformer weights get updated during training.
-    last_layer_only: `bool`, optional (default = `True`)
-        When `True` (the default), only the final layer of the pretrained transformer is taken
-        for the embeddings. But if set to `False`, a scalar mix of all of the layers
-        is used.
-    gradient_checkpointing: `bool`, optional (default = `None`)
-        Enable or disable gradient checkpointing.
-    tokenizer_kwargs: `Dict[str, Any]`, optional (default = `None`)
-        Dictionary with
-        [additional arguments](https://github.com/huggingface/transformers/blob/155c782a2ccd103cf63ad48a2becd7c76a7d2115/transformers/tokenization_utils.py#L691)
-        for `AutoTokenizer.from_pretrained`.
-    transformer_kwargs: `Dict[str, Any]`, optional (default = `None`)
-        Dictionary with
-        [additional arguments](https://github.com/huggingface/transformers/blob/155c782a2ccd103cf63ad48a2becd7c76a7d2115/transformers/modeling_utils.py#L253)
-        for `AutoModel.from_pretrained`.
     masked_language_modeling: `bool`, optional (default = `True`)
         If this is `True` and `masked_lm_labels is not None` in the call to `forward`, the model
         will be trained against a masked language modelling objective and the resulting loss will
@@ -73,28 +50,32 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         self.masked_language_modeling = masked_language_modeling
 
         if self.masked_language_modeling:
-            self.config = AutoConfig.from_pretrained(model_name, output_hidden_states=True)
-            # We only need access to the HF tokenizer if we are masked language modeling
-            self.tokenizer = tokenizer.tokenizer
             # The only differences when masked language modeling are:
-            # 1) `output_hidden_states` must be True to get access to token embeddings.
+            # 1) We need access to the HF tokenizer
+            self.tokenizer = tokenizer.tokenizer
             # 2) We need to use `AutoModelForMaskedLM` to get the correct model
             self.transformer_model = AutoModelForMaskedLM.from_pretrained(
-                model_name, config=self.config, **(transformer_kwargs or {})
+                model_name, **(transformer_kwargs or {})
             )
+            # 3) We need to be able to access the hidden states
+            self.transformer_model.config.output_hidden_states = True
         # Eveything after the if statement (including the else) is copied directly from:
         # https://github.com/allenai/allennlp/blob/master/allennlp/modules/token_embedders/pretrained_transformer_embedder.py
         else:
             from allennlp.common import cached_transformers
 
             self.transformer_model = cached_transformers.get(
-                model_name, True, override_weights_file, override_weights_strip_prefix
+                model_name,
+                True,
+                override_weights_file=override_weights_file,
+                override_weights_strip_prefix=override_weights_strip_prefix,
+                **(transformer_kwargs or {}),
             )
-            self.config = self.transformer_model.config
 
         if gradient_checkpointing is not None:
             self.transformer_model.config.update({"gradient_checkpointing": gradient_checkpointing})
 
+        self.config = self.transformer_model.config
         if sub_module:
             assert hasattr(self.transformer_model, sub_module)
             self.transformer_model = getattr(self.transformer_model, sub_module)
@@ -108,6 +89,18 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         if not last_layer_only:
             self._scalar_mix = ScalarMix(self.config.num_hidden_layers)
             self.config.output_hidden_states = True
+
+        try:
+            if self.transformer_model.get_input_embeddings().num_embeddings != len(
+                tokenizer.tokenizer
+            ):
+                self.transformer_model.resize_token_embeddings(len(tokenizer.tokenizer))
+        except NotImplementedError:
+            # Can't resize for transformers models that don't implement base_model.get_input_embeddings()
+            logger.warning(
+                "Could not resize the token embedding matrix of the transformer model. "
+                "This model does not support resizing."
+            )
 
         self._num_added_start_tokens = len(tokenizer.single_sequence_start_tokens)
         self._num_added_end_tokens = len(tokenizer.single_sequence_end_tokens)
@@ -125,7 +118,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         type_ids: Optional[torch.LongTensor] = None,
         segment_concat_mask: Optional[torch.BoolTensor] = None,
         masked_lm_labels: Optional[torch.LongTensor] = None,
-    ) -> Union[Tuple[torch.FloatTensor, torch.Tensor], torch.Tensor]:  # type: ignore
+    ) -> Tuple[Union[None, torch.FloatTensor], torch.Tensor]:
         """
         # Parameters
 
@@ -144,9 +137,9 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
 
         # Returns:
 
-        If `self.masked_language_modeling`, returns a `Tuple` of the masked language modeling loss
-        and a `torch.Tensor` of shape: `[batch_size, num_wordpieces, embedding_size]`. Otherwise,
-        returns only the `torch.Tensor` of shape: `[batch_size, num_wordpieces, embedding_size]`.
+        Returns a `Tuple` containing the masked language modeling (MLM) loss and a `torch.Tensor`
+        of shape: `[batch_size, num_wordpieces, embedding_size]`. The MLM loss will be a
+        `torch.FloatTensor` if `self.masked_language_modeling` and `None` otherwise.
         """
         # Some of the huggingface transformers don't support type ids at all and crash when you supply
         # them. For others, you can supply a tensor of zeros, and if you don't, they act as if you did.
@@ -169,6 +162,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
             )
 
         transformer_mask = segment_concat_mask if self._max_length is not None else mask
+        assert transformer_mask is not None
         # Shape: [batch_size, num_wordpieces, embedding_size],
         # or if self._max_length is not None:
         # [batch_size * num_segments, self._max_length, embedding_size]
@@ -176,7 +170,7 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
         # We call this with kwargs because some of the huggingface models don't have the
         # token_type_ids parameter and fail even when it's given as None.
         # Also, as of transformers v2.5.1, they are taking FloatTensor masks.
-        parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}  # type: ignore
+        parameters = {"input_ids": token_ids, "attention_mask": transformer_mask.float()}
         if type_ids is not None:
             parameters["token_type_ids"] = type_ids
         if masked_lm_labels is not None and self.masked_language_modeling:
@@ -184,19 +178,18 @@ class PretrainedTransformerEmbedderMLM(PretrainedTransformerEmbedder):
 
         masked_lm_loss = None
         transformer_output = self.transformer_model(**parameters)
+        # Even if masked_language_modeling is True, we may not be masked language modeling on
+        # the current batch. Check if masked language modeling labels are present in the input.
+        if self.masked_language_modeling and "labels" in parameters:
+            masked_lm_loss = transformer_output.loss
 
-        if self.config.output_hidden_states:
-            # Even if masked_language_modeling is True, we may not be masked language modeling on
-            # the current batch. Check if masked language modeling labels are present in the input.
-            if "labels" in parameters:
-                masked_lm_loss = transformer_output[0]
-
-            if self._scalar_mix:
-                embeddings = self._scalar_mix(transformer_output[-1][1:])
-            else:
-                embeddings = transformer_output[-1][-1]
+        if self._scalar_mix is not None:
+            # These hidden states will also include the embedding layer, which we don't
+            # include in the scalar mix. Hence the `[1:]` slicing.
+            hidden_states = transformer_output.hidden_states[1:]
+            embeddings = self._scalar_mix(hidden_states)
         else:
-            embeddings = transformer_output[0]
+            embeddings = transformer_output.hidden_states[-1]
 
         if fold_long_sequences:
             embeddings = self._unfold_long_sequences(

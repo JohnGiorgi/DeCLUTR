@@ -134,12 +134,14 @@ class DeCLUTR(Model):
                 # Positives are represented by their mean embedding a la
                 # https://arxiv.org/abs/1902.09229.
                 _, embedded_positives = self._forward_internal(positives)
-                embedded_positive_chunks = []
-                for i, chunk in enumerate(
-                    torch.chunk(embedded_positives, chunks=embedded_anchors.size(0), dim=0)
-                ):
-                    embedded_positive_chunks.append(torch.mean(chunk, dim=0))
-                embedded_positives = torch.stack(embedded_positive_chunks)
+                # Shape: (num_anchors, num_positives_per_anchor, embedding_dim)
+                embedded_positives = torch.reshape(
+                    embedded_positives,
+                    (embedded_anchors.size(0), -1, embedded_anchors.size(-1)),
+                )
+                # Shape: (num_anchors, embedding_dim)
+                embedded_positives = torch.mean(embedded_positives, dim=1)
+
                 # If we are training on multiple GPUs using DistributedDataParallel, then a naive
                 # application would result in 2 * (batch_size/n_gpus - 1) number of negatives per
                 # GPU. To avoid this, we need to gather the anchors/positives from each replica on

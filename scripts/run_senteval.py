@@ -220,7 +220,7 @@ def _run_senteval(
     path_to_senteval: str,
     batcher: Callable,
     prepare: Callable,
-    output_filepath: Union[str, Path] = None,
+    output_filepath: Path = None,
 ) -> None:
     sys.path.insert(0, path_to_senteval)
     import senteval
@@ -277,7 +277,7 @@ def compute_aggregate_scores(path_to_results: str, ignore_tasks: List[str] = Non
 def random(
     path_to_senteval: str,
     embedding_dim: int = 512,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
@@ -303,7 +303,7 @@ def random(
 def bow(
     path_to_senteval: str,
     path_to_vectors: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     prototyping_config: bool = False,
     verbose: bool = False,
 ) -> None:
@@ -399,7 +399,7 @@ def bow(
 def infersent(
     path_to_senteval: str,
     path_to_vectors: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     cuda_device: int = -1,
     prototyping_config: bool = False,
     verbose: bool = False,
@@ -462,7 +462,7 @@ def infersent(
 @app.command()
 def google_use(
     path_to_senteval: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     tfhub_model_url: str = None,
     tfhub_cache_dir: str = None,
     prototyping_config: bool = False,
@@ -516,7 +516,7 @@ def google_use(
 def transformers(
     path_to_senteval: str,
     pretrained_model_name_or_path: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     mean_pool: bool = False,
     cuda_device: int = -1,
     prototyping_config: bool = False,
@@ -598,7 +598,7 @@ def transformers(
 def sentence_transformers(
     path_to_senteval: str,
     pretrained_model_name_or_path: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     cuda_device: int = -1,
     prototyping_config: bool = False,
     verbose: bool = False,
@@ -649,7 +649,7 @@ def sentence_transformers(
 def allennlp(
     path_to_senteval: str,
     path_to_allennlp_archive: str,
-    output_filepath: str = None,
+    output_filepath: Path = None,
     weights_file: str = None,
     cuda_device: int = -1,
     output_dict_field: str = "embeddings",

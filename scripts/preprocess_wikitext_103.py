@@ -3,7 +3,7 @@ import io
 import re
 import zipfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import requests
 import typer
@@ -17,7 +17,7 @@ SAVING = "\U0001F4BE"
 DOWNLOAD = "\U00002B07"
 
 
-def _write_output_to_disk(text: List[str], output_filepath: Union[str, Path]) -> None:
+def _write_output_to_disk(text: List[str], output_filepath: Path) -> None:
     """Writes a list of documents, `text`, to the file `output_filepath`, one document per line."""
     # Create the directory path if it doesn't exist
     output_filepath = Path(output_filepath)
@@ -39,7 +39,7 @@ def _write_output_to_disk(text: List[str], output_filepath: Union[str, Path]) ->
 
 
 def main(
-    output_filepath: Union[str, Path],
+    output_filepath: Path,
     segment_sentences: bool = False,
     lowercase: bool = False,
     min_length: Optional[int] = None,

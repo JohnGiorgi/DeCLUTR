@@ -220,7 +220,7 @@ def _run_senteval(
     path_to_senteval: str,
     batcher: Callable,
     prepare: Callable,
-    output_filepath: Union[str, Path] = None,
+    output_filepath: Path = None,
 ) -> None:
     sys.path.insert(0, path_to_senteval)
     import senteval

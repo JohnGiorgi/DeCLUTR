@@ -101,10 +101,10 @@ The `--overrides` flag allows you to override any field in the config with a JSO
 
 #### Exporting a trained model to HuggingFace Transformers
 
-We have provided a simple script to export a trained model so that it can be loaded with [Hugging Face Transformers]((https://github.com/huggingface/transformers))
+We have provided a simple script to export a trained model so that it can be loaded with [Hugging Face Transformers](https://github.com/huggingface/transformers)
 
 ```bash
-!wget -nc https://github.com/JohnGiorgi/DeCLUTR/blob/master/scripts/save_pretrained_hf.py
+wget -nc https://github.com/JohnGiorgi/DeCLUTR/blob/master/scripts/save_pretrained_hf.py
 python save_pretrained_hf.py --archive-file "output" --save-directory "output_transformers"
 ```
 

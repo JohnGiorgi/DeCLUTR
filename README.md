@@ -1,9 +1,9 @@
+# DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
+
 ![build](https://github.com/JohnGiorgi/declutr/workflows/build/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/JohnGiorgi/DeCLUTR/branch/master/graph/badge.svg)](https://codecov.io/gh/JohnGiorgi/DeCLUTR)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 ![GitHub](https://img.shields.io/github/license/JohnGiorgi/DeCLUTR?color=blue)
-
-# DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations
 
 The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
 
@@ -97,7 +97,27 @@ allennlp train "training_config/declutr.jsonnet" \
     --include-package "declutr"
 ```
 
-The `--overrides` flag allows you to override any field in the config with a JSON-formatted string, but you can equivalently update the config itself if you prefer. During training, models, vocabulary, configuration, and log files will be saved to the directory provided by `--serialization-dir`. This can be changed to any directory you like. 
+The `--overrides` flag allows you to override any field in the config with a JSON-formatted string, but you can equivalently update the config itself if you prefer. During training, models, vocabulary, configuration, and log files will be saved to the directory provided by `--serialization-dir`. This can be changed to any directory you like.
+
+#### Exporting a trained model to HuggingFace Transformers
+
+We have provided a simple script to export a trained model so that it can be loaded with [Hugging Face Transformers](https://github.com/huggingface/transformers)
+
+```bash
+wget -nc https://github.com/JohnGiorgi/DeCLUTR/blob/master/scripts/save_pretrained_hf.py
+python save_pretrained_hf.py --archive-file "output" --save-directory "output_transformers"
+```
+
+The model, saved to `--save-directory`, can then be loaded using the Hugging Face Transformers library (see [Embedding](#hugging-face-transformers) for more details)
+
+```python
+from transformers import AutoTokenizer, AutoModelForMaskedLM
+  
+tokenizer = AutoTokenizer.from_pretrained("output_transformers")
+model = AutoModel.from_pretrained("output_transformers")
+```
+
+> If you would like to upload your model to the Hugging Face model repository, follow the instructions [here](https://huggingface.co/transformers/model_sharing.html).
 
 #### Multi-GPU training
 
@@ -116,7 +136,7 @@ If your GPU supports it, [mixed-precision](https://devblogs.nvidia.com/mixed-pre
 You can embed text with a trained model in one of three ways:
 
 1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
-2. [🤗 Transformers](#🤗-transformers): load our pretrained model with the [🤗 Transformers library](https://github.com/huggingface/transformers).
+2. [Hugging Face Transformers](#hugging-face-transformers): load our pretrained model with the [Hugging Face Transformers library](https://github.com/huggingface/transformers).
 3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
 Available pre-trained models:
@@ -157,9 +177,9 @@ See the list of available `PRETRAINED_MODELS` in [declutr/encoder.py](declutr/en
 python -c "from declutr.encoder import PRETRAINED_MODELS ; print(list(PRETRAINED_MODELS.keys()))"
 ```
 
-#### 🤗 Transformers
+#### Hugging Face Transformers
 
-Our pretrained models are also hosted with 🤗 Transformers, so they can be used like any other model in that library. Here is a simple example:
+Our pretrained models are also hosted with Hugging Face Transformers, so they can be used like any other model in that library. Here is a simple example:
 
 ```python
 import torch

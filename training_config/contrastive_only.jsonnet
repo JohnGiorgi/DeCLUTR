@@ -61,12 +61,10 @@ local min_length = 32;
             "lr": 5e-5,
             "eps": 1e-06,
             "correct_bias": false,
-            "weight_decay": 0.0,
+            "weight_decay": 0.1,
             "parameter_groups": [
-                # Apply weight decay to pre-trained params, excluding LayerNorm params and biases
-                # See: https://github.com/huggingface/transformers/blob/2184f87003c18ad8a172ecab9a821626522cf8e7/examples/run_ner.py#L105
-                # Regex: https://regex101.com/r/ZUyDgR/3/tests
-                [["(?=.*transformer_model)(?=.*\\.+)(?!.*(LayerNorm|bias)).*$"], {"weight_decay": 0.1}],
+                // Apply weight decay to pre-trained params, excluding LayerNorm params and biases
+                [["bias", "LayerNorm\\.weight", "layer_norm\\.weight"], {"weight_decay": 0}],
             ],
         },
         "num_epochs": 1,

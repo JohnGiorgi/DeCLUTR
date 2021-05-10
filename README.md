@@ -240,11 +240,8 @@ The text embeddings are stored in the field `"embeddings"` in `"output/embedding
 First, clone the SentEval repository and download the transfer task datasets (you only need to do this once)
 
 ```bash
-git clone https://github.com/facebookresearch/SentEval.git
-# SNLI evaluation in SentEval is broken. Download two files from a contributor that fix the error
-# See: https://github.com/facebookresearch/SentEval/pull/52
-(cd SentEval/senteval; curl -O https://raw.githubusercontent.com/facebookresearch/SentEval/0291f274d7674fb6a1ea8fb7a58426ab28adeb0f/senteval/snli.py)
-(cd SentEval/senteval/tools; curl -O https://raw.githubusercontent.com/facebookresearch/SentEval/0291f274d7674fb6a1ea8fb7a58426ab28adeb0f/senteval/tools/validation.py)
+# Clone our fork which has several bug fixes merged
+git clone https://github.com/JohnGiorgi/SentEval.git
 cd SentEval/data/downstream/
 ./get_transfer_data.bash
 cd ../../../

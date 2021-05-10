@@ -241,6 +241,10 @@ First, clone the SentEval repository and download the transfer task datasets (yo
 
 ```bash
 git clone https://github.com/facebookresearch/SentEval.git
+# SNLI evaluation in SentEval is broken. Download two files from a contributor that fix the error
+# See: https://github.com/facebookresearch/SentEval/pull/52
+(cd SentEval/senteval; curl -O https://raw.githubusercontent.com/facebookresearch/SentEval/0291f274d7674fb6a1ea8fb7a58426ab28adeb0f/senteval/snli.py)
+(cd SentEval/senteval/tools; curl -O https://raw.githubusercontent.com/facebookresearch/SentEval/0291f274d7674fb6a1ea8fb7a58426ab28adeb0f/senteval/tools/validation.py)
 cd SentEval/data/downstream/
 ./get_transfer_data.bash
 cd ../../../
@@ -272,10 +276,6 @@ For help with a specific command, e.g. `allennlp`, run
 ```
 python scripts/run_senteval.py allennlp --help
 ```
-
-#### Gotchas
-
-- Evaluating the `"SNLI"` task of SentEval will fail without [this fix](https://github.com/facebookresearch/SentEval/pull/52).
 
 ## Citing
 

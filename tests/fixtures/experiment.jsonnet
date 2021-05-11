@@ -10,10 +10,10 @@ local transformer_model = "distilroberta-base";
     "model": {
         "type": "declutr.DeCLUTR",
         "text_field_embedder": {
-            "type": "declutr.modules.text_field_embedders.mlm_text_field_embedder.MLMTextFieldEmbedder",
+            "type": "declutr.modules.text_field_embedders.MLMTextFieldEmbedder",
             "token_embedders": {
                 "tokens": {
-                    "type": "declutr.modules.token_embedders.pretrained_transformer_embedder_mlm.PretrainedTransformerEmbedderMLM",
+                    "type": "declutr.modules.token_embedders.PretrainedTransformerEmbedderMLM",
                     "model_name": transformer_model,
                     "masked_language_modeling": true
                 },

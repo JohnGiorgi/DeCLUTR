@@ -2,10 +2,10 @@ import random
 from typing import List, Union
 
 import pytest
+from declutr.common.contrastive_utils import sample_anchor_positive_pairs
 from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
-
-from declutr.common.contrastive_utils import sample_anchor_positive_pairs
+from transformers import AutoTokenizer
 
 
 class TestContrastiveUtils:
@@ -125,3 +125,28 @@ class TestContrastiveUtils:
                 max_span_len=max_span_len,
                 min_span_len=min_span_len,
             )
+
+    def test_sample_spans_with_hf_tokenizer(self):
+        text = "They may take our lives, but they'll never take our freedom!"
+        tokenizer = AutoTokenizer.from_pretrained("distilroberta-base")
+        num_tokens = len(tokenizer(text))
+
+        # Arbitrary but valid choices
+        max_span_len = num_tokens
+        min_span_len = max_span_len - 1
+
+        anchors, positives = sample_anchor_positive_pairs(
+            text,
+            num_anchors=1,
+            num_positives=1,
+            max_span_len=max_span_len,
+            min_span_len=min_span_len,
+            tokenizer=tokenizer.tokenize,
+        )
+
+        for anchor in anchors:
+            tokens = anchor.split()
+            assert tokenizer.convert_tokens_to_string(tokens) in text
+        for positive in positives:
+            tokens = positive.split()
+            assert tokenizer.convert_tokens_to_string(tokens) in text

@@ -1,2 +1,5 @@
 [run]
 source = declutr
+omit = tests/* \
+       *\__init__.py \
+       declutr/tokenizers/pretrained_transformer_tokenizer_fix.py

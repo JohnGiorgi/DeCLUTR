@@ -169,22 +169,34 @@ class DeCLUTRDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if self.sample_spans:
             # Choose the anchor/positives at random.
-            anchor_text, positive_text = sample_anchor_positive_pairs(
+            anchor_spans, positive_spans = sample_anchor_positive_pairs(
                 text=text,
                 num_anchors=self._num_anchors,
                 num_positives=self._num_positives,
                 max_span_len=self._max_span_len,
                 min_span_len=self._min_span_len,
                 sampling_strategy=self._sampling_strategy,
+                tokenizer=self._tokenizer.tokenizer.tokenize,
             )
+
             anchors: List[Field] = []
-            for text in anchor_text:
-                tokens = self._tokenizer.tokenize(text)
+            for span in anchor_spans:
+                # Sampled spans have already been tokenized and joined by whitespace.
+                # We need to convert them back to a string to use the AllenNLP tokenizer
+                # It would be simpler to use convert_tokens_to_string, but we can't guarantee
+                # this method is implemented for all HuggingFace Tokenizers
+                anchor_text = self._tokenizer.tokenizer.decode(
+                    self._tokenizer.tokenizer.convert_tokens_to_ids(span.split())
+                )
+                tokens = self._tokenizer.tokenize(anchor_text)
                 anchors.append(TextField(tokens, self._token_indexers))
             fields["anchors"] = ListField(anchors)
             positives: List[Field] = []
-            for text in positive_text:
-                tokens = self._tokenizer.tokenize(text)
+            for span in positive_spans:
+                positive_text = self._tokenizer.tokenizer.decode(
+                    self._tokenizer.tokenizer.convert_tokens_to_ids(span.split())
+                )
+                tokens = self._tokenizer.tokenize(positive_text)
                 positives.append(TextField(tokens, self._token_indexers))
             fields["positives"] = ListField(positives)
         else:

@@ -8,7 +8,7 @@ from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.fields import Field, ListField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
-from allennlp.data.tokenizers import SpacyTokenizer, Tokenizer
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SpacyTokenizer, Tokenizer
 from overrides import overrides
 
 from declutr.common.contrastive_utils import sample_anchor_positive_pairs
@@ -168,6 +168,14 @@ class DeCLUTRDatasetReader(DatasetReader):
 
         fields: Dict[str, Field] = {}
         if self.sample_spans:
+            if isinstance(self._tokenizer, PretrainedTransformerTokenizer):
+                # We add a space in front of the text in order to achieve consistant tokenization with
+                # certain tokenizers, e.g. the BPE tokenizer used by RoBERTa, GPT and others.
+                # See: https://github.com/huggingface/transformers/issues/1196
+                text = f" {text.lstrip()}"
+                tokenizer = self._tokenizer.tokenizer.tokenize
+            else:
+                tokenizer = None
             # Choose the anchor/positives at random.
             anchor_spans, positive_spans = sample_anchor_positive_pairs(
                 text=text,
@@ -176,7 +184,7 @@ class DeCLUTRDatasetReader(DatasetReader):
                 max_span_len=self._max_span_len,
                 min_span_len=self._min_span_len,
                 sampling_strategy=self._sampling_strategy,
-                tokenizer=self._tokenizer.tokenizer.tokenize,
+                tokenizer=tokenizer,
             )
 
             anchors: List[Field] = []

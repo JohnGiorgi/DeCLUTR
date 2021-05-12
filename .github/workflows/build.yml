@@ -44,7 +44,7 @@ jobs:
       run: |
         pytest tests --cov ./declutr --cov-report=xml --cov-config=./.coveragerc
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1.4.1
+      uses: codecov/codecov-action@v1.5.0
       with:
         file: ./coverage.xml
         # Ignore codecov failures as the codecov server is not

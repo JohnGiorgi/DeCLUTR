@@ -44,10 +44,7 @@ jobs:
       run: |
         pytest tests --cov ./declutr --cov-report=xml --cov-config=./.coveragerc
     - name: Upload coverage to Codecov
-      # We don't want to push coverge for every job in the matrix.
-      # Rather arbitrarily, choose to push on Ubuntu with Python 3.8.
-      if: matrix.python-version == '3.8' && matrix.os == 'ubuntu-latest' && github.event_name == 'push'
-      uses: codecov/codecov-action@v1.5.0
+      uses: codecov/codecov-action@v1.4.1
       with:
         file: ./coverage.xml
         # Ignore codecov failures as the codecov server is not

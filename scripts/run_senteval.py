@@ -245,7 +245,7 @@ def _run_senteval(
         output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
         with open(output_filepath, "w") as fp:
             # Convert anything that can't be serialized to JSON to a python type
-            json_safe_results = common_util.sanitize(results)
+            json_safe_results = common_util.sanitize_text(results)
             # Add aggregate scores to results dict
             json_safe_results[AGGREGATE_SCORES_KEY] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)

@@ -3,13 +3,13 @@ import re
 from hypothesis import given
 from hypothesis.strategies import booleans, text
 
-from declutr.common.data_utils import sanitize
+from declutr.common.util import sanitize_text
 
 
 class TestDataUtils:
     @given(text=text(), lowercase=booleans())
-    def test_sanitize(self, text: str, lowercase: bool) -> None:
-        sanitized_text = sanitize(text, lowercase=lowercase)
+    def test_sanitize_text(self, text: str, lowercase: bool) -> None:
+        sanitized_text = sanitize_text(text, lowercase=lowercase)
 
         # There should be no cases of multiple spaces or tabs
         assert re.search(r"[ ]{2,}", sanitized_text) is None

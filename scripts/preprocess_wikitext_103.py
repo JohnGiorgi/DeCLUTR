@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import requests
 import typer
-from declutr.common.data_utils import sanitize
+from declutr.common.util import sanitize_text
 
 WIKITEXT_103_URL = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-raw-v1.zip"
 
@@ -94,7 +94,7 @@ def main(
             documents, length=max_instances, label=typer.style("Preprocessing text", bold=True)
         ) as progress:
             for doc in progress:
-                doc = sanitize(doc, lowercase=lowercase)
+                doc = sanitize_text(doc, lowercase=lowercase)
                 if not doc:
                     continue
 

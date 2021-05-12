@@ -177,6 +177,7 @@ class DeCLUTRDatasetReader(DatasetReader):
                 # A call to the `tokenize` method of the AllenNLP tokenizer causes
                 # subsequent calls to the underlying HuggingFace Tokenizer (if `use_fast`)
                 # to truncate text. Reset the truncation each time here.
+                # Note this only appears to happen for transformers<3.1
                 if self._tokenizer.tokenizer.is_fast:
                     self._tokenizer.tokenizer._tokenizer.no_truncation()
             else:

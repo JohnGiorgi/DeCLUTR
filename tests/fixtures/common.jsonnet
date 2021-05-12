@@ -17,7 +17,7 @@ local min_length = 8;
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
-            "type": "declutr.tokenizers.PretrainedTransformerTokenizerFix",
+            "type": "pretrained_transformer",
             "model_name": transformer_model,
             "max_length": max_length,
         },

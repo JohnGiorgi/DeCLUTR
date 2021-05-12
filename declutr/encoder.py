@@ -10,7 +10,7 @@ from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 from validators.url import url
 
-from declutr.common.data_utils import sanitize
+from declutr.common.util import sanitize_text
 
 PRETRAINED_MODELS = {
     "declutr-small": "https://github.com/JohnGiorgi/DeCLUTR/releases/download/v0.1.0rc1/declutr-small.tar.gz",
@@ -100,7 +100,7 @@ class Encoder:
 
         embeddings: torch.FloatTensor = []  # promise mypy we will behave
         for i in range(0, len(inputs), batch_size):
-            batch_json = [{"text": sanitize(input_)} for input_ in inputs[i : i + batch_size]]
+            batch_json = [{"text": sanitize_text(input_)} for input_ in inputs[i : i + batch_size]]
             outputs = self._predictor.predict_batch_json(batch_json)
             outputs = torch.as_tensor(
                 # Accumulating the tensors on the GPU would quickly lead to OOM.

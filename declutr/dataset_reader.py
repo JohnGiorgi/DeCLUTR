@@ -12,7 +12,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SpacyTokeni
 from overrides import overrides
 
 from declutr.common.contrastive_utils import sample_anchor_positive_pairs
-from declutr.common.data_utils import sanitize
+from declutr.common.util import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ class DeCLUTRDatasetReader(DatasetReader):
         # Some very minimal preprocessing to remove whitespace, newlines and tabs.
         # We peform it here as it will cover both training and predicting with the model.
         # We DON'T lowercase by default, but rather allow `self._tokenizer` to decide.
-        text = sanitize(text, lowercase=False)
+        text = sanitize_text(text, lowercase=False)
 
         fields: Dict[str, Field] = {}
         if self.sample_spans:

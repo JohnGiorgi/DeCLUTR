@@ -173,9 +173,15 @@ class DeCLUTRDatasetReader(DatasetReader):
                 # certain tokenizers, e.g. the BPE tokenizer used by RoBERTa, GPT and others.
                 # See: https://github.com/huggingface/transformers/issues/1196
                 text = f" {text.lstrip()}"
-                tokenizer = self._tokenizer.tokenizer.tokenize
+                tokenization_func = self._tokenizer.tokenizer.tokenize
+                # A call to the `tokenize` method of the AllenNLP tokenizer causes
+                # subsequent calls to the underlying HuggingFace Tokenizer (if `use_fast`)
+                # to truncate text. Reset the truncation each time here.
+                # Note this only appears to happen for transformers<3.1
+                if self._tokenizer.tokenizer.is_fast:
+                    self._tokenizer.tokenizer._tokenizer.no_truncation()
             else:
-                tokenizer = None
+                tokenization_func = None
             # Choose the anchor/positives at random.
             anchor_spans, positive_spans = sample_anchor_positive_pairs(
                 text=text,
@@ -184,7 +190,7 @@ class DeCLUTRDatasetReader(DatasetReader):
                 max_span_len=self._max_span_len,
                 min_span_len=self._min_span_len,
                 sampling_strategy=self._sampling_strategy,
-                tokenizer=tokenizer,
+                tokenizer=tokenization_func,
             )
 
             anchors: List[Field] = []

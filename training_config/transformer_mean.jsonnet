@@ -13,7 +13,7 @@ local max_length = 512;
         "type": "declutr",
         "lazy": true,
         "tokenizer": {
-            "type": "pretrained_transformer_fix",
+            "type": "pretrained_transformer",
             "model_name": transformer_model,
             // Account for special tokens (e.g. CLS and SEP), otherwise a cryptic error is thrown.
             "max_length": max_length - 2,

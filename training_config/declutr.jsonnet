@@ -18,7 +18,7 @@ local min_length = 32;
         "max_span_len": max_length,
         "min_span_len": min_length,
         "tokenizer": {
-            "type": "pretrained_transformer_fix",
+            "type": "pretrained_transformer",
             "model_name": transformer_model,
             // Account for special tokens (e.g. CLS and SEP), otherwise a cryptic error is thrown.
             "max_length": max_length - 2,

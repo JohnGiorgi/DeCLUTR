@@ -55,8 +55,8 @@ def all_gather_anchor_positive_pairs(
         return anchors, positives
 
     # Gather the encoded anchors and positives on all replicas
-    anchors_list = [torch.ones_like(anchors) for _ in range(dist.get_world_size())]
-    positives_list = [torch.ones_like(positives) for _ in range(dist.get_world_size())]
+    anchors_list = [torch.zeros_like(anchors) for _ in range(dist.get_world_size())]
+    positives_list = [torch.zeros_like(positives) for _ in range(dist.get_world_size())]
     dist.all_gather(anchors_list, anchors.contiguous())
     dist.all_gather(positives_list, positives.contiguous())
     # The gathered copy of the current replicas positive pairs have no gradients, so we overwrite

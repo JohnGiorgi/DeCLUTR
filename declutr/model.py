@@ -1,6 +1,8 @@
 from typing import Dict, Optional
 
 import torch
+import torch.distributed as dist
+from allennlp.common import util
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
@@ -64,7 +66,7 @@ class DeCLUTR(Model):
 
         super().__init__(vocab, **kwargs)
         self._text_field_embedder = text_field_embedder
-        # (HACK): Prevents the user from having to specify the tokenizer / masked language modeling
+        # Prevents the user from having to specify the tokenizer / masked language modeling
         # objective. In the future it would be great to come up with something more elegant.
         token_embedder = self._text_field_embedder._token_embedders["tokens"]
         self._masked_language_modeling = token_embedder.masked_language_modeling
@@ -127,7 +129,7 @@ class DeCLUTR(Model):
         # If positives are supplied by DataLoader and we are training, compute a contrastive loss.
         if self.training:
             output_dict["loss"] = 0
-            # TODO: We should throw a ValueError if no postives provided by loss is not None.
+            # TODO: We should throw a ValueError if no postives provided but loss is not None.
             if self._loss is not None:
                 # Like the anchors, if we sampled multiple positives, we need to unpack them.
                 positives = unpack_batch(positives)
@@ -156,7 +158,12 @@ class DeCLUTR(Model):
                     embedded_anchors, embedded_positives
                 )
                 indices_tuple = self._miner(embeddings, labels) if self._miner is not None else None
-                output_dict["loss"] += self._loss(embeddings, labels, indices_tuple)
+                contrastive_loss = self._loss(embeddings, labels, indices_tuple)
+                # Loss needs to be scaled by world size when using DistributedDataParallel
+                # See: https://amsword.medium.com/gradient-backpropagation-with-torch-distributed-all-gather-9f3941a381f8
+                if util.is_distributed():
+                    contrastive_loss *= dist.get_world_size()
+                output_dict["loss"] += contrastive_loss
             # Loss may be derived from contrastive objective, MLM objective or both.
             if masked_lm_loss is not None:
                 output_dict["loss"] += masked_lm_loss

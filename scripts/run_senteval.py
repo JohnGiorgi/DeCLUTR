@@ -245,7 +245,7 @@ def _run_senteval(
         output_filepath.parents[0].mkdir(parents=True, exist_ok=True)
         with open(output_filepath, "w") as fp:
             # Convert anything that can't be serialized to JSON to a python type
-            json_safe_results = common_util.sanitize_text(results)
+            json_safe_results = common_util.sanitize(results)
             # Add aggregate scores to results dict
             json_safe_results[AGGREGATE_SCORES_KEY] = aggregate_scores
             json.dump(json_safe_results, fp, indent=2)
@@ -544,7 +544,7 @@ def transformers(
         # Place all input tensors on same device as the model
         inputs = {name: tensor.to(params.device) for name, tensor in inputs.items()}
 
-        sequence_output, pooled_output = model(**inputs)
+        sequence_output, pooled_output = model(**inputs)[:2]
 
         # If mean_pool, we take the average of the token-level embeddings, accounting for pads.
         # Otherwise, we take the pooled output for this specific model, which is typically the

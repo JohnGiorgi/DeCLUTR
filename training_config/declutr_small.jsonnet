@@ -47,6 +47,12 @@ local min_length = 32;
             "type": "nt_xent",
             "temperature": 0.05,
         },
+        // There was a small bug in the original implementation that caused gradients derived from
+        // the contrastive loss to be scaled by 1/N, where N is the number of GPUs used during
+        // training. This has been fixed. To reproduce results from the paper, set this to false.
+        // Note that this will have no effect if you are not using distributed training with more
+        // than 1 GPU.
+        "scale_fix": false
     },
     "data_loader": {
         "batch_size": 4,

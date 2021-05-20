@@ -99,6 +99,10 @@ allennlp train "training_config/declutr.jsonnet" \
 
 The `--overrides` flag allows you to override any field in the config with a JSON-formatted string, but you can equivalently update the config itself if you prefer. During training, models, vocabulary, configuration, and log files will be saved to the directory provided by `--serialization-dir`. This can be changed to any directory you like.
 
+#### Gotchas
+
+- There was a small bug in the original implementation that caused gradients derived from the contrastive loss to be scaled by 1/N, where N is the number of GPUs used during training. This has been fixed. To reproduce results from the paper, set `model.scale_fix` to `False` in your config. Note that this will have no effect if you are not using distributed training with more than 1 GPU.
+
 #### Exporting a trained model to HuggingFace Transformers
 
 We have provided a simple script to export a trained model so that it can be loaded with [Hugging Face Transformers](https://github.com/huggingface/transformers)

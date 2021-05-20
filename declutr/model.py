@@ -60,6 +60,7 @@ class DeCLUTR(Model):
         feedforward: Optional[FeedForward] = None,
         miner: Optional[PyTorchMetricLearningMiner] = None,
         loss: Optional[PyTorchMetricLearningLoss] = None,
+        scale_fix: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
         **kwargs,
     ) -> None:
@@ -88,6 +89,12 @@ class DeCLUTR(Model):
                     " and/or specify `masked_language_modeling=True` in the config when training."
                 )
             )
+        # There was a small bug in the original implementation that caused gradients derived from
+        # the contrastive loss to be scaled by 1/N, where N is the number of GPUs used during
+        # training. This has been fixed. To reproduce results from the paper, set `model.scale_fix`
+        # to `False` in your config. Note that this will have no effect if you are not using
+        # distributed training with more than 1 GPU.
+        self._scale_fix = scale_fix
         initializer(self)
 
     def forward(  # type: ignore
@@ -161,7 +168,7 @@ class DeCLUTR(Model):
                 contrastive_loss = self._loss(embeddings, labels, indices_tuple)
                 # Loss needs to be scaled by world size when using DistributedDataParallel
                 # See: https://amsword.medium.com/gradient-backpropagation-with-torch-distributed-all-gather-9f3941a381f8
-                if util.is_distributed():
+                if util.is_distributed() and self._scale_fix:
                     contrastive_loss *= dist.get_world_size()
                 output_dict["loss"] += contrastive_loss
             # Loss may be derived from contrastive objective, MLM objective or both.

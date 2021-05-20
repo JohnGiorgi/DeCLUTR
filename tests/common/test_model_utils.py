@@ -59,8 +59,7 @@ class TestModelUtils:
             assert torch.equal(tensor, four_dim_input["tokens"][name])
 
     def test_all_gather_anchor_positive_pairs_no_op(self) -> None:
-        """Check that `all_gather_anchor_positive_pairs` is a no-op when not in distributed mode.
-        """
+        """Check that `all_gather_anchor_positive_pairs` is a no-op when not in distributed mode."""
         num_anchors = 2
         num_positives = 2
         batch_size = 16

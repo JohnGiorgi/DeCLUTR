@@ -9,13 +9,13 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
 
 | Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream (-SNLI) |  Probing  |   Δ   |
 |------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:------------------:|:---------:|:-----:|
-| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |        76.00       |   72.58   | -3.06 |
-| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |        78.89       |   66.70   | -0.17 |
-| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |        77.19       |   63.22   | -1.87 |
-| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |        72.58       |   74.57   | -6.48 |
-| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |        72.70       |   74.19   | -6.36 |
-| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |        77.41       | __74.71__ | -1.65 |
-| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |      __79.06__     |   74.65   |   --  |
+| [InferSent V2](https://github.com/facebookresearch/InferSent)                                              |           Yes           |     38M    |     4096    |        76.00       |   72.58   | -3.10 |
+| [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/5)                  |           Yes           |    147M    |     512     |        78.89       |   66.70   | -0.21 |
+| [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)  ("roberta-base-nli-mean-tokens") |           Yes           |    125M    |     768     |        77.19       |   63.22   | -1.91 |
+| Transformer-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                        |            No           |     82M    |     768     |        72.58       |   74.57   | -6.52 |
+| Transformer-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                     |            No           |    125M    |     768     |        72.70       |   74.19   | -6.40 |
+| DeCLUTR-small ([DistilRoBERTa-base](https://huggingface.co/distilroberta-base))                            |            No           |     82M    |     768     |        77.50       | __74.71__ | -1.60 |
+| DeCLUTR-base ([RoBERTa-base](https://huggingface.co/roberta-base))                                         |            No           |    125M    |     768     |      __79.10__     |   74.65   |   --  |
 
 > Transformer-* is the same underlying architecture and pretrained weights as DeCLUTR-* _before_ continued pretraining with our contrastive objective. Transformer-* and DeCLUTR-* use mean pooling on their token-level embeddings to produce a fixed-length sentence representation. Downstream scores are computed without considering perfomance on SNLI (denoted "Downstream (-SNLI)") as InferSent, USE and Sentence Transformers all train on SNLI. Δ: difference to DeCLUTR-base downstream score.
 
@@ -27,6 +27,7 @@ The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Un
   - [Training](#training)
   - [Embedding](#embedding)
   - [Evaluating with SentEval](#evaluating-with-senteval)
+  - [Reproducing results](#reproducing-results)
 - [Citing](#citing)
 
 ## Notebooks
@@ -277,6 +278,19 @@ For help with a specific command, e.g. `allennlp`, run
 ```
 python scripts/run_senteval.py allennlp --help
 ```
+
+### Reproducing results
+
+To reproduce results from the paper, first follow the instructions to set up SentEval in [Evaluating with SentEval](#evaluating-with-senteval). Then, run
+
+```bash
+python scripts/run_senteval.py transformers "SentEval" "johngiorgi/declutr-base" \
+	--output-filepath "senteval_results.json" \
+	--cuda-device 0 \
+	--mean-pool
+```
+
+`"johngiorgi/declutr-base"` can be replaced with (almost) any model on the [HuggingFace model hub](https://huggingface.co/models). Evaluation takes approximately 10-12 hours on a NVIDIA V100 Tesla GPU.
 
 ## Citing
 

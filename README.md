@@ -297,11 +297,20 @@ python scripts/run_senteval.py transformers "SentEval" "johngiorgi/declutr-base"
 If you use DeCLUTR in your work, please consider citing our preprint
 
 ```
-@article{Giorgi2020DeCLUTRDC,
-  title={DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations},
-  author={John M Giorgi and Osvald Nitski and Gary D. Bader and Bo Wang},
-  journal={ArXiv},
-  year={2020},
-  volume={abs/2006.03659}
+@inproceedings{giorgi-etal-2021-declutr,
+    title = "{D}e{CLUTR}: Deep Contrastive Learning for Unsupervised Textual Representations",
+    author = "Giorgi, John  and
+      Nitski, Osvald  and
+      Wang, Bo  and
+      Bader, Gary",
+    booktitle = "Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers)",
+    month = aug,
+    year = "2021",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2021.acl-long.72",
+    doi = "10.18653/v1/2021.acl-long.72",
+    pages = "879--895",
+    abstract = "Sentence embeddings are an important component of many natural language processing (NLP) systems. Like word embeddings, sentence embeddings are typically learned on large text corpora and then transferred to various downstream tasks, such as clustering and retrieval. Unlike word embeddings, the highest performing solutions for learning sentence embeddings require labelled data, limiting their usefulness to languages and domains where labelled data is abundant. In this paper, we present DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations. Inspired by recent advances in deep metric learning (DML), we carefully design a self-supervised objective for learning universal sentence embeddings that does not require labelled training data. When used to extend the pretraining of transformer-based language models, our approach closes the performance gap between unsupervised and supervised pretraining for universal sentence encoders. Importantly, our experiments suggest that the quality of the learned embeddings scale with both the number of trainable parameters and the amount of unlabelled training data. Our code and pretrained models are publicly available and can be easily adapted to new domains or used to embed unseen text.",
 }
 ```

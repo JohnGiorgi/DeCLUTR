@@ -5,7 +5,7 @@
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 ![GitHub](https://img.shields.io/github/license/JohnGiorgi/DeCLUTR?color=blue)
 
-The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://arxiv.org/abs/2006.03659). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
+The corresponding code for our paper: [DeCLUTR: Deep Contrastive Learning for Unsupervised Textual Representations](https://aclanthology.org/2021.acl-long.72/). Results on [SentEval](https://github.com/facebookresearch/SentEval) are presented below (as averaged scores on the downstream and probing task test sets), along with existing state-of-the-art methods.
 
 | Model                                                                                                      | Requires labelled data? | Parameters | Embed. dim. | Downstream (-SNLI) |  Probing  |   Δ   |
 |------------------------------------------------------------------------------------------------------------|:-----------------------:|:----------:|:-----------:|:------------------:|:---------:|:-----:|
@@ -82,7 +82,7 @@ You can specify the train set path in the [configs](training_config) under `"tra
 
 #### Gotchas
 
-- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_reader.py) and/or [our paper]((https://arxiv.org/abs/2006.03659)) for more details on these hyperparameters.
+- A training dataset should contain documents with a minimum of `num_anchors * max_span_len * 2` whitespace tokens. This is required to sample spans according to our sampling procedure. See the [dataset reader](declutr/dataset_reader.py) and/or [our paper](https://aclanthology.org/2021.acl-long.72/) for more details on these hyperparameters.
 
 ### Training
 

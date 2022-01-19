@@ -77,7 +77,18 @@ class Encoder:
             If given, the `inputs` will be batched before embedding.
         """
         if isinstance(inputs, str):
-            if Path(inputs).is_file() or url(inputs):
+            # Determine if inputs is a path, or text string
+            try:
+                is_path = Path(inputs).is_file()
+            except OSError:
+                warnings.warn(
+                    "'OSError' raised when checking if 'inputs' is a filepath."
+                    " Assuming it is a string or URL."
+                )
+            else:
+                is_path = Path(inputs).is_file() or url(inputs)
+
+            if is_path:
                 inputs = Path(cached_path(inputs)).read_text().split("\n")
             else:
                 inputs = [inputs]

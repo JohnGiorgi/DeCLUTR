@@ -138,37 +138,40 @@ If your GPU supports it, [mixed-precision](https://devblogs.nvidia.com/mixed-pre
 
 ### Embedding
 
-You can embed text with a trained model in one of three ways:
+You can embed text with a trained model in one of four ways:
 
-1. [As a library](#as-a-library): import and initialize an object from this repo, which can be used to embed sentences/paragraphs.
-2. [Hugging Face Transformers](#hugging-face-transformers): load our pretrained model with the [Hugging Face Transformers library](https://github.com/huggingface/transformers).
-3. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
+1. [Sentence Transformers](#sentencetransformers): load our pretrained models with the [SentenceTransformers](https://www.sbert.net/) library (_recommended_).
+2. [Hugging Face Transformers](#hugging-face-transformers): load our pretrained models with the [Hugging Face Transformers](https://github.com/huggingface/transformers) library.
+3. [From this repo](#from-this-repo): import and initialize an object from this repo which can be used to embed sentences/paragraphs.
+4. [Bulk embed](#bulk-embed-a-file): embed all text in a given text file with a simple command-line interface.
 
-Available pre-trained models:
+The following pre-trained models are available:
 
 - [johngiorgi/declutr-small](https://huggingface.co/johngiorgi/declutr-small)
 - [johngiorgi/declutr-base](https://huggingface.co/johngiorgi/declutr-base)
 - [johngiorgi/declutr-sci-base](https://huggingface.co/johngiorgi/declutr-sci-base)
 
-#### As a library
+#### SentenceTransformers
 
-To use the model as a library, import `Encoder` and pass it some text (it accepts both strings and lists of strings)
+Our pretrained models are hosted with Hugging Face Transformers, so they can easily be loaded in SentenceTransformers. Just make sure to [install the SentenceTransformers library](https://www.sbert.net/docs/installation.html) first. Here is a simple example
 
 ```python
-from declutr import Encoder
+from sentence_transformers import SentenceTransformer
 
-# This can be a path on disk to a model you have trained yourself OR
-# the name of one of our pretrained models.
-pretrained_model_or_path = "declutr-small"
+# Load the model
+model = SentenceTransformer("johngiorgi/declutr-small")
 
-encoder = Encoder(pretrained_model_or_path)
-embeddings = encoder([
+# Prepare some text to embed
+texts = [
     "A smiling costumed woman is holding an umbrella.",
-    "A happy woman in a fairy costume holds an umbrella."
-])
+    "A happy woman in a fairy costume holds an umbrella.",
+]
+
+# Embed the text
+embeddings = model.encode(texts)
 ```
 
-these embeddings can then be used, for example, to compute the semantic similarity between some number of sentences or paragraphs
+These embeddings can then be used, for example, to compute the semantic similarity between some number of sentences or paragraphs
 
 ```python
 from scipy.spatial.distance import cosine
@@ -176,20 +179,12 @@ from scipy.spatial.distance import cosine
 semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
 ```
 
-See the list of available `PRETRAINED_MODELS` in [declutr/encoder.py](declutr/encoder.py)
-
-```bash
-python -c "from declutr.encoder import PRETRAINED_MODELS ; print(list(PRETRAINED_MODELS.keys()))"
-```
-
 #### Hugging Face Transformers
 
-Our pretrained models are also hosted with Hugging Face Transformers, so they can be used like any other model in that library. Here is a simple example:
+Alternatively, you can use the models straight from Hugging Face Transformers. This just requires a few extra steps. Here is a simple example
 
 ```python
 import torch
-from scipy.spatial.distance import cosine
-
 from transformers import AutoModel, AutoTokenizer
 
 # Load the model
@@ -211,9 +206,30 @@ with torch.no_grad():
 embeddings = torch.sum(
     sequence_output * inputs["attention_mask"].unsqueeze(-1), dim=1
 ) / torch.clamp(torch.sum(inputs["attention_mask"], dim=1, keepdims=True), min=1e-9)
+```
 
-# Compute a semantic similarity via the cosine distance
-semantic_sim = 1 - cosine(embeddings[0], embeddings[1])
+#### From this repo
+
+To use the model directly from this repo, import `Encoder` and pass it some text (it accepts both strings and lists of strings)
+
+```python
+from declutr import Encoder
+
+# This can be a path on disk to a model you have trained yourself OR
+# the name of one of our pretrained models.
+pretrained_model_or_path = "declutr-small"
+
+encoder = Encoder(pretrained_model_or_path)
+embeddings = encoder([
+    "A smiling costumed woman is holding an umbrella.",
+    "A happy woman in a fairy costume holds an umbrella."
+])
+```
+
+See the list of available `PRETRAINED_MODELS` in [declutr/encoder.py](declutr/encoder.py)
+
+```bash
+python -c "from declutr.encoder import PRETRAINED_MODELS ; print(list(PRETRAINED_MODELS.keys()))"
 ```
 
 #### Bulk embed a file

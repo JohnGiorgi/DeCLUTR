@@ -310,7 +310,7 @@ python scripts/run_senteval.py transformers "SentEval" "johngiorgi/declutr-base"
 
 ## Citing
 
-If you use DeCLUTR in your work, please consider citing our preprint
+If you use DeCLUTR in your work, please consider citing our paper
 
 ```
 @inproceedings{giorgi-etal-2021-declutr,
